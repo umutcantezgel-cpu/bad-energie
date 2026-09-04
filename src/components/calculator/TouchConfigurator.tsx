@@ -10,7 +10,7 @@
  * Intern-Modus: die Komponente reicht an den Meister-Modus weiter.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { COMPANY_DATA } from '@/config/company';
 import {
   JOURNEYS,
@@ -366,12 +366,16 @@ function KundenModus({
         </div>
       ) : null}
 
-      <AnimatePresence mode="wait" initial={false}>
+      {/*
+        Bewusst ohne AnimatePresence: Der neue Schritt darf nie darauf warten, dass eine
+        Ausblend-Animation endet. Pausiert der Browser die Animationsschleife (verdeckter
+        Tab, Energiesparmodus), bliebe der Konfigurator sonst auf dem alten Schritt stehen.
+      */}
+      <div>
         <motion.div
           key={schritt}
           initial={wenigerBewegung ? false : { opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={wenigerBewegung ? { opacity: 1 } : { opacity: 0, x: -24 }}
           transition={{ duration: wenigerBewegung ? 0 : 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
           {istKontakt ? (
@@ -397,7 +401,7 @@ function KundenModus({
             />
           )}
         </motion.div>
-      </AnimatePresence>
+      </div>
 
       {/* Honigtopf gegen Automaten: sichtbar leer, fuer Hilfsmittel unsichtbar. */}
       <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}>

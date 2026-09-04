@@ -67,7 +67,7 @@ const PageTransition = ({ children }) => {
     const variants = prefersReducedMotion ? reducedMotionVariants : pageVariants;
 
     return (
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
             <motion.div
                 key={location.pathname}
                 initial="initial"

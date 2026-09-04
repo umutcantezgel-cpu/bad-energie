@@ -538,7 +538,8 @@ export async function POST(
         einheit,
         hinweis: (hinweis || '').trim(),
         geaendertAm: new Date(),
-        geaendertVon: session.name,
+        // Fremdschlüssel auf benutzer.id, nicht der Anzeigename.
+        geaendertVon: session.benutzerId,
       }).where(eq(richtpreis.nr, nr));
       return NextResponse.json({ ok: true });
     } catch (err) {
