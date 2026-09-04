@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import type { TerminfensterEintrag } from './page';
+import type { TerminfensterEintrag } from './page-types';
 import { erstelleTerminfenster, loescheTerminfenster } from './actions';
 
 export default function TermineClient({

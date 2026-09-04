@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { BenutzerEintrag } from './page';
+import type { BenutzerEintrag } from './page-types';
 import type { Rolle } from '@/lib/types';
 import { legeBenutzerAn, setzePinNeu, toggleBenutzerAktiv } from './actions';
 

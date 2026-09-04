@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import type { BoardKarte } from './page';
+import type { BoardKarte } from './page-types';
 import { euro } from '@/lib/services/calculation';
 import type { AnfrageStatus } from '@/lib/types';
 
