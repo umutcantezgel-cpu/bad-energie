@@ -180,5 +180,83 @@
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 350ms;
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in-out: var(--ease-house);
+}
+/* ==========================================================================
+   MODUL: VERTRIEBS- UND KALKULATIONSMODUL (Konfigurator, Intern-Bereich)
+   Briefbogen-Palette. Das Website-Blau #0C3A87 bleibt fuer Header, Hero
+   und Marketing unveraendert; die --modul-* Tokens gelten nur im Modul.
+   ========================================================================== */
+:root {
+  /* Modul-Palette */
+  --modul-blau: #1B3A8C;
+  --modul-orange: #EE6C1F;
+  --modul-gold: #F0C000;
+  --modul-grau: #8E959E;
+  --modul-elektro: #475569;
+
+  /* Gewerke-Tripel: Flaeche / Text (AA-sicher auf Weiss) / Tint */
+  --gewerk-wasser-flaeche: #1B3A8C;
+  --gewerk-wasser-text: #1B3A8C;
+  --gewerk-wasser-tint: #EEF2FA;
+
+  --gewerk-heizung-flaeche: #EE6C1F;
+  --gewerk-heizung-text: #A9430C;
+  --gewerk-heizung-tint: #FFF1E8;
+
+  --gewerk-solar-flaeche: #F0C000;
+  --gewerk-solar-text: #7A5F00;
+  --gewerk-solar-tint: #FFF8D6;
+
+  --gewerk-luft-flaeche: #8E959E;
+  --gewerk-luft-text: #4B5563;
+  --gewerk-luft-tint: #F1F3F5;
+
+  --gewerk-elektro-flaeche: #475569;
+  --gewerk-elektro-text: #334155;
+  --gewerk-elektro-tint: #EEF1F5;
+
+  /* Statuspalette des Moduls */
+  --status-eingang: #94A3B8;
+  --status-geplant: #296BF5;
+  --status-blockiert: #B42318;
+  --status-freigegeben: #16A34A;
+  --status-versendet: #0284C7;
+  --status-erinnert: #D97706;
+  --status-antwort: #15803D;
+  --status-verworfen: #64748B;
+
+  /* Feedback: Fehler immer mit Icon und Text, nie Gold */
+  --color-error: #B42318;
+  --color-error-tint: #FEF3F2;
+
+  /* Buttons */
+  --color-button-primary: var(--modul-blau);
+  --color-button-primary-hover: #142C6B;
+  --color-button-primary-text: #FFFFFF;
+  --color-button-secondary: #FFFFFF;
+  --color-button-secondary-hover: #F1F5F9;
+  --color-button-secondary-text: var(--modul-blau);
+  --color-button-ghost-text: #334155;
+  --color-button-disabled: #CBD5E1;
+  --color-button-disabled-text: #64748B;
+
+  /* Typoskala (Body 16px, keine neuen Oberflaechen unter 14px) */
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 28px;
+  --font-size-display: 34px;
+
+  /* Fehlende Spacing-Stufe (wurde im @theme selbstreferenziell definiert) */
+  --spacing-36: 144px;
+
+  /* Radius und Bewegung */
+  --radius-2xl: 32px;
+  --ease-house: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* Touch-Ziele */
+  --ziel-standard: 44px;
+  --ziel-baustelle: 56px;
 }

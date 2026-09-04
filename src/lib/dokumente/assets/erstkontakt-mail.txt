@@ -1,0 +1,25 @@
+Guten Tag {{anrede}} {{nachname}},
+
+{{persoenlicher_satz}}
+
+Ich habe Ihr Vorhaben auf Basis Ihrer Angaben durchgerechnet. Die Kostenschätzung liegt dieser Mail als PDF bei. Das Wichtigste daraus:
+
+Voraussichtlich {{summe_brutto_von}} bis {{summe_brutto_bis}} Euro, inklusive Material, Montage und Mehrwertsteuer.
+<!-- FOERDERUNG -->
+Davon übernimmt die Förderung voraussichtlich rund {{foerder_zuschuss}} Euro. Ihr Eigenanteil liegt damit bei etwa {{eigenanteil_von}} bis {{eigenanteil_bis}} Euro.
+<!-- /FOERDERUNG -->
+
+Das ist eine Spanne, keine feste Zahl. Wo genau wir darin landen, sehe ich erst vor Ort: Technikraum, Aufstellort, Leitungswege. Dafür brauche ich etwa eine Stunde bei Ihnen.
+
+Mein Vorschlag: {{terminvorschlag}}. Wenn Ihnen etwas anderes besser passt, antworten Sie einfach auf diese Mail oder rufen Sie an: 06441 2039053.
+
+Mit freundlichen Grüßen
+
+{{bearbeiter}}
+{{bearbeiter_rolle}}, Bad & Energie GmbH
+
+Bad & Energie GmbH, Siegmund-Hiepe-Straße 20, 35578 Wetzlar
+Geschäftsführer Sabri Demir, Amtsgericht Wetzlar HRB 2449
+bad-energie.de, info@bad-energie.de
+
+Sie erhalten diese Mail, weil Sie uns zu Ihrem Vorhaben angefragt haben. Kostenschätzung {{ks_nummer}}, unverbindlich.

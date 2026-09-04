@@ -146,7 +146,7 @@ export default function BlogPostPage() {
           </aside>
 
           {/* MAIN ARTICLE (Center) */}
-          <main className="lg:col-span-9">
+          <div className="lg:col-span-9">
             <div className="glass-bezel-outer shadow-2xl mb-12">
               <div className="glass-bezel-inner p-8 sm:p-12 space-y-8">
 
@@ -260,7 +260,7 @@ export default function BlogPostPage() {
               />
             </div>
 
-          </main>
+          </div>
         </div>
       </div>
 

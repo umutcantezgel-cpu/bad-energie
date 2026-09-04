@@ -78,9 +78,61 @@ export default function DatenschutzPage() {
                         </p>
                     </div>
 
-                    {/* 4. SSL/TLS & Datensicherheit */}
+                    {/*
+                      ENTWURF ZUR FREIGABE: Die folgenden drei Abschnitte beschreiben die Verarbeitung
+                      im Konfigurator und in der Kostenschätzung. Vor dem Livegang durch den Betreiber
+                      rechtlich prüfen lassen (Speicherfrist, Auftragsverarbeiter, Rechtsgrundlagen).
+                    */}
+                    <div className="space-y-3 text-xs text-slate-600 leading-relaxed border-b border-slate-100 pb-6">
+                        <h2 className="text-base font-bold text-slate-900">5. Konfigurator, Kostenschätzung und Terminanfragen</h2>
+                        <h3 className="font-bold text-slate-800 text-sm">Welche Daten wir verarbeiten</h3>
+                        <p>
+                            Wenn Sie unseren Konfigurator ausfüllen, eine Kostenschätzung anfordern oder einen Termin anfragen, verarbeiten wir: Ihre Angaben zum Vorhaben (etwa Raumgröße, Ausstattungswunsch, bestehende Heizung, gewünschter Zeitraum), Ihre Kontaktdaten (Anrede, Vorname, Nachname, E-Mail-Adresse, Telefonnummer), die Adresse des Objekts sowie freiwillig hochgeladene Fotos. Bei einer Beratung vor Ort kommen Angaben unserer Monteure hinzu, etwa Notizen zur Baustelle und Handskizzen.
+                        </p>
+                        <h3 className="font-bold text-slate-800 text-sm">Zweck und Rechtsgrundlage</h3>
+                        <p>
+                            Wir verarbeiten diese Daten, um Ihre Anfrage zu beantworten, eine unverbindliche Kostenschätzung zu erstellen und einen Termin abzustimmen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Durchführung vorvertraglicher Maßnahmen auf Ihre Anfrage hin). Soweit Sie zusätzlich in eine Eingangsbestätigung per E-Mail oder in den Upload von Fotos einwilligen, ist Rechtsgrundlage Art. 6 Abs. 1 lit. a DSGVO. Diese Einwilligung können Sie jederzeit für die Zukunft widerrufen.
+                        </p>
+                        <h3 className="font-bold text-slate-800 text-sm">Speicherdauer</h3>
+                        <p>
+                            Anfragen speichern wir bis zu 24 Monate nach dem letzten Kontakt zu dem Vorhaben und löschen sie danach automatisch, einschließlich der Fotos und Dokumente. Kommt ein Auftrag zustande, gelten die handels- und steuerrechtlichen Aufbewahrungsfristen von sechs beziehungsweise zehn Jahren.
+                        </p>
+                        <h3 className="font-bold text-slate-800 text-sm">Empfänger</h3>
+                        <p>
+                            Für Betrieb und Versand setzen wir sorgfältig ausgewählte Dienstleister als Auftragsverarbeiter nach Art. 28 DSGVO ein: Vercel für den Betrieb der Website, Neon für die Datenbank und Vercel Blob für Dateien, jeweils mit Standort in der Europäischen Union, sowie Resend für den Versand unserer E-Mails. Eine Weitergabe zu Werbezwecken findet nicht statt.
+                        </p>
+                        <h3 className="font-bold text-slate-800 text-sm">Bestätigungslink in unseren E-Mails</h3>
+                        <p>
+                            In der Kostenschätzung senden wir Ihnen einen persönlichen Link, über den Sie einen der beiden Terminvorschläge bestätigen können. Der Link enthält eine zufällige Kennung ohne Rückschluss auf Ihre Person, ist 30 Tage gültig und lässt sich nur einmal einlösen. Ein Öffnen der E-Mail wird nicht nachverfolgt.
+                        </p>
+                        <h3 className="font-bold text-slate-800 text-sm">Widerspruch</h3>
+                        <p>
+                            Sie können der Verarbeitung jederzeit widersprechen und die Löschung Ihrer Anfrage verlangen. Eine formlose Nachricht an <a href="mailto:info@bad-energie.de" className="text-[#0C3A87] underline">info@bad-energie.de</a> genügt.
+                        </p>
+                    </div>
+
+                    {/* 6. Speicherung im Browser */}
+                    <div className="space-y-3 text-xs text-slate-600 leading-relaxed border-b border-slate-100 pb-6">
+                        <h2 className="text-base font-bold text-slate-900">6. Speicherung auf Ihrem Endgerät</h2>
+                        <p>
+                            Damit Ihre Angaben im Konfigurator beim Blättern zwischen den Schritten erhalten bleiben, speichern wir sie vorübergehend im Sitzungsspeicher Ihres Browsers unter dem Schlüssel <span className="font-mono">be-konfigurator</span>. Ihre Kontaktdaten werden dort nicht abgelegt. Der Eintrag wird gelöscht, sobald Sie die Anfrage absenden oder von vorn beginnen, spätestens beim Schließen des Browsers. Ihre Einwilligungsentscheidung speichern wir unter <span className="font-mono">baris_consent_settings</span>, damit wir Sie nicht bei jedem Besuch erneut fragen. Beides ist technisch notwendig nach § 25 Abs. 2 TDDDG und setzt keine Einwilligung voraus.
+                        </p>
+                    </div>
+
+                    {/* 7. Externe Inhalte */}
+                    <div className="space-y-3 text-xs text-slate-600 leading-relaxed border-b border-slate-100 pb-6">
+                        <h2 className="text-base font-bold text-slate-900">7. Externe Inhalte und Reichweitenmessung</h2>
+                        <p>
+                            Auf der Seite Beratung binden wir den Terminkalender von Calendly ein. Er wird erst geladen, wenn Sie ausdrücklich zustimmen. Dabei werden Ihre IP-Adresse und Angaben zu Ihrem Gerät an Calendly übertragen.
+                        </p>
+                        <p>
+                            Analyse- und Marketingdienste wie Google Analytics oder der Meta Pixel werden ausschließlich nach Ihrer Einwilligung geladen. Ohne Einwilligung werden keine entsprechenden Skripte ausgeführt. Rechtsgrundlage ist Art. 6 Abs. 1 lit. a DSGVO in Verbindung mit § 25 Abs. 1 TDDDG. Ihre Auswahl können Sie jederzeit über die Schaltfläche „Datenschutz“ unten links ändern.
+                        </p>
+                    </div>
+
+                    {/* 8. SSL/TLS & Datensicherheit */}
                     <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
-                        <h2 className="text-base font-bold text-slate-900">4. SSL- bzw. TLS-Verschlüsselung</h2>
+                        <h2 className="text-base font-bold text-slate-900">8. SSL- bzw. TLS-Verschlüsselung</h2>
                         <p>
                             Diese Seite nutzt aus Sicherheitsgründen und zum Schutz der Übertragung vertraulicher Inhalte, wie zum Beispiel Bestellungen oder Anfragen, die Sie an uns als Seitenbetreiber senden, eine SSL- bzw. TLS-Verschlüsselung. Eine verschlüsselte Verbindung erkennen Sie daran, dass die Adresszeile des Browsers von &bdquo;http://&ldquo; auf &bdquo;https://&ldquo; wechselt und an dem Schloss-Symbol in Ihrer Browserzeile.
                         </p>

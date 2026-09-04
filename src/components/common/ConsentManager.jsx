@@ -1,139 +1,41 @@
 "use client";
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Shield, ChevronRight, Check, MapPin, BarChart3, Megaphone, Settings2 } from 'lucide-react';
+import { Shield, ChevronRight, MapPin, BarChart3, Megaphone, Settings2 } from 'lucide-react';
 import { cn } from '@/utils';
+import { useConsent } from '@/components/common/ConsentProvider';
+import { ALLES, NUR_ESSENZIELL, getStoredConsent, hasStoredConsent, saveConsent } from '@/components/common/consent-store';
 
-// Consent Version - Increment when privacy policy changes to reset consent
-const CONSENT_VERSION = '2.0';
-const CONSENT_KEY = 'baris_consent_settings';
-
-// Context for sharing consent state across the app
-const ConsentContext = createContext(null);
-
-export const useConsent = () => {
-    const context = useContext(ConsentContext);
-    if (!context) {
-        // Return default values if context is not available
-        return {
-            consent: { essential: true, analytics: false, marketing: false, maps: false, externalContent: false },
-            hasConsent: (category) => category === 'essential',
-            updateConsent: () => { },
-            showBanner: () => { }
-        };
-    }
-    return context;
-};
-
-// Helper function to get consent without context (for non-React code)
-export const getStoredConsent = () => {
-    if (typeof window === 'undefined') return null;
-    try {
-        const stored = localStorage.getItem(CONSENT_KEY);
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            // Check version - if outdated, return null to trigger re-consent
-            if (parsed.version !== CONSENT_VERSION) {
-                localStorage.removeItem(CONSENT_KEY);
-                return null;
-            }
-            return parsed.settings;
-        }
-    } catch (e) {
-        console.error('Error reading consent:', e);
-    }
-    return null;
-};
-
-export const hasStoredConsent = (category) => {
-    const consent = getStoredConsent();
-    if (!consent) return category === 'essential';
-    return consent[category] === true;
-};
+// Rückwärtskompatible Re-Exporte (der Speicher liegt jetzt in consent-store.ts)
+export { useConsent, getStoredConsent, hasStoredConsent };
 
 const ConsentManager = () => {
+    const { consent, entscheidungOffen } = useConsent();
     const [isVisible, setIsVisible] = useState(false);
     const [showDetails, setShowDetails] = useState(false);
-    const [preferences, setPreferences] = useState(() => {
-        const defaultPrefs = { essential: true, analytics: false, marketing: false, maps: false, externalContent: false };
-        if (typeof window === 'undefined') return defaultPrefs;
-        try {
-            const savedConsent = localStorage.getItem(CONSENT_KEY);
-            if (!savedConsent) return defaultPrefs;
-            const parsed = JSON.parse(savedConsent);
-            if (parsed.version !== CONSENT_VERSION) {
-                localStorage.removeItem(CONSENT_KEY);
-                return defaultPrefs;
-            }
-            return parsed.settings;
-        } catch {
-            localStorage.removeItem(CONSENT_KEY);
-            return defaultPrefs;
-        }
-    });
+    const [entwurf, setEntwurf] = useState(null);
+    // Gespeicherte Auswahl als Grundlage; ein lokaler Entwurf gewinnt, solange das Fenster offen ist.
+    const preferences = entwurf ?? consent;
+    const setPreferences = setEntwurf;
 
+    // Banner nach kurzer Verzögerung zeigen, solange keine Entscheidung vorliegt.
     useEffect(() => {
-        const hasValidConsent = (() => {
-            try {
-                const stored = localStorage.getItem(CONSENT_KEY);
-                if (!stored) return false;
-                const parsed = JSON.parse(stored);
-                return parsed.version === CONSENT_VERSION;
-            } catch {
-                return false;
-            }
-        })();
-
-        if (hasValidConsent) return;
-
+        if (!entscheidungOffen) return undefined;
         const timer = setTimeout(() => setIsVisible(true), 1000);
         return () => clearTimeout(timer);
-    }, []);
+    }, [entscheidungOffen]);
 
-    const handleAcceptAll = () => {
-        const all = {
-            essential: true,
-            analytics: true,
-            marketing: true,
-            maps: true,
-            externalContent: true
-        };
-        saveConsent(all);
-    };
-
-    const handleAcceptSelected = () => {
-        saveConsent(preferences);
-    };
-
-    const handleRejectAll = () => {
-        const essentialOnly = {
-            essential: true,
-            analytics: false,
-            marketing: false,
-            maps: false,
-            externalContent: false
-        };
-        saveConsent(essentialOnly);
-    };
-
-    const saveConsent = (settings) => {
-        const consentData = {
-            settings,
-            version: CONSENT_VERSION,
-            timestamp: new Date().toISOString()
-        };
-        localStorage.setItem(CONSENT_KEY, JSON.stringify(consentData));
-        setPreferences(settings);
+    // Auswahl speichern. Kein Neuladen der Seite: die Verbraucher hören auf das Ereignis.
+    const speichern = (settings) => {
+        saveConsent(settings);
+        setEntwurf(null);
         setIsVisible(false);
-
-        // Dispatch custom event for components to react
-        window.dispatchEvent(new CustomEvent('consentUpdated', { detail: settings }));
-
-        // Reload page to apply consent changes
-        if (settings.analytics || settings.marketing || settings.maps) {
-            window.location.reload();
-        }
+        setShowDetails(false);
     };
+
+    const handleAcceptAll = () => speichern(ALLES);
+    const handleAcceptSelected = () => speichern(preferences);
+    const handleRejectAll = () => speichern(NUR_ESSENZIELL);
 
     // Allow external trigger to show banner (e.g., from footer link)
     useEffect(() => {

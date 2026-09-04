@@ -49,7 +49,7 @@ const beratungSteps = [
 
 const Beratung = () => {
     return (
-        <main className="bg-neutral-50 min-h-screen">
+        <div className="bg-neutral-50 min-h-screen">
             {/* ── Hero Section ─────────────────────────────────────────── */}
             <section className="relative pt-32 pb-20 bg-gradient-to-br from-[var(--color-neutral-900)] via-[#1a2d3d] to-[var(--color-brand-primary)] text-white overflow-hidden">
                 <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
@@ -200,7 +200,7 @@ const Beratung = () => {
                     </div>
                 </div>
             </section>
-        </main>
+        </div>
     );
 };
 

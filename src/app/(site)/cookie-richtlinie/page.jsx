@@ -37,23 +37,37 @@ export default function CookieRichtliniePage() {
                         <h2 className="text-base font-bold text-slate-900">3. Cookie-Kategorien</h2>
                         <div className="space-y-3">
                             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                                <h3 className="font-bold text-slate-900 text-sm mb-1">Technisch notwendige / Funktionale Cookies (Immer aktiv)</h3>
+                                <h3 className="font-bold text-slate-900 text-sm mb-1">Technisch notwendig (immer aktiv)</h3>
                                 <p>
-                                    Einige Cookies stellen sicher, dass bestimmte Teile der Website einwandfrei funktionieren und Ihre Benutzervorlieben bekannt bleiben (z. B. Navigation, Formularzustände). Diese dürfen ohne vorherige Einwilligung gesetzt werden.
+                                    Diese Einträge sind für den Betrieb der Website erforderlich und setzen keine Einwilligung voraus: Ihre Einwilligungsentscheidung (<span className="font-mono">baris_consent_settings</span>, Speicher des Browsers, ohne Ablaufdatum, jederzeit löschbar), die Zwischenspeicherung Ihrer Konfigurator-Angaben (<span className="font-mono">be-konfigurator</span>, nur bis zum Schließen des Browsers) sowie im internen Bereich unser Sitzungscookie (<span className="font-mono">sitzung</span> beziehungsweise <span className="font-mono">__Host-sitzung</span>, Laufzeit maximal zwölf Stunden).
                                 </p>
                             </div>
 
                             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                                <h3 className="font-bold text-slate-900 text-sm mb-1">Präferenz- &amp; Einstellungs-Cookies</h3>
+                                <h3 className="font-bold text-slate-900 text-sm mb-1">Statistik und Analyse</h3>
                                 <p>
-                                    Präferenz-Cookies ermöglichen es der Website, sich an Informationen zu erinnern, die das Verhalten oder Aussehen der Website verändern (z. B. Ihre bevorzugte Region im Konfigurator).
+                                    Helfen uns zu verstehen, wie Besucher die Website nutzen. Wird nur nach Ihrer Einwilligung geladen, etwa Google Analytics.
                                 </p>
                             </div>
 
                             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                                <h3 className="font-bold text-slate-900 text-sm mb-1">Statistik- &amp; Analyse-Cookies</h3>
+                                <h3 className="font-bold text-slate-900 text-sm mb-1">Marketing und Werbung</h3>
                                 <p>
-                                    Wir verwenden analytische Cookies, um das Nutzungserlebnis für unsere Besucher zu optimieren und anonyme Einblicke in die Nutzung unserer Rechner und Konfiguratoren zu erhalten.
+                                    Dienen der Messung von Werbekampagnen, etwa der Meta Pixel. Wird nur nach Ihrer Einwilligung geladen.
+                                </p>
+                            </div>
+
+                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                                <h3 className="font-bold text-slate-900 text-sm mb-1">Kartendienste</h3>
+                                <p>
+                                    Ermöglichen die Anzeige interaktiver Karten. Dabei werden Daten an den Anbieter übertragen.
+                                </p>
+                            </div>
+
+                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                                <h3 className="font-bold text-slate-900 text-sm mb-1">Externe Inhalte</h3>
+                                <p>
+                                    Erlauben das Laden von Inhalten anderer Anbieter, etwa des Terminkalenders von Calendly auf der Seite Beratung. Ohne Ihre Einwilligung sehen Sie dort nur einen Hinweis mit einer Schaltfläche zum Laden.
                                 </p>
                             </div>
                         </div>
@@ -62,7 +76,7 @@ export default function CookieRichtliniePage() {
                     <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
                         <h2 className="text-base font-bold text-slate-900">4. Zustimmung verwalten &amp; widerrufen</h2>
                         <p>
-                            Wenn Sie unsere Website zum ersten Mal besuchen, zeigen wir Ihnen ein Pop-up mit einer Erklärung zu Cookies an. Sobald Sie auf &bdquo;Einstellungen speichern&ldquo; klicken, geben Sie uns Ihr Einverständnis, die von Ihnen gewählten Kategorien von Cookies zu verwenden. Sie können die Verwendung von Cookies jederzeit über Ihren Browser oder unsere Cookie-Einstellungen deaktivieren bzw. widerrufen.
+                            Wenn Sie unsere Website zum ersten Mal besuchen, zeigen wir Ihnen ein Pop-up mit einer Erklärung zu Cookies an. Sobald Sie auf &bdquo;Auswahl speichern&ldquo; klicken, geben Sie uns Ihr Einverständnis, die von Ihnen gewählten Kategorien von Cookies zu verwenden. Sie können die Verwendung von Cookies jederzeit über Ihren Browser oder unsere Cookie-Einstellungen deaktivieren bzw. widerrufen.
                         </p>
                     </div>
                 </div>

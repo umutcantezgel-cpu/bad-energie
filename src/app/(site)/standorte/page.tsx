@@ -38,7 +38,7 @@ const standorteGraph = buildGraph([
 
 export default function StandorteOverviewPage() {
   return (
-    <main className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50">
       <JsonLd schema={standorteGraph} />
 
       {/* Hero Section */}
@@ -137,6 +137,6 @@ export default function StandorteOverviewPage() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

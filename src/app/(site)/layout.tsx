@@ -4,7 +4,7 @@ import '../globals.css';
 import { HeaderWrapper } from '@/components/layout/HeaderWrapper';
 import { ClientWidgets } from '@/components/layout/ClientWidgets';
 import Footer from '@/components/common/Footer';
-import TrackingScripts from '@/components/common/TrackingScripts';
+import SkipLink from '@/components/common/SkipLink';
 import { ContentProvider } from '@/contexts/ContentContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { buildRootGraph } from '@/lib/schema';
@@ -96,11 +96,9 @@ export default function RootLayout({
       <body className="antialiased min-h-screen flex flex-col">
         <AuthProvider>
           <ContentProvider>
-            <TrackingScripts />
+            <SkipLink />
             <HeaderWrapper />
-            <div className="flex-1">
-              {children}
-            </div>
+            <main id="main-content" className="flex-1">{children}</main>
             <Footer />
             <ClientWidgets />
           </ContentProvider>
