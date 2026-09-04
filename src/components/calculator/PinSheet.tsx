@@ -4,9 +4,8 @@
  * Wird nur durch einen langen Druck auf das Signet im Konfigurator-Kopf
  * geöffnet und meldet über die Server Action `anmelden` an.
  */
-import React, { useActionState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { anmelden } from '@/app/(intern)/intern/actions';
 import type { AnmeldeErgebnis } from '@/lib/types';
 
 export type PinSheetProps = {
@@ -18,9 +17,35 @@ export type PinSheetProps = {
 
 export default function PinSheet({ offen, onSchliessen, ziel = '/intern/konfigurator' }: PinSheetProps) {
   const router = useRouter();
-  const [ergebnis, formAction, laeuft] = useActionState<AnmeldeErgebnis | undefined, FormData>(anmelden, undefined);
+  const [ergebnis, setErgebnis] = useState<AnmeldeErgebnis | undefined>();
+  const [laeuft, setLaeuft] = useState(false);
   const ersteEingabe = useRef<HTMLInputElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLaeuft(true);
+    setErgebnis(undefined);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const email = String(formData.get('email') ?? '');
+      const pin = String(formData.get('pin') ?? '');
+      const res = await fetch('/api/intern/anmelden', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, pin }),
+      });
+      const daten: AnmeldeErgebnis = await res.json();
+      setErgebnis(daten);
+      if (daten.ok) {
+        router.push(ziel);
+      }
+    } catch {
+      setErgebnis({ ok: false, fehler: 'Verbindungsfehler beim Anmelden.' });
+    } finally {
+      setLaeuft(false);
+    }
+  };
 
   useEffect(() => {
     if (offen) ersteEingabe.current?.focus();
@@ -78,7 +103,7 @@ export default function PinSheet({ offen, onSchliessen, ziel = '/intern/konfigur
           Dieser Bereich ist nicht öffentlich.
         </p>
 
-        <form action={formAction} className="mt-5 space-y-4">
+        <form onSubmit={onSubmit} className="mt-5 space-y-4">
           <div>
             <label htmlFor="pin-email" className="font-semibold text-slate-900" style={{ fontSize: 'var(--font-size-sm)' }}>
               E-Mail-Adresse

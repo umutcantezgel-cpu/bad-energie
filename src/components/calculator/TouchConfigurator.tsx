@@ -28,7 +28,6 @@ import {
   type OptionWert,
 } from '@/lib/journeys';
 import { kontaktSchema, type EstimateResponse, type InternAnfrageDTO, type OeffentlicheErgebnisDTO, type Quelle } from '@/lib/types';
-import MeisterModus from './MeisterModus';
 import ErgebnisKarte, { type AntwortChip } from './ErgebnisKarte';
 import JourneyStep from './JourneyStep';
 import KontaktSchritt, { LEERER_KONTAKT, type KontaktFelder } from './KontaktSchritt';
@@ -48,7 +47,7 @@ import {
 import { euro } from '@/lib/services/calculation';
 
 export type TouchConfiguratorProps = {
-  modus: 'kunde' | 'intern';
+  modus?: 'kunde' | 'intern';
   journey?: JourneyId;
   quelle?: Quelle;
   /** Kompakter Einstieg: nur Ueberschrift und erster Schritt, klappt bei Interaktion auf. */
@@ -80,14 +79,10 @@ function Skeleton() {
 }
 
 export default function TouchConfigurator({
-  modus,
   journey: journeyId = 'bad',
   quelle,
   kompakt = false,
-  anfrageId,
-  initial,
 }: TouchConfiguratorProps) {
-  if (modus === 'intern') return <MeisterModus anfrageId={anfrageId} initial={initial} />;
   return <KundenModus journeyId={journeyId} quelle={quelle} kompakt={kompakt} />;
 }
 

@@ -2,6 +2,8 @@ import { PORTFOLIO_PROJECTS } from '@/config/projects';
 import { buildGraph, buildProjectNode, buildBreadcrumbNode, buildWebPageNode, SITE_URL } from '@/lib/schema';
 import JsonLd from '@/components/seo/JsonLd';
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return PORTFOLIO_PROJECTS.map((project) => ({
     id: project.id.toString(),

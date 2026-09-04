@@ -16,6 +16,8 @@ import { MUSTERBAEDER } from '@/config/musterbaeder';
 import { COMPANY_DATA } from '@/config/company';
 import TouchConfigurator from '@/components/calculator/TouchConfigurator';
 
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
     return MUSTERBAEDER.map((b) => ({
         slug: b.slug

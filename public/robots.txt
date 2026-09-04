@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /intern/
+Disallow: /login
+
+Sitemap: https://bad-energie.de/sitemap.xml

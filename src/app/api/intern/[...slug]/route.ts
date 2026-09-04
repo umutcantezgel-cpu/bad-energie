@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { getDb } from '@/db/client';
 import { anfrage as anfrageTabelle, anhang as anhangTabelle } from '@/db/schema';
-import { verifySessionApi } from '@/lib/services/auth';
+import { anmelden as authAnmelden, verifySessionApi } from '@/lib/services/auth';
 import { getStorage, speichereFoto } from '@/lib/services/storage';
 
 export const runtime = 'nodejs';
@@ -15,6 +15,21 @@ export async function POST(
   { params }: { params: Promise<{ slug: string[] }> },
 ): Promise<NextResponse> {
   const { slug } = await params;
+
+  // Pfad 0: /api/intern/anmelden (ohne vorherige Sitzung)
+  if (slug.length === 1 && slug[0] === 'anmelden') {
+    try {
+      const body = await request.json();
+      const ergebnis = await authAnmelden({
+        email: String(body.email ?? ''),
+        pin: String(body.pin ?? ''),
+      });
+      return NextResponse.json(ergebnis);
+    } catch {
+      return NextResponse.json({ ok: false, fehler: 'Ungültige Anfrage.' }, { status: 400 });
+    }
+  }
+
   const session = await verifySessionApi();
   if (!session) {
     return NextResponse.json({ ok: false, fehler: 'Nicht autorisiert.' }, { status: 401 });

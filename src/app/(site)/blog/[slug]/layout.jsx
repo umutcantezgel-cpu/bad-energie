@@ -2,6 +2,8 @@ import { posts } from '@/config/posts';
 import { buildGraph, buildArticleNode, buildBreadcrumbNode, buildWebPageNode, SITE_URL } from '@/lib/schema';
 import JsonLd from '@/components/seo/JsonLd';
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return posts.map((post) => ({
     slug: post.slug,

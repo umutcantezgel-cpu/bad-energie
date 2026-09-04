@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { anmelden } from './actions';
 import type { AnmeldeErgebnis } from '@/lib/types';
 
-export default function InternAnmeldung() {
+export default function InternAnmeldungClient() {
   const router = useRouter();
   const [zustand, aktion, laeuft] = useActionState<AnmeldeErgebnis | undefined, FormData>(anmelden, undefined);
   const idEmail = useId();

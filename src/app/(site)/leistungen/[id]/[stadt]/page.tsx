@@ -9,6 +9,8 @@ import JsonLd from '@/components/seo/JsonLd';
 import { MapPin, Phone, Calendar, ArrowRight, ShieldCheck, CheckCircle2, Sparkles, Award } from 'lucide-react';
 import QualityPromise from '@/components/sections/QualityPromise';
 
+export const dynamicParams = false;
+
 // ---------------------------------------------------------------------------
 // Static Params – generates a page for every service × city combination
 // ---------------------------------------------------------------------------

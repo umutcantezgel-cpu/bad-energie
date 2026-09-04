@@ -2,6 +2,8 @@ import { SERVICES } from '@/config/services';
 import { buildGraph, buildServiceNode, buildBreadcrumbNode, buildWebPageNode, SITE_URL } from '@/lib/schema';
 import JsonLd from '@/components/seo/JsonLd';
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return SERVICES.map((service) => ({
     id: service.id,

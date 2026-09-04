@@ -30,16 +30,21 @@ import MatrixClient from '../matrix/MatrixClient';
 import TermineClient from '../termine/TermineClient';
 import EinstellungenClient from '../einstellungen/EinstellungenClient';
 import BenutzerClient from '../benutzer/BenutzerClient';
-import TouchConfigurator from '@/components/calculator/TouchConfigurator';
+import MeisterModus from '@/components/calculator/MeisterModus';
 import AnfrageDetailClient from '../anfragen/[id]/AnfrageDetailClient';
+import InternAnmeldungClient from '../InternAnmeldungClient';
+import { aktuelleSession } from '@/lib/services/auth';
 import type { Rolle } from '@/lib/types';
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string[] }>;
+  params: Promise<{ slug?: string[] }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  if (!slug || slug.length === 0) {
+    return { title: 'Anmeldung | Intern' };
+  }
   const bereich = slug[0];
   const titel: Record<string, string> = {
     board: 'Vorgangs-Board',
@@ -58,10 +63,19 @@ export async function generateMetadata({
 export default async function InternCatchAllPage({
   params,
 }: {
-  params: Promise<{ slug: string[] }>;
+  params: Promise<{ slug?: string[] }>;
 }) {
-  const session = await verifySession();
   const { slug } = await params;
+
+  if (!slug || slug.length === 0) {
+    const session = await aktuelleSession();
+    if (session) {
+      redirect('/intern/board');
+    }
+    return <InternAnmeldungClient />;
+  }
+
+  const session = await verifySession();
   const bereich = slug[0];
   const db = await getDb();
 
@@ -219,12 +233,12 @@ export default async function InternCatchAllPage({
 
   if (bereich === 'konfigurator') {
     if (slug.length === 1) {
-      return <TouchConfigurator modus="intern" />;
+      return <MeisterModus />;
     }
     const anfrageId = slug[1];
     const initial = await ladeAnfrage(anfrageId);
     if (!initial) notFound();
-    return <TouchConfigurator modus="intern" anfrageId={anfrageId} initial={initial} />;
+    return <MeisterModus anfrageId={anfrageId} initial={initial} />;
   }
 
   if (bereich === 'anfragen' && slug.length >= 2) {
