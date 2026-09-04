@@ -26,11 +26,6 @@ const Header = ({ isScrolled, isMobileMenuOpen, setIsMobileMenuOpen, setIsHelpSi
     const dropdownRef = useRef(null);
 
     useEffect(() => {
-        setActiveDropdown(null);
-        if (setIsMobileMenuOpen) setIsMobileMenuOpen(false);
-    }, [pathname, setIsMobileMenuOpen]);
-
-    useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setActiveDropdown(null);

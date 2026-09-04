@@ -31,7 +31,7 @@ export async function generateMetadata({
   params: Promise<{ id: string; stadt: string }>;
 }): Promise<Metadata> {
   const { id, stadt } = await params;
-  const service = SERVICES.find((s: any) => s.id === id);
+  const service = SERVICES.find((s: { id: string }) => s.id === id);
   const city = CITIES.find((c) => c.slug === stadt);
   if (!service || !city) return {};
 
@@ -106,7 +106,7 @@ export default async function ServiceCityPage({
   params: Promise<{ id: string; stadt: string }>;
 }) {
   const { id, stadt } = await params;
-  const service = SERVICES.find((s: any) => s.id === id);
+  const service = SERVICES.find((s: { id: string }) => s.id === id);
   const city = CITIES.find((c) => c.slug === stadt);
   if (!service || !city) notFound();
 
@@ -115,7 +115,7 @@ export default async function ServiceCityPage({
   // Build feature & subcategory strings for rich content
   const featureList = (service.features ?? []).join(', ');
   const subcategoryNames = (service.subcategories ?? [])
-    .map((s: any) => s.name)
+    .map((s: { name: string }) => s.name)
     .join(', ');
   const distanceInfo =
     city.distanceKm === 0

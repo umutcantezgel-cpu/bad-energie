@@ -120,9 +120,11 @@ export default function BlogPostPage() {
           <div className="flex flex-wrap items-center justify-center gap-6 text-blue-100 text-xs font-bold pt-2">
             <div className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-cyan-300" />
-              {new Date(post.created_date || Date.now()).toLocaleDateString('de-DE', {
-                day: 'numeric', month: 'long', year: 'numeric'
-              })}
+              {post.created_date
+                ? new Date(post.created_date).toLocaleDateString('de-DE', {
+                    day: 'numeric', month: 'long', year: 'numeric'
+                  })
+                : 'Aktuell'}
             </div>
             <div className="w-1 h-1 rounded-full bg-blue-300/40" />
             <div className="flex items-center gap-1.5">
