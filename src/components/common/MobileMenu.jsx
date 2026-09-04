@@ -2,168 +2,117 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Phone, HelpCircle, ChevronDown, ChevronUp, Mail, MapPin, ArrowRight } from 'lucide-react';
-import { navigationLinks, quickLinks } from '@/config/navigation';
-import { useContent } from '@/contexts/ContentContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Phone, HelpCircle, ChevronDown, Mail, MapPin, ArrowRight, Calendar, X } from 'lucide-react';
+import { navigationLinks } from '@/config/navigation';
 import { COMPANY_DATA } from '@/config/company';
 
-const MobileMenu = ({ isOpen, onClose, onOpenHelp }) => {
+export default function MobileMenu({ isOpen, onClose, onOpenHelp }) {
     const pathname = usePathname();
-    const { siteConfig } = useContent();
     const [expandedMenu, setExpandedMenu] = useState(null);
 
     const toggleSubmenu = (menuName) => {
         setExpandedMenu(expandedMenu === menuName ? null : menuName);
     };
 
-    // Animation variants
-    const overlayVariants = {
-        closed: { opacity: 0 },
-        open: { opacity: 1, transition: { duration: 0.3 } }
-    };
-
-    const menuVariants = {
-        closed: { 
-            y: "-100%",
-            opacity: 0,
-            transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
-        },
-        open: { 
-            y: 0, 
-            opacity: 1,
-            transition: { 
-                duration: 0.4, 
-                ease: [0.4, 0, 0.2, 1],
-                staggerChildren: 0.05,
-                delayChildren: 0.1
-            } 
-        }
-    };
-
-    const itemVariants = {
-        closed: { opacity: 0, x: -20 },
-        open: { opacity: 1, x: 0 }
-    };
+    if (!isOpen) return null;
 
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <motion.div 
-                    initial="closed"
-                    animate="open"
-                    exit="closed"
-                    variants={overlayVariants}
-                    className="lg:hidden fixed top-16 md:top-20 left-0 right-0 bottom-0 z-40 bg-white/95 backdrop-blur-xl border-t border-[var(--color-border-default)] overflow-y-auto"
-                >
-                    <motion.div variants={menuVariants} className="max-w-7xl mx-auto px-6 py-6 pb-24 flex flex-col min-h-full">
-                        <div className="flex flex-col gap-2 flex-grow">
-                            {navigationLinks.map((link) => (
-                                <motion.div key={link.name} variants={itemVariants} className="flex flex-col">
-                                    {link.submenu ? (
+        <div className="lg:hidden fixed inset-0 top-[60px] bg-slate-950/60 backdrop-blur-md z-40 animate-in fade-in duration-300">
+            <div className="bg-white/95 backdrop-blur-2xl h-full max-w-sm w-full ml-auto shadow-2xl p-6 overflow-y-auto pb-28 flex flex-col justify-between border-l border-white/40">
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <span className="text-xs font-black uppercase tracking-wider text-[#0C3A87]">Menü-Navigation</span>
+                        <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            Kundendienst aktiv
+                        </span>
+                    </div>
+
+                    <div className="space-y-1">
+                        {navigationLinks.map((link) => {
+                            const hasSubmenu = Boolean(link.submenu);
+                            const isExpanded = expandedMenu === link.name;
+
+                            return (
+                                <div key={link.name} className="border-b border-slate-100/80 pb-1.5">
+                                    {hasSubmenu ? (
                                         <>
                                             <button
                                                 onClick={() => toggleSubmenu(link.name)}
-                                                className={`min-h-[50px] flex items-center justify-between px-4 py-3 rounded-2xl font-bold text-lg transition-all duration-300 w-full text-left ${link.submenu.some(sub => sub.path === pathname)
-                                                    ? 'text-blue-600 bg-blue-50/80 shadow-sm'
-                                                    : 'text-neutral-800 hover:text-blue-600 hover:bg-neutral-50'
-                                                    }`}
+                                                className="w-full flex items-center justify-between py-2 text-xs font-black text-slate-800"
                                             >
-                                                {link.name}
-                                                <motion.div
-                                                    animate={{ rotate: expandedMenu === link.name ? 180 : 0 }}
-                                                    transition={{ duration: 0.2 }}
-                                                >
-                                                    <ChevronDown className="w-5 h-5" />
-                                                </motion.div>
+                                                <span>{link.name}</span>
+                                                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-[#0C3A87]' : ''}`} />
                                             </button>
-
-                                            <AnimatePresence>
-                                                {expandedMenu === link.name && (
-                                                    <motion.div 
-                                                        initial={{ height: 0, opacity: 0 }}
-                                                        animate={{ height: "auto", opacity: 1 }}
-                                                        exit={{ height: 0, opacity: 0 }}
-                                                        className="overflow-hidden"
-                                                    >
-                                                        <div className="flex flex-col gap-1 mt-2 mb-2 pl-4 border-l-2 border-blue-100 ml-6">
-                                                            {link.submenu.map((subLink) => (
+                                            {isExpanded && (
+                                                <div className="pl-3 pr-1 py-2 space-y-3 bg-blue-50/50 rounded-2xl my-1 border border-blue-100/40">
+                                                    {link.submenu.map((cat, idx) => (
+                                                        <div key={idx} className="space-y-1">
+                                                            <p className="text-[10px] font-black text-[#0C3A87] uppercase tracking-wider">{cat.category}</p>
+                                                            {cat.items?.map((sub) => (
                                                                 <Link
-                                                                    key={subLink.name}
-                                                                    href={subLink.path}
+                                                                    key={sub.name}
+                                                                    href={sub.path}
                                                                     onClick={onClose}
-                                                                    className={`min-h-[44px] flex items-center px-4 py-2 rounded-xl text-base font-semibold text-neutral-600 hover:text-blue-600 hover:bg-blue-50/50 transition-colors`}
+                                                                    className="block py-1 text-xs font-semibold text-slate-700 hover:text-[#0C3A87]"
                                                                 >
-                                                                    {subLink.name}
+                                                                    {sub.name}
                                                                 </Link>
                                                             ))}
                                                         </div>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </>
                                     ) : (
                                         <Link
                                             href={link.path}
                                             onClick={onClose}
-                                            className={`min-h-[50px] flex items-center px-4 py-3 rounded-2xl font-bold text-lg transition-all duration-300 ${pathname === link.path
-                                                ? 'text-blue-600 bg-blue-50/80 shadow-sm'
-                                                : 'text-neutral-800 hover:text-blue-600 hover:bg-neutral-50'
-                                                }`}
+                                            className="block py-2 text-xs font-black text-slate-800 hover:text-[#0C3A87]"
                                         >
                                             {link.name}
                                         </Link>
                                     )}
-                                </motion.div>
-                            ))}
-                            
-                            <motion.div variants={itemVariants} className="h-px bg-neutral-200 my-4" />
+                                </div>
+                            );
+                        })}
 
-                            <motion.button
-                                variants={itemVariants}
-                                onClick={() => {
-                                    onClose();
-                                    onOpenHelp();
-                                }}
-                                className="min-h-[50px] flex items-center px-4 py-3 rounded-2xl font-bold text-lg text-neutral-800 hover:text-blue-600 hover:bg-neutral-50 transition-all duration-300"
+                        <div className="pt-2">
+                            <button
+                                onClick={onOpenHelp}
+                                className="w-full flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-xs font-black text-[#0C3A87] bg-blue-50/80 hover:bg-blue-100 border border-blue-200/60 transition-all"
                             >
-                                <HelpCircle className="w-6 h-6 mr-3 text-neutral-400" />
-                                Hilfe & FAQ
-                                <ArrowRight className="w-5 h-5 ml-auto text-neutral-300" />
-                            </motion.button>
+                                <HelpCircle className="w-4 h-4" />
+                                <span>Hilfe-Center &amp; Notfall-Ratgeber</span>
+                            </button>
                         </div>
-                        
-                        {/* Bottom Action Area */}
-                        <motion.div variants={itemVariants} className="mt-8 flex flex-col gap-4">
-                            <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-100">
-                                <h4 className="text-sm font-bold text-neutral-500 uppercase tracking-wider mb-3">Direkter Kontakt</h4>
-                                <a href={`tel:${COMPANY_DATA.contact.phoneLink}`} className="flex items-center gap-3 text-neutral-800 font-semibold mb-3 hover:text-blue-600 transition-colors">
-                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                                        <Phone className="w-5 h-5" />
-                                    </div>
-                                    {COMPANY_DATA.contact.phone}
-                                </a>
-                                <a href={`mailto:${COMPANY_DATA.contact.email}`} className="flex items-center gap-3 text-neutral-800 font-semibold hover:text-blue-600 transition-colors">
-                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                                        <Mail className="w-5 h-5" />
-                                    </div>
-                                    Nachricht senden
-                                </a>
-                            </div>
-                            
-                            <a
-                                href={`tel:${siteConfig.contact.phoneLink}`}
-                                onClick={onClose}
-                                className="w-full flex items-center justify-center px-6 py-4 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-600/20 font-bold text-lg transition-all duration-300 hover:bg-blue-700 active:scale-[0.98]"
-                            >
-                                Jetzt anrufen
-                            </a>
-                        </motion.div>
-                    </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
-    );
-};
+                    </div>
+                </div>
 
-export default MobileMenu;
+                {/* Mobile Bottom Actions */}
+                <div className="mt-6 pt-4 border-t border-slate-200 space-y-2.5">
+                    <Link
+                        href="/termin"
+                        onClick={onClose}
+                        className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-full bg-gradient-to-r from-[#E4040E] to-[#B91C1C] text-white font-black text-xs shadow-md border border-white/20"
+                    >
+                        <Calendar className="w-4 h-4" />
+                        Online-Termin vereinbaren
+                    </Link>
+
+                    <a
+                        href={`tel:${COMPANY_DATA.headquarters.phoneLink}`}
+                        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-full bg-white text-[#0C3A87] font-black text-xs border border-blue-200 shadow-xs"
+                    >
+                        <Phone className="w-4 h-4" />
+                        {COMPANY_DATA.headquarters.phone} (Wetzlar)
+                    </a>
+
+                    <div className="text-center text-[10px] text-slate-400 pt-1 font-medium">
+                        Hans-Sachs-Str. 12 &middot; 35576 Wetzlar
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

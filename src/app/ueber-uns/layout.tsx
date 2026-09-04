@@ -4,7 +4,7 @@ import JsonLd from '@/components/seo/JsonLd';
 
 export const metadata = createMetadata({
   title: 'Über uns – Meisterbetrieb in Wetzlar',
-  description: 'Lernen Sie Batherm Haustechnik kennen. Ihr Meisterbetrieb für Sanitär und Heizung in Wetzlar – zuverlässig, kompetent, persönlich.',
+  description: 'Lernen Sie die Bad & Energie GmbH kennen. Ihr Meisterbetrieb für Badsanierung und Heizung in Wetzlar – Tradition seit 1926, Meisterbetrieb seit 2001.',
   path: '/ueber-uns',
 });
 
@@ -17,9 +17,9 @@ const breadcrumbs = [
 const aboutSchema = buildGraph([
   buildAboutPageNode({
     url: pageUrl,
-    name: 'Über Batherm Haustechnik – Ihr Meisterbetrieb in Wetzlar',
+    name: 'Über die Bad & Energie GmbH – Ihr Meisterbetrieb in Wetzlar',
     description:
-      'Lernen Sie Batherm Haustechnik und Inhaber Baris Aydin kennen. Ihr Meisterbetrieb für Sanitär, Heizung und Klimatechnik in Wetzlar.',
+      'Lernen Sie die Bad & Energie GmbH und Geschäftsführer Sabri Demir kennen. Meisterbetrieb für Badsanierung, Heizung und Haustechnik in Wetzlar.',
   }),
   buildBreadcrumbNode(breadcrumbs, pageUrl),
 ]);
@@ -32,4 +32,3 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-

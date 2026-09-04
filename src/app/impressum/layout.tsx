@@ -4,7 +4,7 @@ import JsonLd from '@/components/seo/JsonLd';
 
 export const metadata = createMetadata({
   title: 'Impressum & rechtliche Angaben',
-  description: 'Impressum und gesetzliche Anbieterkennzeichnung der Batherm Haustechnik, Linsenbergstrasse 9, 35586 Wetzlar. Inhaber Baris Aydin.',
+  description: 'Impressum und gesetzliche Anbieterkennzeichnung der Bad & Energie GmbH, Hans-Sachs-Straße 12, 35576 Wetzlar. Geschäftsführer Sabri Demir.',
   path: '/impressum',
 });
 
@@ -17,8 +17,8 @@ const breadcrumbs = [
 const impressumSchema = buildGraph([
   buildWebPageNode({
     url: pageUrl,
-    name: 'Impressum & rechtliche Angaben | Batherm Haustechnik',
-    description: 'Gesetzliche Anbieterkennzeichnung von Batherm Haustechnik in Wetzlar.',
+    name: 'Impressum & rechtliche Angaben | Bad & Energie GmbH',
+    description: 'Gesetzliche Anbieterkennzeichnung der Bad & Energie GmbH in Wetzlar.',
     breadcrumbItems: breadcrumbs,
   }),
   buildBreadcrumbNode(breadcrumbs, pageUrl),
@@ -32,4 +32,3 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-

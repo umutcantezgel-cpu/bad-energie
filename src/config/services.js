@@ -1,206 +1,206 @@
-// services.config.js - FESTWERT für alle Leistungen
-// Source: Gemini 3 Pro Official Reference Documentation (v1.0)
+// MASTER SERVICES DATA - BAD & ENERGIE GMBH
+// Complete service structure across all divisions
 
 export const SERVICES = [
     {
-        id: "sanitaer",
-        name: "Sanitärtechnik",
-        shortDescription: "Professionelle Installation und Wartung von Sanitäranlagen",
+        id: "bad",
+        name: "Bad & Wellness",
+        shortDescription: "Komplettbäder, Badsanierung Wetzlar & barrierefreie Komfortbäder aus einer Hand",
         icon: "Droplets",
         color: "primary",
         priority: 1,
+        link: "/bad",
 
         subcategories: [
-            { id: "baeder", name: "Bäder & Duschen", icon: "shower" },
-            { id: "kuechen", name: "Küchen & Spülen", icon: "sink" },
-            { id: "leitungen", name: "Wasserleitungen", icon: "pipe" },
-            { id: "armaturen", name: "Armaturen & Accessoires", icon: "wrench" }
+            { id: "badsanierung", name: "Badsanierung Wetzlar", path: "/bad/badsanierung", icon: "bath" },
+            { id: "barrierefrei", name: "Barrierefreies Bad", path: "/bad/barrierefreies-bad", icon: "shield" },
+            { id: "aus-einer-hand", name: "Bad aus einer Hand", path: "/bad/bad-aus-einer-hand", icon: "sparkles" },
+            { id: "musterbaeder", name: "Musterbäder & Kollektionen", path: "/bad/musterbaeder", icon: "layers" },
+            { id: "fliesen", name: "Fliesenverlegung", path: "/bad/fliesen", icon: "grid" },
+            { id: "budgetkalkulator", name: "Budgetkalkulator", path: "/bad/budgetkalkulator", icon: "calculator" }
         ],
 
         features: [
-            "Badezimmer-Renovierung",
-            "Küchenausstattung",
-            "Rohrleitungssanierung",
-            "Notfalldienst",
-            "Garantieleistung"
+            "3D-Badplanung mit fotorealistischer Visualisierung",
+            "Festpreisgarantie & verbindlicher Terminplan",
+            "Komplette Koordination aller Gewerke (Fliesen, Elektro, Sanitär)",
+            "Barrierefreie Umbauten nach DIN 18040-2 mit bis zu 4.000 € Pflegekassen-Zuschuss",
+            "Markenpartner: VIGOUR (derby/white/one), Duka, CONEL, COSMO",
+            "Staubarme Sanierung durch modernste Schutzsysteme"
         ],
 
-        detailText: "Umfassende Sanitärlösungen für Wohn- und Gewerberäume. Von der Planung über Installation bis zur Wartung – wir kümmern uns um alle Ihre Bedürfnisse.",
-
-        ctaText: "Kostenlos Angebot anfordern",
-
-        heroImage: "/images/uploads/sanitaer_hero_premium.png",
+        detailText: "Vom ersten Beratungsgespräch und der 3D-Visualisierung über den behutsamen Rückbau bis hin zur millimetergenauen Installation von Waschtischanlagen, bodengleichen Duschen und edlen Fliesen: Die Bad & Energie GmbH realisiert Ihr Traumbad schlüsselfertig mit Festpreisgarantie.",
+        ctaText: "Badprojekt anfragen",
+        heroImage: "/images/uploads/01.webp",
         gallery: [
-            "/images/uploads/Gemini_Generated_Image_398sct398sct398s.webp",
-            "/images/uploads/Gemini_Generated_Image_5q5ntx5q5ntx5q5n.webp",
-            "/images/uploads/Gemini_Generated_Image_5vimo25vimo25vim.webp"
+            "/images/uploads/01.webp",
+            "/images/uploads/02.webp",
+            "/images/uploads/03.webp"
         ]
     },
 
     {
         id: "heizung",
-        name: "Heizungstechnik",
-        shortDescription: "Installation, Wartung und Optimierung von Heizsystemen",
-        icon: "Thermometer",
+        name: "Heizung & Wärmepumpen",
+        shortDescription: "Zukunftssichere Wärmepumpen (NIBE Partner), Gas-Brennwert, Fußbodenheizung & bis zu 70% Förderung",
+        icon: "Flame",
         color: "secondary",
         priority: 2,
+        link: "/heizung",
 
         subcategories: [
-            { id: "gasheizung", name: "Gas-Heizung", icon: "flame" },
-            { id: "waermepumpe", name: "Wärmepumpe", icon: "leaf" },
-            { id: "pelletheizung", name: "Pellet-Heizung", icon: "box" },
-            { id: "solarthermie", name: "Solarthermie", icon: "sun" }
+            { id: "waermepumpe", name: "Wärmepumpen", path: "/heizung/waermepumpe", icon: "zap" },
+            { id: "nibe", name: "NIBE Effizienz Partner", path: "/heizung/nibe-partner", icon: "award" },
+            { id: "brennwert", name: "Gas-Brennwerttechnik", path: "/heizung/gas-brennwerttechnik", icon: "flame" },
+            { id: "fussbodenheizung", name: "Wand- & Fußbodenheizung", path: "/heizung/wand-und-fussbodenheizung", icon: "sun" },
+            { id: "holz", name: "Heizen mit Holz & Pellets", path: "/heizung/heizen-mit-holz", icon: "box" },
+            { id: "foerderung", name: "Fördermittelberatung BEG", path: "/foerderung", icon: "badge-percent" },
+            { id: "konfigurator", name: "Heizungskonfigurator", path: "/heizung/heizungskonfigurator", icon: "sliders" }
         ],
 
         features: [
-            "Heizungs-Installation",
-            "Energieberatung",
-            "Wartung & Reparatur",
-            "Fördermittel-Beantragung",
-            "Effizienzsteigerung"
+            "Zertifizierter NIBE Effizienz Partner für Spitzen-Wärmepumpentechnik",
+            "Luft-Wasser-, Sole-Wasser- (Erdwärme) und Wasser-Wasser-Systeme",
+            "Bis zu 70 % staatliche BEG-/KfW-Förderung inklusive Antragsbegleitung",
+            "Hocheffiziente Gas-Brennwert- und Hybridsysteme für Bestandsgebäude",
+            "Hydraulischer Abgleich nach Verfahren B & Heizungscheck",
+            "Moderne Flächenheizungen für maximalen Wärmekomfort"
         ],
 
-        detailText: "Moderne Heiztechnik mit höchster Effizienz und Zuverlässigkeit. Wir beraten Sie bei der Wahl der optimalen Heizlösung für Ihre Situation.",
-
-        ctaText: "Kostenlos Beratung buchen",
-
-        heroImage: "/images/uploads/heizung_hero_premium.png",
+        detailText: "Wir machen Ihre Heizung fit für die Zukunft. Als offizieller NIBE Effizienz Partner projektieren und installieren wir Wärmepumpensysteme mit maximaler Jahresarbeitszahl. Wir prüfen Fördermöglichkeiten, berechnen exakte Heizlasten und übernehmen den fachgerechten hydraulischen Abgleich.",
+        ctaText: "Heizungsberatung sichern",
+        heroImage: "/images/uploads/04.webp",
         gallery: [
-            "/images/uploads/Gemini_Generated_Image_5xh9j55xh9j55xh9.webp",
-            "/images/uploads/Gemini_Generated_Image_7ty3xz7ty3xz7ty3.webp"
+            "/images/uploads/04.webp",
+            "/images/uploads/05.webp"
         ]
     },
 
     {
-        id: "klima",
-        name: "Klimatechnik",
-        shortDescription: "Lüftungs- und Klimaanlagen für optimales Raumklima",
+        id: "lueftung",
+        name: "Lüftung & Klimatechnik",
+        shortDescription: "Kontrollierte Wohnraumlüftung mit Wärmerückgewinnung, Bautenschutz & moderne Klimasysteme",
         icon: "Wind",
         color: "info",
         priority: 3,
+        link: "/lueftung",
 
         subcategories: [
-            { id: "luftung", name: "Lüftungsanlagen", icon: "fan" },
-            { id: "klimaanlage", name: "Klimaanlagen", icon: "snowflake" },
-            { id: "luftreinigung", name: "Luftreinigung", icon: "air" },
-            { id: "feuchte", name: "Feuchte-Kontrolle", icon: "droplet" }
+            { id: "zentral", name: "Zentrale Wohnraumlüftung", path: "/lueftung/zentrale-wohnraumlueftung", icon: "fan" },
+            { id: "dezentral", name: "Dezentrale Wohnraumlüftung", path: "/lueftung/dezentrale-wohnraumlueftung", icon: "repeat" },
+            { id: "klima", name: "Klimaanlagen & Split-Geräte", path: "/lueftung/klimaanlage", icon: "snowflake" }
         ],
 
         features: [
-            "Lüftungs-Installation",
-            "Klimatisierung",
-            "Wartung & Service",
-            "Energiesparen",
-            "Luftqualität-Verbesserung"
+            "Kontrollierte Be- und Entlüftung mit bis zu 92 % Wärmerückgewinnung",
+            "Effektiver Bautenschutz: Zuverlässige Vermeidung von Feuchtigkeit & Schimmel",
+            "Pollen- und Feinstaubfilter für Allergiker",
+            "Flüsterleise Split-Klimaanlagen mit Wärmepumpenfunktion (Kühlen & Heizen)",
+            "Geringer Energieverbrauch durch Inverter-Technologie",
+            "Fachgerechte Einregulierung nach DIN 1946-6"
         ],
 
-        detailText: "Professionelle Klimatechnik für Wohn- und Gewerberäume. Optimales Raumklima für Gesundheit, Komfort und Produktivität.",
-
-        ctaText: "Kostenlos Angebot anfordern",
-
-        heroImage: "/images/uploads/klima_hero_premium.png",
+        detailText: "Frische, gefilterte Luft rund um die Uhr bei geschlossenen Fenstern. Unsere Lüftungslösungen schützen die Bausubstanz Ihres hochisolierten Gebäudes vor Schimmel, senken Lüftungswärmeverluste und sorgen für ein gesundes Wohlfühlklima im Sommer wie im Winter.",
+        ctaText: "Lüftungskonzept anfragen",
+        heroImage: "/images/uploads/06.webp",
         gallery: [
-            "/images/uploads/Gemini_Generated_Image_7yx3xg7yx3xg7yx3.webp"
+            "/images/uploads/06.webp"
         ]
     },
 
     {
-        id: "wartung",
-        name: "Wartung & Service",
-        shortDescription: "Regelmäßige Pflege für langlebige und effiziente Anlagen",
-        icon: "Wrench", // Needs to be mapped or available
-        color: "success",
-        priority: 6,
-
-        available24_7: false,
-
-        subcategories: [
-            { id: "heizungswartung", name: "Heizungswartung", icon: "flame" },
-            { id: "sanitaercheck", name: "Sanitär-Check", icon: "check" },
-            { id: "filterwechsel", name: "Filterwechsel", icon: "wind" }
-        ],
-
-        features: [
-            "Jährliche Inspektion",
-            "Funktionsprüfung",
-            "Reinigung & Einstellung",
-            "Verschleißteil-Tausch",
-            "Dokumentation"
-        ],
-
-        detailText: "Eine regelmäßige Wartung spart Energie, verhindert Ausfälle und verlängert die Lebensdauer Ihrer Anlage. Wir kümmern uns zuverlässig darum.",
-
-        ctaText: "Wartungstermin vereinbaren",
-
-        // Reuse an image or use a generic one
-        heroImage: "/images/uploads/wartung_hero_premium.png",
-        gallery: []
-    },
-
-    {
-        id: "smart-home",
-        name: "Smart Home",
-        shortDescription: "Intelligente Steuerung für Heizung und Klima",
-        icon: "Smartphone",
+        id: "haustechnik",
+        name: "Haustechnik & Trinkwasserhygiene",
+        shortDescription: "Trinkwasserfilter, Wasserenthärtung, Legionellenprävention nach TrinkwV & Grauwassersysteme",
+        icon: "Shield",
         color: "primary",
         priority: 4,
+        link: "/haustechnik",
 
         subcategories: [
-            { id: "heizungssteuerung", name: "Heizungssteuerung", icon: "thermometer" },
-            { id: "sicherheit", name: "Sicherheitstechnik", icon: "shield" },
-            { id: "beleuchtung", name: "Lichtsteuerung", icon: "sun" },
-            { id: "energie", name: "Energiemanagement", icon: "zap" }
+            { id: "legionellen", name: "Legionellen & Hygiene", path: "/haustechnik/legionellen", icon: "activity" },
+            { id: "filter", name: "Trinkwasserfilter", path: "/haustechnik/trinkwasserfilter", icon: "filter" },
+            { id: "entkalkung", name: "Entkalkungsanlagen", path: "/haustechnik/entkalkung", icon: "droplets" },
+            { id: "grauwasser", name: "Regen- & Grauwassernutzung", path: "/haustechnik/regen-und-grauwassernutzung", icon: "refresh-cw" },
+            { id: "installation", name: "Sanitärinstallation", path: "/haustechnik/sanitaerinstallation", icon: "wrench" }
         ],
 
         features: [
-            "App-Steuerung",
-            "Energieeinsparung",
-            "Automatisierte Abläufe",
-            "Nachrüstung möglich",
-            "Sprachsteuerung"
+            "Gesetzliche Legionellenprüfung nach Trinkwasserverordnung für Mehrfamilienhäuser",
+            "Thermische Desinfektion (>60 °C) & chemische Spülverfahren",
+            "Mechanische Ultrafiltrationsanlagen mit automatischer Sensor-Rückspülung",
+            "Moderne Wasserenthärtungsanlagen zum Schutz von Rohrleitungen und Armaturen",
+            "Rückspülbare Trinkwasser-Feinfilter gegen Partikeleintrag",
+            "Regen- und Grauwassernutzung für nachhaltige Ressourcenschonung"
         ],
 
-        detailText: "Machen Sie Ihr Zuhause intelligent. Steuern Sie Heizung, Licht und mehr bequem per App – für mehr Komfort und Effizienz.",
-
-        ctaText: "Beratung anfordern",
-
-        heroImage: "/images/uploads/Gemini_Generated_Image_w5ni2lw5ni2lw5ni.webp",
+        detailText: "Wasser ist unser wichtigstes Lebensmittel. Wir gewährleisten durch modernste Filtertechnik, bedarfsgerechte Enthärtung und präventive Legionellenschutz-Konzepte allerhöchste Trinkwasserhygiene und dauerhaften Werterhalt Ihrer Rohrleitungsinstallationen.",
+        ctaText: "Wassercheck anfordern",
+        heroImage: "/images/uploads/07.webp",
         gallery: [
-            "/images/uploads/extra-04.webp",
-            "/images/uploads/smart_home_detail.png"
+            "/images/uploads/07.webp"
         ]
     },
 
     {
-        id: "wasseraufbereitung",
-        name: "Wasseraufbereitung",
-        shortDescription: "Sauberes und weiches Wasser für Ihr Zuhause",
-        icon: "Droplet",
-        color: "info",
+        id: "energie",
+        name: "Regenerative Energien & Solar",
+        shortDescription: "Photovoltaik, Solarthermie & Speicher – Intelligente Kopplung mit modernen Wärmepumpen",
+        icon: "Sun",
+        color: "warning",
         priority: 5,
+        link: "/energie",
 
         subcategories: [
-            { id: "enthertung", name: "Enthärtungsanlagen", icon: "droplets" },
-            { id: "filter", name: "Trinkwasserfilter", icon: "filter" },
-            { id: "dosierung", name: "Dosieranlagen", icon: "activity" }
+            { id: "pv", name: "Photovoltaik & Stromspeicher", path: "/energie/photovoltaik", icon: "zap" },
+            { id: "solarthermie", name: "Solarthermie", path: "/energie/solarthermie", icon: "sun" }
         ],
 
         features: [
-            "Kalkschutz",
-            "Trinkwasserhygiene",
-            "Geräteschutz",
-            "Wartungsservice",
-            "Salzlieferung"
+            "Synergetische Kopplung von PV und Wärmepumpe für maximalen Eigenverbrauch",
+            "Solare Trinkwassererwärmung & solare Heizungsunterstützung",
+            "Moderne Hochleistungs-Batteriespeicher mit Notstromoption",
+            "Wirtschaftlichkeitsberechnung & Amortisationsanalyse für Hessen",
+            "Fachgerechte Dachmontage und netzseitige Inbetriebnahme"
         ],
 
-        detailText: "Genießen Sie perfektes Trinkwasser und schützen Sie Ihre Installation vor Kalkschäden mit unseren modernen Aufbereitungsanlagen.",
-
-        ctaText: "Angebot anfordern",
-
-        heroImage: "/images/uploads/Gemini_Generated_Image_wnggl0wnggl0wngg.webp",
+        detailText: "Nutzen Sie die unerschöpfliche Kraft der Sonne. Wir kombinieren Photovoltaik- und Solarthermieanlagen mit modernen Wärmepumpensystemen zu autarken Energiesystemen, die Ihre Strom- und Heizkosten auf ein Minimum reduzieren.",
+        ctaText: "Solarpotenzial prüfen",
+        heroImage: "/images/uploads/08.webp",
         gallery: [
-            "/images/uploads/extra-05.webp",
-            "/images/uploads/water_gallery_premium.png"
+            "/images/uploads/08.webp"
+        ]
+    },
+
+    {
+        id: "gewerbe",
+        name: "Gewerbekunden & Objektbau",
+        shortDescription: "Industrieheizung, gewerbliche Sanitäranlagen, Groß-Wärmepumpen & Generalunternehmer-Koordination",
+        icon: "Building",
+        color: "secondary",
+        priority: 6,
+        link: "/gewerbe",
+
+        subcategories: [
+            { id: "objektbau", name: "Objekt- & Anlagenbau", path: "/gewerbe/objekt-u-anlagenbau", icon: "building" },
+            { id: "sanitaer-gewerbe", name: "Gewerbliche Sanitäranlagen", path: "/gewerbe/sanitaeranlagen", icon: "users" },
+            { id: "grossheizanlagen", name: "Großheizanlagen", path: "/gewerbe/grossheizanlagen", icon: "flame" }
+        ],
+
+        features: [
+            "Erfahrener Partner für Wohnungsbaugesellschaften, Kommunen und Industrie",
+            "Schnittstellenkoordination aller TGA-Gewerke",
+            "Großkaskaden für Wärmepumpen und Spitzenlast-Brennwerttechnik",
+            "Vandalismusgeschützte, barrierefreie Sanitärräume nach Arbeitsstättenrichtlinie",
+            "Termin- und Kostentreue bei Großprojekten",
+            "Rechtssichere Abnahmen & Revisionsdokumentation"
+        ],
+
+        detailText: "Planungssicherheit und Ausführungsqualität für Großprojekte: Bad & Energie GmbH plant, errichtet und wartet komplexe TGA-Anlagen im Industrie-, Gewerbe- und öffentlichen Sektor im gesamten Lahn-Dill-Kreis und Mittelhessen.",
+        ctaText: "B2B Projekt anfragen",
+        heroImage: "/images/uploads/09.webp",
+        gallery: [
+            "/images/uploads/09.webp"
         ]
     }
 ];

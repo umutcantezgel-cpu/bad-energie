@@ -3,8 +3,8 @@ import { buildGraph, buildBreadcrumbNode, buildWebPageNode, SITE_URL, ORG_ID } f
 import JsonLd from '@/components/seo/JsonLd';
 
 export const metadata = createMetadata({
-  title: 'Referenzen & Projekte unserer Arbeiten',
-  description: 'Abgeschlossene Projekte von Batherm Haustechnik: Badsanierungen, Heizungsinstallationen und Solaranlagen in Wetzlar und Umgebung.',
+  title: 'Referenzen & Kundenprojekte | Bad & Energie GmbH',
+  description: 'Abgeschlossene Meisterprojekte der Bad & Energie GmbH: Badsanierungen, NIBE Wärmepumpen, Wohnraumlüftung und Trinkwasserhygiene in Wetzlar & Lahn-Dill.',
   path: '/referenzen',
 });
 
@@ -17,17 +17,17 @@ const breadcrumbs = [
 const referenzenSchema = buildGraph([
   buildWebPageNode({
     url: pageUrl,
-    name: 'Referenzen & Meisterprojekte | Batherm Haustechnik Wetzlar',
+    name: 'Referenzen & Meisterprojekte | Bad & Energie GmbH Wetzlar',
     description:
-      'Erfolgreich umgesetzte Projekte für Sanitär, Badsanierung, Wärmepumpen und Klimatechnik in Wetzlar und Region.',
+      'Erfolgreich umgesetzte Projekte für Badsanierung, Wärmepumpen, Lüftung und Haustechnik in Wetzlar und Region.',
     breadcrumbItems: breadcrumbs,
   }),
   buildBreadcrumbNode(breadcrumbs, pageUrl),
   {
     '@type': 'CollectionPage',
     '@id': `${pageUrl}#collection`,
-    name: 'Batherm Haustechnik Projekt-Referenzen',
-    description: 'Bildergalerie und Dokumentation von Meisterarbeiten in Mittelhessen.',
+    name: 'Bad & Energie GmbH Projekt-Referenzen',
+    description: 'Dokumentation von Meisterarbeiten im Lahn-Dill-Kreis und Landkreis Gießen.',
     publisher: { '@id': ORG_ID },
   },
 ]);
@@ -40,4 +40,3 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-

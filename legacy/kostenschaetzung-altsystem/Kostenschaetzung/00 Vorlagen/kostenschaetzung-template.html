@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Kostenschätzung {{ks_nummer}} · Bad &amp; Energie GmbH</title>
+<!--
+  ============================================================
+  Bad & Energie GmbH · Kostenschätzung (Erstkontakt)
+  DIN A4 · druckstabil in Chromium, Edge, Chrome (Drucken → Als PDF speichern)
+  oder automatisch über render_pdf.py (Playwright)
+
+  PLATZHALTER: {{name}} wird durch render_pdf.py aus datenblatt.json ersetzt.
+  Zeilen der Leistungstabelle: der mit ROW markierte Block wird je Titel wiederholt.
+  Förderblock: der mit FOERDERUNG markierte Block wird entfernt, wenn im
+  Datenblatt keine Förderung angegeben ist.
+
+  FARBEN (aus dem Logo, identisch zum Mail-Design)
+    BLAU #1B3A8C · ROT #D0211A · TEXT #1A1A1A · SEKUNDÄR #4A4F5C
+    FLÄCHE #F3F6FC · LINIE #DDE2EC
+  ============================================================
+-->
+<style>
+  @page {
+    size: A4;
+    margin: 14mm 16mm 16mm 16mm;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #FFFFFF;
+    color: #1A1A1A;
+    font-family: Arial, "Helvetica Neue", Helvetica, "Liberation Sans", "DejaVu Sans", sans-serif;
+    font-size: 10pt;
+    line-height: 14.5pt;
+  }
+  * { box-sizing: border-box; }
+
+  /* Seitenrahmen als Tabelle: thead und tfoot wiederholt Chromium auf jeder Seite */
+  table.page { width: 100%; border-collapse: collapse; }
+  table.page > thead > tr > td,
+  table.page > tfoot > tr > td,
+  table.page > tbody > tr > td { padding: 0; vertical-align: top; }
+
+  /* Kopf */
+  .kopf { width: 100%; border-collapse: collapse; border-top: 3px solid #D0211A; }
+  .kopf td { vertical-align: top; padding: 0; }
+  .kopf .logo { width: 30mm; padding: 5mm 0 0 0; }
+  .kopf .logo img { width: 22mm; height: 22mm; display: block; }
+  .kopf .firma { text-align: right; padding: 6mm 0 0 0; font-size: 9pt; line-height: 13pt; color: #4A4F5C; }
+  .kopf .firma strong { display: block; font-size: 13pt; line-height: 17pt; color: #1B3A8C; margin-bottom: 1mm; }
+  .kopf-abstand { height: 6mm; }
+
+  /* Fuß */
+  .fuss { width: 100%; border-collapse: collapse; border-top: 1px solid #DDE2EC; margin-top: 6mm; }
+  .fuss td { padding: 2.5mm 0 0 0; font-size: 7.5pt; line-height: 11pt; color: #4A4F5C; vertical-align: top; }
+  .fuss td.rechts { text-align: right; }
+
+  /* Adressblock und Dokumentdaten */
+  .meta { width: 100%; border-collapse: collapse; }
+  .meta td { vertical-align: top; padding: 0; }
+  .meta .adresse { width: 55%; padding-top: 3mm; }
+  .meta .adresse .zeile { display: block; }
+  .meta .daten { width: 45%; }
+  .meta .daten h1 { margin: 0 0 3mm 0; font-size: 22pt; line-height: 26pt; font-weight: bold; color: #1B3A8C; letter-spacing: -0.01em; }
+  .meta .daten table { border-collapse: collapse; }
+  .meta .daten td { font-size: 9.5pt; line-height: 14pt; padding: 0 0 0.5mm 0; }
+  .meta .daten td.k { color: #4A4F5C; width: 34mm; }
+
+  /* Textteile */
+  h2 { font-size: 12.5pt; line-height: 17pt; color: #1B3A8C; margin: 5mm 0 1.8mm 0; font-weight: bold; page-break-after: avoid; }
+  h2.betreff { font-size: 14pt; line-height: 19pt; margin-top: 7mm; color: #1A1A1A; }
+  p { margin: 0 0 3mm 0; }
+  .anrede { margin-top: 5mm; }
+
+  /* Leistungstabelle */
+  table.leistung { width: 100%; border-collapse: collapse; page-break-inside: auto; }
+  table.leistung thead { display: table-header-group; }
+  table.leistung tr { page-break-inside: avoid; }
+  table.leistung th {
+    text-align: left; font-size: 9pt; line-height: 12pt; color: #4A4F5C; font-weight: normal;
+    padding: 0 0 2mm 0; border-bottom: 1px solid #1B3A8C;
+  }
+  table.leistung th.z, table.leistung td.z { text-align: right; white-space: nowrap; }
+  table.leistung td { padding: 1.5mm 0 1.5mm 0; border-bottom: 1px solid #DDE2EC; vertical-align: top; }
+  table.leistung td.titel { width: 34%; padding-right: 4mm; font-weight: bold; }
+  table.leistung td.text { color: #4A4F5C; font-size: 9pt; line-height: 13pt; padding-right: 4mm; }
+  table.leistung td.z { width: 22mm; font-variant-numeric: tabular-nums; }
+  table.leistung td.bis-label { color: #4A4F5C; font-size: 9pt; }
+  table.leistung.summe { page-break-inside: avoid; }
+  table.leistung tr.summe td { border-bottom: none; padding-top: 3mm; font-weight: bold; }
+  table.leistung tr.summe td.text { font-weight: normal; }
+  table.leistung tr.brutto td { border-bottom: 2px solid #1B3A8C; padding-top: 1mm; padding-bottom: 3mm; font-weight: bold; color: #1B3A8C; font-size: 11.5pt; }
+  .spanne-hinweis { font-size: 8.5pt; line-height: 12pt; color: #4A4F5C; margin-top: 2mm; }
+
+  /* Förderblock */
+  .foerderung { background: #F3F6FC; border-left: 3px solid #1B3A8C; padding: 3mm 5mm; margin: 5mm 0 0 0; page-break-inside: avoid; }
+  .foerderung h3 { margin: 0 0 2mm 0; font-size: 11pt; line-height: 15pt; color: #1B3A8C; }
+  .foerderung table { border-collapse: collapse; width: 100%; }
+  .foerderung td { padding: 1mm 0; }
+  .foerderung td.z { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .foerderung td.eigen { font-weight: bold; border-top: 1px solid #DDE2EC; padding-top: 2mm; }
+  .foerderung p { margin: 1.5mm 0 0 0; font-size: 8.5pt; line-height: 12pt; color: #4A4F5C; }
+
+  /* Annahmen */
+  ul.annahmen { margin: 0; padding: 0 0 0 5mm; }
+  ul.annahmen li { page-break-inside: avoid; }
+  ul.annahmen li { margin: 0 0 1mm 0; padding-left: 1mm; }
+
+  /* Ablauf: echte Reihenfolge, deshalb nummeriert */
+  ol.ablauf { margin: 0; padding: 0; list-style: none; counter-reset: schritt; }
+  ol.ablauf li { position: relative; padding: 0 0 1.5mm 11mm; counter-increment: schritt; page-break-inside: avoid; }
+  ol.ablauf li::before {
+    content: counter(schritt);
+    position: absolute; left: 0; top: 0.3mm;
+    width: 7.5mm; height: 7.5mm; line-height: 7.5mm; text-align: center;
+    border: 1.5px solid #D0211A; border-radius: 50%;
+    color: #D0211A; font-weight: bold; font-size: 10pt;
+  }
+  ol.ablauf li strong { display: block; }
+
+  .hinweis { margin-top: 4mm; padding-top: 2.5mm; border-top: 1px solid #DDE2EC; font-size: 8.5pt; line-height: 12pt; color: #4A4F5C; page-break-inside: avoid; }
+  .gruss { margin-top: 5mm; page-break-inside: avoid; }
+  .gruss .name { margin-top: 2.5mm; font-weight: bold; }
+  .gruss p { margin-bottom: 0; }
+  .gruss .rolle { color: #4A4F5C; }
+
+
+  /* Wasserzeichen wie auf dem pds Angebot: fest positioniert, Chromium wiederholt es je Seite */
+  .wz-anker { position: relative; height: 0; }
+  .wasserzeichen { position: absolute; left: -8mm; bottom: 6mm; width: 112mm; height: 112mm; opacity: 0.05; z-index: 0; pointer-events: none; }
+  .wasserzeichen img { width: 100%; height: 100%; display: block; }
+
+  /* Piktogramm je Gewerk, aus dem Logo geschnitten */
+  table.leistung td.ico { width: 9mm; padding-right: 2mm; padding-top: 1.6mm; }
+  table.leistung td.ico img { width: 6.5mm; height: 6.5mm; display: block; }
+  table.leistung th.ico { width: 9mm; }
+  table.legende { border-collapse: collapse; margin-top: 2mm; }
+  table.legende td { padding: 0 6mm 0 0; font-size: 8.5pt; line-height: 12pt; color: #4A4F5C; white-space: nowrap; vertical-align: middle; }
+  table.legende img { width: 4.5mm; height: 4.5mm; vertical-align: middle; margin-right: 1.5mm; }
+
+  /* Kernzahl: gleiche Fläche wie in der Mail */
+  table.leistung tr.brutto td { background: #F3F6FC; }
+  table.leistung tr.brutto td.titel { padding-left: 3mm; border-left: 3px solid #1B3A8C; }
+  table.leistung tr.brutto td.z:last-child { padding-right: 3mm; }
+
+  @media screen {
+    body { background: #E9EBEF; padding: 12mm 0; }
+    table.page { width: 210mm; margin: 0 auto; background: #FFFFFF; padding: 14mm 16mm 16mm 16mm; box-shadow: 0 2px 12px rgba(0,0,0,.12); }
+  }
+</style>
+</head>
+<body>
+
+<table class="page">
+<thead>
+  <tr><td>
+    <table class="kopf">
+      <tr>
+        <td class="logo"><img src="data:image/jpeg;base64,{{logo_base64}}" alt="Bad &amp; Energie GmbH"></td>
+        <td class="firma">
+          <strong>Bad &amp; Energie GmbH</strong>
+          Siegmund-Hiepe-Straße 20 · 35578 Wetzlar<br>
+          Telefon 06441 2039053 · info@bad-energie.de<br>
+          bad-energie.de
+        </td>
+      </tr>
+    </table>
+    <div class="kopf-abstand"></div>
+  </td></tr>
+</thead>
+
+<tfoot>
+  <tr><td>
+    <div class="wz-anker"><div class="wasserzeichen"><img src="data:image/jpeg;base64,{{logo_base64}}" alt=""></div></div>
+    <table class="fuss">
+      <tr>
+        <td>Bad &amp; Energie GmbH · Siegmund-Hiepe-Straße 20 · 35578 Wetzlar<br>Telefon 06441 2039053 · info@bad-energie.de · bad-energie.de</td>
+        <td class="rechts">Geschäftsführer Sabri Demir<br>Amtsgericht Wetzlar HRB 2449 · USt-IdNr. DE215933612</td>
+      </tr>
+    </table>
+  </td></tr>
+</tfoot>
+
+<tbody>
+<tr><td>
+
+  <table class="meta">
+    <tr>
+      <td class="adresse">
+        <span class="zeile">{{anrede}}</span>
+        <span class="zeile">{{vorname}} {{nachname}}</span>
+        <span class="zeile">{{strasse}}</span>
+        <span class="zeile">{{plz_ort}}</span>
+      </td>
+      <td class="daten">
+        <h1>Kostenschätzung</h1>
+        <table>
+          <tr><td class="k">Nummer</td><td>{{ks_nummer}}</td></tr>
+          <tr><td class="k">Datum</td><td>{{datum}}</td></tr>
+          <tr><td class="k">Ihr Ansprechpartner</td><td>{{bearbeiter}}</td></tr>
+          <tr><td class="k">Objekt</td><td>{{objekt_adresse}}</td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <h2 class="betreff">Ihr Vorhaben: {{vorhaben_kurz}}</h2>
+
+  <p class="anrede">Guten Tag {{anrede}} {{nachname}},</p>
+  <p>{{persoenlicher_satz}} Damit Sie eine Grundlage für Ihre Entscheidung haben, habe ich das Vorhaben auf Basis Ihrer Angaben durchgerechnet. Das Ergebnis ist eine Spanne, keine feste Zahl. Wo genau wir darin landen, zeigt sich beim Termin vor Ort.</p>
+
+  <h2>Was wir eingeplant haben</h2>
+  <table class="leistung">
+    <thead>
+      <tr>
+        <th class="ico"></th>
+        <th>Leistung</th>
+        <th>Was dazugehört</th>
+        <th class="z">von</th>
+        <th class="z">bis</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- ROW -->
+      <tr>
+        <td class="ico">{{row_icon}}</td>
+        <td class="titel">{{row_titel}}</td>
+        <td class="text">{{row_text}}</td>
+        <td class="z">{{row_von}} €</td>
+        <td class="z">{{row_bis}} €</td>
+      </tr>
+      <!-- /ROW -->
+    </tbody>
+  </table>
+  <table class="leistung summe">
+    <tbody>
+      <tr class="summe">
+        <td class="ico"></td>
+        <td class="titel">Gesamt netto</td>
+        <td class="text"></td>
+        <td class="z">{{summe_netto_von}} €</td>
+        <td class="z">{{summe_netto_bis}} €</td>
+      </tr>
+      <tr class="brutto">
+        <td class="ico"></td>
+        <td class="titel">Gesamt inkl. 19 % MwSt.</td>
+        <td class="text"></td>
+        <td class="z">{{summe_brutto_von}} €</td>
+        <td class="z">{{summe_brutto_bis}} €</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="spanne-hinweis">Alle Beträge sind Richtwerte auf Basis vergleichbarer Anlagen. Sie enthalten Material, Montage, Anfahrt und Inbetriebnahme, sofern in der Zeile nichts anderes steht.</p>
+  <table class="legende">
+    <tr>
+      <td><img src="data:image/png;base64,{{icon_flamme}}" alt="">Heizung</td>
+      <td><img src="data:image/png;base64,{{icon_wasser}}" alt="">Bad und Wasser</td>
+      <td><img src="data:image/png;base64,{{icon_sonne}}" alt="">Wärmepumpe und Solar</td>
+      <td><img src="data:image/png;base64,{{icon_luft}}" alt="">Klima und Lüftung</td>
+    </tr>
+  </table>
+
+  <!-- FOERDERUNG -->
+  <div class="foerderung">
+    <h3>Voraussichtliche Förderung</h3>
+    <table>
+      <tr><td>Förderfähige Kosten, gedeckelt nach Förderrichtlinie</td><td class="z">bis {{foerder_kosten}} €</td></tr>
+      <tr><td>Zuschuss bei {{foerder_satz}} % Fördersatz</td><td class="z">ca. {{foerder_zuschuss}} €</td></tr>
+      <tr><td class="eigen">Ihr voraussichtlicher Eigenanteil</td><td class="z eigen">{{eigenanteil_von}} bis {{eigenanteil_bis}} €</td></tr>
+    </table>
+    <p>Der Fördersatz hängt von Ihrer Situation ab, etwa ob Sie das Haus selbst bewohnen. Der Antrag muss vor Auftragserteilung gestellt werden, wir bereiten die Unterlagen vor.</p>
+  </div>
+  <!-- /FOERDERUNG -->
+
+  <h2>Wovon diese Schätzung ausgeht</h2>
+  <ul class="annahmen">
+    {{annahmen_liste}}
+  </ul>
+
+  <h2>So geht es weiter</h2>
+  <ol class="ablauf">
+    <li><strong>Termin vor Ort</strong>Wir schauen uns Technikraum, Aufstellort und Leitungswege an und nehmen alle Maße auf. Dauer etwa eine Stunde. Mein Vorschlag: {{terminvorschlag}}.</li>
+    <li><strong>Verbindliches Angebot</strong>Danach erhalten Sie ein Angebot mit festen Preisen und allen Positionen im Detail, in der Regel innerhalb einer Woche.</li>
+    <li><strong>Ausführung</strong>{{ausfuehrung_satz}}</li>
+  </ol>
+
+  <p class="hinweis">Diese Kostenschätzung ist unverbindlich und kein Angebot im Sinne des § 145 BGB. Verbindlich sind allein die Preise des schriftlichen Angebots nach dem Termin vor Ort. Materialpreise mit Rohstoffbindung können sich bis dahin ändern.</p>
+
+  <div class="gruss">
+    <p>Mit freundlichen Grüßen</p>
+    <p class="name">{{bearbeiter}}</p>
+    <p class="rolle">{{bearbeiter_rolle}} · Bad &amp; Energie GmbH<br>Telefon 06441 2039053 · {{bearbeiter_mail}}</p>
+  </div>
+
+</td></tr>
+</tbody>
+</table>
+
+</body>
+</html>

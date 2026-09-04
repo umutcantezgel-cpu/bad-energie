@@ -3,8 +3,8 @@ import { buildGraph, buildFaqNode, buildBreadcrumbNode, buildWebPageNode, SITE_U
 import JsonLd from '@/components/seo/JsonLd';
 
 export const metadata = createMetadata({
-  title: 'FAQ – Fragen zu Heizung & Sanitär',
-  description: 'Antworten auf häufige Fragen rund um Heizung, Sanitär, Wärmepumpen und Förderung. Ihr Meisterbetrieb in Wetzlar berät Sie gerne.',
+  title: 'FAQ – Häufig gestellte Fragen zu Bad & Heizung | Bad & Energie GmbH',
+  description: 'Antworten auf alle Fragen rund um Badsanierung, NIBE Wärmepumpen, Gas-Brennwert, Lüftung & Legionellenschutz in Wetzlar & Lahn-Dill.',
   path: '/faq',
 });
 
@@ -33,56 +33,40 @@ const faqs = [
   },
   {
     question: 'Was kostet eine Badsanierung?',
-    answer: 'Ein Standardbad beginnt bei ca. 15.000€, während Luxusbäder deutlich teurer sein können. Wir erstellen Ihnen gerne ein individuelles Angebot nach einer Vor-Ort-Besichtigung.',
+    answer: 'Ein Standardbad beginnt bei ca. 6.900€ (Basic), während Komfort- und Luxusbäder zwischen 15.000€ und 35.000€ liegen. Nutzen Sie unseren Budgetkalkulator für eine Sofortschätzung.',
   },
   {
     question: 'Wie lange dauert eine Badsanierung?',
-    answer: 'Ein komplettes Bad kann in 2-3 Wochen fertiggestellt werden. Die genaue Dauer hängt vom Umfang der Arbeiten ab.',
+    answer: 'Ein komplettes Bad wird von uns im Schnitt in 8 bis 12 Werktagen schlüsselfertig fertiggestellt – mit festem Bauzeitenplan.',
   },
   {
     question: 'Was tun bei einem Wasserrohrbruch?',
-    answer: 'Sofort den Hauptwasserhahn schließen, Strom im betroffenen Bereich abschalten und uns kontaktieren. Dokumentieren Sie Schäden für die Versicherung.',
+    answer: 'Sofort den Hauptwasserhahn schließen, Strom im betroffenen Bereich abschalten und unseren Notdienst unter 06441 20 39 053 anrufen.',
   },
   {
     question: 'Wie vermeide ich Legionellen?',
-    answer: 'Warmwasser auf mindestens 60°C halten, alle Wasserhähne regelmäßig nutzen (mindestens alle 3 Tage) und die Anlage jährlich warten lassen.',
+    answer: 'Warmwasserspeicher auf mindestens 60°C halten, Leitungen regelmäßig spülen und die gesetzlich vorgeschriebene 3-jährliche Legionellenprüfung durchführen lassen.',
   },
   {
-    question: 'Wie oft muss eine Klimaanlage gewartet werden?',
-    answer: 'Mindestens einmal jährlich sollten Filter gereinigt/gewechselt und das System überprüft werden. Bei starker Nutzung empfehlen wir halbjährliche Wartung.',
-  },
-  {
-    question: 'Welche Klimaanlage ist für mein Zuhause geeignet?',
-    answer: 'Das hängt von der Raumgröße und Ihren Anforderungen ab. Split-Klimaanlagen sind effizient und leise, mobile Geräte flexibel einsetzbar.',
-  },
-  {
-    question: 'Wie hoch sind die Stromkosten einer Klimaanlage?',
-    answer: 'Moderne Inverter-Klimaanlagen verbrauchen bei typischer Nutzung ca. 30-50€ pro Monat. Der genaue Verbrauch hängt von Gerät und Nutzungsdauer ab.',
-  },
-  {
-    question: 'Ist eine Vor-Ort-Besichtigung notwendig?',
-    answer: 'Für ein genaues Angebot schauen wir uns die Gegebenheiten bei Ihnen vor Ort an. Dieser Termin ist für Sie unverbindlich.',
+    question: 'Wie oft muss eine Wohnraumlüftung gewartet werden?',
+    answer: 'Mindestens einmal jährlich sollten Filter gereinigt/gewechselt und das System überprüft werden.',
   },
   {
     question: 'In welchem Gebiet sind Sie tätig?',
-    answer: 'Wir sind in Wetzlar und im gesamten Lahn-Dill-Kreis sowie Richtung Gießen und Marburg für Sie tätig.',
+    answer: 'Wir sind in Wetzlar, Gießen und im gesamten Lahn-Dill-Kreis für Sie im Einsatz.',
   },
   {
     question: 'Wie hoch ist die Förderung für Wärmepumpen?',
-    answer: 'Aktuell werden Wärmepumpen mit bis zu 70% der förderfähigen Kosten bezuschusst (KfW Heizungsförderung 458). Wir unterstützen Sie beim Förderantrag.',
-  },
-  {
-    question: 'Erstellen Sie kostenlose Angebote?',
-    answer: 'Ja, wir erstellen Ihnen gerne ein transparentes, unverbindliches Angebot nach einer Vor-Ort-Besichtigung.',
+    answer: 'Aktuell werden NIBE Wärmepumpen mit bis zu 70% der förderfähigen Kosten bezuschusst (KfW Heizungsförderung 458).',
   },
 ];
 
 const faqGraph = buildGraph([
   buildWebPageNode({
     url: pageUrl,
-    name: 'Häufig gestellte Fragen (FAQ) | Batherm Haustechnik',
+    name: 'Häufig gestellte Fragen (FAQ) | Bad & Energie GmbH',
     description:
-      'Antworten auf alle Fragen rund um Sanitär, Heizung, Wärmepumpen, Klimaanlagen und Fördermittel in Wetzlar.',
+      'Antworten auf alle Fragen rund um Badsanierung, Heizung, NIBE Wärmepumpen, Wohnraumlüftung und Fördermittel in Wetzlar.',
     breadcrumbItems: breadcrumbs,
   }),
   buildBreadcrumbNode(breadcrumbs, pageUrl),

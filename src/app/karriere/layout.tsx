@@ -3,8 +3,8 @@ import { buildGraph, buildJobPostingNode, buildFaqNode, buildBreadcrumbNode, bui
 import JsonLd from '@/components/seo/JsonLd';
 
 export const metadata = createMetadata({
-  title: 'Karriere & Jobs im SHK-Handwerk',
-  description: 'Werden Sie Teil unseres Teams bei Batherm Haustechnik in Wetzlar. Aktuelle Jobs für Anlagenmechaniker SHK – jetzt unkompliziert bewerben!',
+  title: 'Karriere & Jobs im SHK-Handwerk | Bad & Energie GmbH Wetzlar',
+  description: 'Werden Sie Teil unseres Meisterteams bei der Bad & Energie GmbH in Wetzlar. Aktuelle Jobs für Anlagenmechaniker SHK, Kundendienstmonteure und Azubis.',
   path: '/karriere',
 });
 
@@ -18,7 +18,7 @@ const jobs = [
   {
     title: 'Anlagenmechaniker SHK (m/w/d) für Sanitär- & Heizungstechnik',
     description:
-      'Installation von Wärmepumpen, Fußbodenheizungen, Trinkwasserinstallationen und Premium-Badsanierungen in Wetzlar und Region.',
+      'Installation von NIBE Wärmepumpen, Fußbodenheizungen, Trinkwasserinstallationen und schlüsselfertigen Badsanierungen in Wetzlar und Region.',
     employmentType: 'FULL_TIME',
   },
   {
@@ -37,28 +37,28 @@ const jobs = [
 
 const karriereFaqs = [
   {
-    question: 'Wie läuft der Bewerbungsprozess bei Batherm Haustechnik ab?',
+    question: 'Wie läuft der Bewerbungsprozess bei der Bad & Energie GmbH ab?',
     answer:
-      'Ganz unkompliziert: Sie rufen uns an, schreiben eine E-Mail oder nutzen unser Kontaktformular. Wir benötigen kein langes Anschreiben – ein kurzer Lebenslauf oder ein Anruf reicht vollkommen aus.',
+      'Ganz unkompliziert: Sie rufen uns an unter 06441 20 39 053 oder schreiben eine kurze E-Mail an anfrage@bad-energie-profi.de.',
   },
   {
     question: 'Gibt es Möglichkeiten zur fachlichen Weiterbildung?',
     answer:
-      'Ja, wir fördern gezielt Produktschulungen bei führenden Herstellern (Panasonic, Vaillant, Viessmann), Lehrgänge zum Kälteschein sowie Weiterbildung zum Meister oder Techniker.',
+      'Ja, wir fördern gezielt Produktschulungen direkt bei Herstellern wie NIBE, Lehrgänge zum Kälteschein sowie Weiterbildungen zum Meister oder Techniker.',
   },
   {
     question: 'Werden Überstunden bezahlt oder ausgeglichen?',
     answer:
-      'Jede geleistete Überstunde wird auf Ihrem persönlichen Zeitkonto minutengenau erfasst und kann nach Wunsch wahlweise mit Zuschlägen ausbezahlt oder durch Freizeit ausgeglichen werden.',
+      'Jede geleistete Überstunde wird auf Ihrem persönlichen Zeitkonto erfasst und kann wahlweise vergütet oder durch Freizeit ausgeglichen werden.',
   },
 ];
 
 const karriereGraph = buildGraph([
   buildWebPageNode({
     url: pageUrl,
-    name: 'Karriere & Jobs im SHK-Handwerk in Wetzlar | Batherm Haustechnik',
+    name: 'Karriere & Jobs im SHK-Handwerk in Wetzlar | Bad & Energie GmbH',
     description:
-      'Stellenangebote für Anlagenmechaniker SHK, Servicetechniker und Azubis bei Batherm Haustechnik in Wetzlar.',
+      'Stellenangebote für Anlagenmechaniker SHK, Servicetechniker und Azubis bei der Bad & Energie GmbH in Wetzlar.',
     breadcrumbItems: breadcrumbs,
   }),
   buildBreadcrumbNode(breadcrumbs, pageUrl),
@@ -74,4 +74,3 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-

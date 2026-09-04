@@ -4,7 +4,7 @@ import JsonLd from '@/components/seo/JsonLd';
 
 export const metadata = createMetadata({
   title: 'Datenschutzerklärung nach DSGVO',
-  description: 'Ausführliche Informationen zum Datenschutz und zur Verarbeitung personenbezogener Daten bei Batherm Haustechnik gemäß DSGVO.',
+  description: 'Ausführliche Informationen zum Datenschutz und zur Verarbeitung personenbezogener Daten bei der Bad & Energie GmbH gemäß DSGVO.',
   path: '/datenschutz',
 });
 
@@ -17,7 +17,7 @@ const breadcrumbs = [
 const datenschutzSchema = buildGraph([
   buildWebPageNode({
     url: pageUrl,
-    name: 'Datenschutzerklärung | Batherm Haustechnik',
+    name: 'Datenschutzerklärung | Bad & Energie GmbH',
     description: 'Informationen zur Erhebung und Verarbeitung personenbezogener Daten nach DSGVO.',
     breadcrumbItems: breadcrumbs,
   }),
@@ -32,4 +32,3 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-

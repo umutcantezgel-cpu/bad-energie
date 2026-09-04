@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
-const BASE_URL = 'https://www.batherm.de';
-const SITE_NAME = 'Batherm Haustechnik';
+const BASE_URL = 'https://bad-energie.de';
+const SITE_NAME = 'Bad & Energie GmbH';
 
 export function createMetadata(options: {
   title: string;

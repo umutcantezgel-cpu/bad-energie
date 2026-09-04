@@ -27,29 +27,29 @@ const STORAGE_KEYS = {
 
 // Adapter to map COMPANY_DATA to legacy siteConfig structure for UI compatibility
 const getAdaptedSiteConfig = () => ({
-    name: COMPANY_DATA.legalName,
-    description: "Ihr Experte für Sanitär, Heizung und Haustechnik in Wetzlar und Umgebung.",
+    name: COMPANY_DATA?.legalName || "Bad & Energie GmbH",
+    description: "Ihr Meisterbetrieb für Badsanierung, Heizung und Haustechnik in Wetzlar und Umgebung.",
     contact: {
-        phone: COMPANY_DATA.contact.phone,
-        phoneLink: COMPANY_DATA.contact.phone.replace(/[^0-9+]/g, ''),
-        email: COMPANY_DATA.contact.email,
+        phone: COMPANY_DATA?.contact?.phone || "06441 20 39 053",
+        phoneLink: (COMPANY_DATA?.contact?.phone || "064412039053").replace(/[^0-9+]/g, ''),
+        email: COMPANY_DATA?.contact?.email || "anfrage@bad-energie-profi.de",
         address: {
-            street: COMPANY_DATA.address.street,
-            zipCity: `${COMPANY_DATA.address.postalCode} ${COMPANY_DATA.address.city}`
+            street: COMPANY_DATA?.address?.street || "Hans-Sachs-Straße 12",
+            zipCity: `${COMPANY_DATA?.address?.postalCode || "35576"} ${COMPANY_DATA?.address?.city || "Wetzlar"}`
         },
         hours: {
-            weekdays: `Mo-Fr: ${COMPANY_DATA.hours.monday.open} - ${COMPANY_DATA.hours.monday.close} Uhr`,
-            saturday: `Sa: ${COMPANY_DATA.hours.saturday.open} - ${COMPANY_DATA.hours.saturday.close} Uhr`
+            weekdays: COMPANY_DATA?.hours?.formattedWeekdays || "Mo - Do: 07:00 – 16:45 Uhr",
+            saturday: "Notdienst für Bestandskunden"
         }
     },
     social: {
-        instagram: COMPANY_DATA.social.instagram
+        instagram: COMPANY_DATA?.social?.instagram || "https://www.instagram.com/badundenergie"
     },
-    serviceAreas: COMPANY_DATA.business.serviceArea,
+    serviceAreas: COMPANY_DATA?.business?.serviceArea || ["Wetzlar", "Gießen", "Lahn-Dill-Kreis"],
     legal: {
-        owner: COMPANY_DATA.owner.firstName + ' ' + COMPANY_DATA.owner.lastName,
-        taxId: COMPANY_DATA.tax.ustId,
-        register: COMPANY_DATA.authority.name
+        owner: COMPANY_DATA?.owner?.fullName || "Sabri Demir",
+        taxId: COMPANY_DATA?.tax?.ustId || "DE215 933 612",
+        register: COMPANY_DATA?.authority?.name || "Handwerkskammer Wiesbaden"
     }
 });
 

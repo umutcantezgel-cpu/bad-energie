@@ -4,7 +4,7 @@ import JsonLd from '@/components/seo/JsonLd';
 
 export const metadata = createMetadata({
   title: 'AGB – Geschäftsbedingungen',
-  description: 'Allgemeine Geschäftsbedingungen der Batherm Haustechnik für handwerkliche Leistungen in Sanitär, Heizung und Klimatechnik.',
+  description: 'Allgemeine Geschäftsbedingungen der Bad & Energie GmbH für handwerkliche Leistungen in Badsanierung, Heizung und Haustechnik.',
   path: '/agb',
 });
 
@@ -17,8 +17,8 @@ const breadcrumbs = [
 const agbSchema = buildGraph([
   buildWebPageNode({
     url: pageUrl,
-    name: 'Allgemeine Geschäftsbedingungen (AGB) | Batherm Haustechnik',
-    description: 'Geschäftsbedingungen für handwerkliche Dienstleistungen und Lieferungen von Batherm Haustechnik.',
+    name: 'Allgemeine Geschäftsbedingungen (AGB) | Bad & Energie GmbH',
+    description: 'Geschäftsbedingungen für handwerkliche Dienstleistungen und Werkverträge der Bad & Energie GmbH.',
     breadcrumbItems: breadcrumbs,
   }),
   buildBreadcrumbNode(breadcrumbs, pageUrl),
@@ -32,4 +32,3 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-

@@ -4,7 +4,7 @@ import JsonLd from '@/components/seo/JsonLd';
 
 export const metadata = createMetadata({
   title: 'Widerrufsbelehrung & Musterformular',
-  description: 'Widerrufsbelehrung und Muster-Widerrufsformular für Verbraucher bei Beauftragung von Leistungen der Batherm Haustechnik.',
+  description: 'Widerrufsbelehrung und Muster-Widerrufsformular für Verbraucher bei Beauftragung von Leistungen der Bad & Energie GmbH.',
   path: '/widerruf',
 });
 
@@ -17,8 +17,8 @@ const breadcrumbs = [
 const widerrufSchema = buildGraph([
   buildWebPageNode({
     url: pageUrl,
-    name: 'Widerrufsbelehrung & Musterformular | Batherm Haustechnik',
-    description: 'Gesetzliche Widerrufsbelehrung und Muster-Widerrufsformular für Kunden der Batherm Haustechnik.',
+    name: 'Widerrufsbelehrung & Musterformular | Bad & Energie GmbH',
+    description: 'Gesetzliche Widerrufsbelehrung und Muster-Widerrufsformular für Kunden der Bad & Energie GmbH.',
     breadcrumbItems: breadcrumbs,
   }),
   buildBreadcrumbNode(breadcrumbs, pageUrl),
@@ -32,4 +32,3 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-

@@ -1,202 +1,107 @@
-"use client";
 import React from 'react';
-import { siteConfig } from '@/config/site';
-import { Phone, Mail, MapPin, Building2, FileText, Shield, Scale, Gavel } from 'lucide-react';
+import Link from 'next/link';
+import { COMPANY_DATA } from '@/config/company';
 
-export default function Impressum() {
-  return (
-    <div className="relative min-h-screen py-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="relative">
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-xl rounded-3xl border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.1)]" />
+export const metadata = {
+    title: 'Impressum | Bad & Energie GmbH Wetzlar',
+    description: 'Gesetzliche Anbieterkennzeichnung der Bad & Energie GmbH gemäß § 5 DDG: Geschäftsführer Sabri Demir, HRB 2449 Amtsgericht Wetzlar, USt-IdNr. DE215 933 612.',
+    alternates: { canonical: 'https://bad-energie.de/impressum' }
+};
 
-          <div className="relative p-8 md:p-12">
-            <h1 className="text-4xl font-bold text-[#1a3a52] mb-8">Impressum – Gesetzliche Anbieterkennzeichnung</h1>
+export default function ImpressumPage() {
+    return (
+        <div className="pt-32 pb-24 min-h-screen relative overflow-hidden">
+            {/* Ambient Glow */}
+            <div className="ambient-glow-blue -top-20 -left-20" />
+            <div className="ambient-glow-cyan top-96 -right-20" />
 
-            <div className="space-y-8 text-[#2c3e50]">
-              {/* Provider Identity */}
-              <section>
-                <h2 className="text-2xl font-bold text-[#1a3a52] mb-4 flex items-center gap-2">
-                  <Building2 className="w-6 h-6" />
-                  Angaben gemäß § 5 TMG und Art. 3 Abs. 3 DDG
-                </h2>
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                  <p className="leading-relaxed font-semibold text-lg mb-2">
-                    {siteConfig.legalName}
-                  </p>
-                  <p className="leading-relaxed">
-                    Inhaber: {siteConfig.legal.owner}<br />
-                    {siteConfig.contact.address.street}<br />
-                    {siteConfig.contact.address.zipCity}<br />
-                    {siteConfig.contact.address.country}
-                  </p>
-                </div>
-              </section>
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="glass-bezel-outer shadow-2xl">
+                    <div className="glass-bezel-inner p-8 sm:p-12 space-y-8 text-slate-800">
+                        <div>
+                            <span className="text-xs uppercase font-black tracking-wider text-[#0C3A87] bg-blue-50 px-3.5 py-1 rounded-full inline-block border border-blue-200/60 shadow-xs mb-2">
+                                Rechtliche Pflichtangaben nach § 5 Digitale-Dienste-Gesetz (DDG)
+                            </span>
+                            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 mt-1">Impressum</h1>
+                        </div>
 
-              {/* Contact */}
-              <section>
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                  <h2 className="text-xl font-semibold text-[#1a3a52] mb-4 flex items-center gap-2">
-                    <Mail className="w-5 h-5" />
-                    Kontakt
-                  </h2>
-                  <div className="space-y-2 text-gray-600">
-                    <p>Telefon: <a href={`tel:${siteConfig.contact.phoneLink}`} className="text-[#1a3a52] hover:underline">{siteConfig.contact.phone}</a></p>
-                    <p>E-Mail: <a href={`mailto:${siteConfig.contact.email}`} className="text-[#1a3a52] hover:underline">{siteConfig.contact.email}</a></p>
-                  </div>
-                </div>
-              </section>
+                        {/* Company Details */}
+                        <div className="space-y-2 border-b border-slate-200/60 pb-6 text-xs sm:text-sm">
+                            <h2 className="text-base font-black text-slate-900">Angaben gemäß § 5 DDG:</h2>
+                            <p className="font-black text-slate-900">Bad &amp; Energie GmbH</p>
+                            <p>Hans-Sachs-Straße 12</p>
+                            <p>35576 Wetzlar</p>
+                            <p className="text-xs text-slate-500 font-medium pt-1">
+                                Zweiter Standort / Betriebsstätte: Siegmund-Hiepe-Straße 20, 35578 Wetzlar
+                            </p>
+                        </div>
 
-              {/* Tax & Registration */}
-              <section>
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                  <h2 className="text-xl font-semibold text-[#1a3a52] mb-4 flex items-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    Registereintrag & Steuern
-                  </h2>
-                  <div className="space-y-4 text-gray-600">
-                    <div>
-                      <span className="font-semibold block text-sm mb-1">Umsatzsteuer-ID:</span>
-                      {siteConfig.legal.taxId}
+                        {/* Representation */}
+                        <div className="space-y-2 border-b border-slate-200/60 pb-6 text-xs sm:text-sm">
+                            <h2 className="text-base font-black text-slate-900">Vertreten durch:</h2>
+                            <p>Geschäftsführer: <strong className="text-slate-900 font-black">{COMPANY_DATA.owner.fullName}</strong></p>
+                        </div>
+
+                        {/* Contact */}
+                        <div className="space-y-2 border-b border-slate-200/60 pb-6 text-xs sm:text-sm">
+                            <h2 className="text-base font-black text-slate-900">Kontakt:</h2>
+                            <p>Telefon: <a href={`tel:${COMPANY_DATA.headquarters.phoneLink}`} className="text-[#0C3A87] font-black underline">{COMPANY_DATA.headquarters.phone}</a></p>
+                            <p>Telefon (Standort Lahn-Dill): <a href={`tel:${COMPANY_DATA.branchLahnDill.phoneLink}`} className="text-[#0C3A87] font-black underline">{COMPANY_DATA.branchLahnDill.phone}</a></p>
+                            <p>Telefax: {COMPANY_DATA.branchLahnDill.fax}</p>
+                            <p>E-Mail: <a href={`mailto:${COMPANY_DATA.headquarters.email}`} className="text-[#0C3A87] font-black underline">{COMPANY_DATA.headquarters.email}</a></p>
+                            <p>E-Mail (Allgemein): <a href={`mailto:${COMPANY_DATA.branchLahnDill.email}`} className="text-[#0C3A87] font-black underline">{COMPANY_DATA.branchLahnDill.email}</a></p>
+                        </div>
+
+                        {/* Register & Tax */}
+                        <div className="space-y-2 border-b border-slate-200/60 pb-6 text-xs sm:text-sm">
+                            <h2 className="text-base font-black text-slate-900">Registereintragung:</h2>
+                            <p>Eintragung im Handelsregister.</p>
+                            <p>Registergericht: <strong className="text-slate-900 font-black">{COMPANY_DATA.tax.court}</strong></p>
+                            <p>Registernummer: <strong className="text-slate-900 font-black">{COMPANY_DATA.tax.registerNumber}</strong></p>
+                            <p className="pt-2">Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz: <strong className="text-slate-900 font-black">{COMPANY_DATA.tax.ustId}</strong></p>
+                            <p>Steuernummer: <strong className="text-slate-900 font-black">{COMPANY_DATA.tax.taxNumber}</strong></p>
+                        </div>
+
+                        {/* Chamber & Professional Regulation */}
+                        <div className="space-y-2 border-b border-slate-200/60 pb-6 text-xs sm:text-sm">
+                            <h2 className="text-base font-black text-slate-900">Zuständige Kammer &amp; Aufsichtsbehörde:</h2>
+                            <p>Handwerkskammer Wiesbaden</p>
+                            <p>Bierstadter Str. 45, 65189 Wiesbaden</p>
+                            <p className="pt-2">Berufsbezeichnung: Meisterbetrieb für Sanitär-, Heizungs- und Klimatechnik (verliehen in der Bundesrepublik Deutschland)</p>
+                            <p>Berufsrechtliche Regelungen: Handwerksordnung (HwO) (einsehbar unter: <a href="https://www.gesetze-im-internet.de/hwo/" target="_blank" rel="noopener noreferrer" className="text-[#0C3A87] underline font-semibold">www.gesetze-im-internet.de/hwo/</a>)</p>
+                        </div>
+
+                        {/* Dispute Resolution */}
+                        <div className="space-y-3 border-b border-slate-200/60 pb-6 text-xs text-slate-600 leading-relaxed font-medium">
+                            <h2 className="text-base font-black text-slate-900">Verbraucherstreitbeilegung / Universalschlichtungsstelle:</h2>
+                            <p>
+                                Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
+                            </p>
+                            <p>
+                                Plattform der EU-Kommission zur Online-Streitbeilegung: <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="text-[#0C3A87] underline font-bold">https://ec.europa.eu/consumers/odr</a>. Unsere E-Mail-Adresse finden Sie oben im Impressum.
+                            </p>
+                        </div>
+
+                        {/* Disclaimers */}
+                        <div className="space-y-4 text-xs text-slate-500 leading-relaxed font-medium">
+                            <h3 className="font-black text-slate-800 text-sm">Haftung für Inhalte</h3>
+                            <p>
+                                Als Diensteanbieter sind wir gemäß § 7 Abs.1 DDG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 DDG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.
+                            </p>
+
+                            <h3 className="font-black text-slate-800 text-sm">Haftung für Links</h3>
+                            <p>
+                                Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich.
+                            </p>
+
+                            <h3 className="font-black text-slate-800 text-sm">Urheberrecht</h3>
+                            <p>
+                                Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers.
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                      <span className="font-semibold block text-sm mb-1">Handwerksrolle:</span>
-                      Eingetragen in der Handwerksrolle der Handwerkskammer Wiesbaden
-                      <br />
-                      <span className="font-medium">Registernummer: 120707</span>
-                    </div>
-                    <div>
-                      <span className="font-semibold block text-sm mb-1">Registereintrag:</span>
-                      Als Einzelunternehmen nicht im Handelsregister eingetragen.
-                    </div>
-                  </div>
                 </div>
-              </section>
-
-              {/* § 18 MStV - Responsible for Editorial Content */}
-              <section>
-                <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
-                  <h2 className="text-xl font-semibold text-[#1a3a52] mb-4 flex items-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    Inhaltlich Verantwortlicher gemäß § 18 Abs. 2 MStV
-                  </h2>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Verantwortlich für redaktionelle Inhalte (insbesondere Blog-Artikel und Ratgeberbeiträge) gemäß § 18 Abs. 2 Medienstaatsvertrag:
-                  </p>
-                  <div className="bg-white p-4 rounded-lg border border-blue-100">
-                    <p className="font-semibold text-[#1a3a52]">{siteConfig.legal.owner}</p>
-                    <p className="text-gray-600">
-                      {siteConfig.legalName}<br />
-                      {siteConfig.contact.address.street}<br />
-                      {siteConfig.contact.address.zipCity}<br />
-                      E-Mail: <a href={`mailto:${siteConfig.contact.email}`} className="text-[#1a3a52] underline">{siteConfig.contact.email}</a>
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Supervision */}
-              <section>
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                  <h2 className="text-xl font-semibold text-[#1a3a52] mb-4 flex items-center gap-2">
-                    <Scale className="w-5 h-5" />
-                    Aufsichtsbehörde & Kammer
-                  </h2>
-                  <div className="space-y-4 text-gray-600">
-                    <div>
-                      <span className="font-semibold block text-sm mb-1">Zuständige Kammer:</span>
-                      <a href="https://www.hwk-wiesbaden.de" target="_blank" rel="noopener noreferrer" className="text-[#1a3a52] hover:underline flex items-center gap-1">
-                        Handwerkskammer Wiesbaden
-                      </a>
-                      <span className="block text-sm text-gray-500">Bierstadter Straße 45, 65189 Wiesbaden</span>
-                    </div>
-                    <div>
-                      <span className="font-semibold block text-sm mb-1">Berufsbezeichnung:</span>
-                      Installateur- und Heizungsbauermeister (verliehen in Deutschland)
-                    </div>
-                    <div>
-                      <span className="font-semibold block text-sm mb-1">Berufsrechtliche Regelungen:</span>
-                      <a href="https://www.gesetze-im-internet.de/hwo/" target="_blank" rel="noopener noreferrer" className="text-[#1a3a52] hover:underline">Handwerksordnung</a>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Insurance */}
-              <section>
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                  <h2 className="text-xl font-semibold text-[#1a3a52] mb-4 flex items-center gap-2">
-                    <Shield className="w-5 h-5" />
-                    Berufshaftpflichtversicherung
-                  </h2>
-                  <div className="text-gray-600 space-y-2">
-                    <p>Es besteht eine Berufshaftpflichtversicherung bei:</p>
-                    <p className="font-medium text-[#1a3a52]">VHV Allgemeine Versicherung AG</p>
-                    <p>VHV-Platz 1<br />30177 Hannover</p>
-                    <p className="text-sm mt-2 text-gray-500">Geltungsbereich: Deutschland</p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Dispute Resolution */}
-              <section>
-                <div className="bg-amber-50 rounded-xl p-6 border border-amber-200">
-                  <h2 className="text-xl font-semibold text-[#1a3a52] mb-4 flex items-center gap-2">
-                    <Gavel className="w-5 h-5" />
-                    Streitschlichtung
-                  </h2>
-                  <div className="text-gray-600 space-y-3">
-                    <p>
-                      Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:
-                      <a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer" className="text-[#1a3a52] hover:underline ml-1">
-                        https://ec.europa.eu/consumers/odr/
-                      </a>
-                    </p>
-                    <p className="text-sm">
-                      Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Copyright */}
-              <section>
-                <h2 className="text-2xl font-bold text-[#1a3a52] mb-4">
-                  Urheberrecht
-                </h2>
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                  <p className="leading-relaxed text-sm">
-                    Alle Inhalte, Bilder, Grafiken und Designs auf dieser Website sind urheberrechtlich geschützt.
-                    Eine unerlaubte Vervielfältigung, Verbreitung oder Änderung dieser Inhalte ist ohne ausdrückliche
-                    schriftliche Genehmigung untersagt.
-                  </p>
-                </div>
-              </section>
-
-              {/* Webdesign & Konzeption */}
-              <section>
-                <h2 className="text-2xl font-bold text-[#1a3a52] mb-4">
-                  Webdesign & Konzeption
-                </h2>
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                  <p className="leading-relaxed text-sm">
-                    Technische Konzeption und Realisierung durch: <br />
-                    <a 
-                      href="https://codayweb.de" 
-                      target="_blank" 
-                      rel="dofollow noopener noreferrer"
-                      className="text-[#1a3a52] hover:underline font-semibold"
-                    >
-                      Coday Webdesign Wetzlar
-                    </a>
-                  </p>
-                </div>
-              </section>
-
             </div>
-          </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }

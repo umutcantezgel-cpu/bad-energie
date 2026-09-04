@@ -1,0 +1,40 @@
+{
+  "_hinweis": "Einfache Badrenovierung, Fliese auf Fliese, Sanitärobjekte Hausmarke, bis ca. 4 m². Kein Förderblock.",
+  "vorhaben_kurz": "Badrenovierung",
+  "mail_betreff": "Ihre Kostenschätzung für das Bad",
+  "mail_preheader": "Eine erste Einschätzung mit Zahlen und zwei Terminvorschlägen für den Ortstermin.",
+  "foerderung_standard": false,
+  "rows": [
+    {
+      "titel": "Badrenovierung",
+      "gewerk": "bad",
+      "text": "Demontage, Fliese auf Fliese mit Haftgrund, Spachtelung und Abdichtung, Wandfliesen raumhoch, Bodenfliesen, Dusche mit flacher Wanne, Waschtisch und WC Hausmarke, Silikonfugen",
+      "von": null,
+      "bis": null,
+      "_matrix": "Matrix 14"
+    },
+    {
+      "titel": "Warmwasser elektrisch",
+      "gewerk": "wasser",
+      "text": "Durchlauferhitzer mit Starkstromzuleitung durch Elektrofachbetrieb",
+      "von": null,
+      "bis": null,
+      "zuschlag": true,
+      "_matrix": "Matrix 16"
+    },
+    {
+      "titel": "Trockenbau Rückwand",
+      "gewerk": "bad",
+      "text": "Trockenbauwand mit Feuchtraumplatte für Unterputzleitungen, [lfm] lfm",
+      "von": null,
+      "bis": null,
+      "zuschlag": true,
+      "_matrix": "Matrix 17, je lfm"
+    }
+  ],
+  "annahmen_standard": [
+    "Fliesen werden bauseits gestellt oder nach Wahl gesondert angeboten.",
+    "Der vorhandene Unterputzspülkasten bleibt.",
+    "Malerarbeiten, Spiegel und Zubehör sind nicht enthalten."
+  ]
+}

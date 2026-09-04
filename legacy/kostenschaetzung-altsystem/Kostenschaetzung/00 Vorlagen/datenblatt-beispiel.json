@@ -1,0 +1,70 @@
+{
+  "_hinweis": "Ein Datenblatt je Lead. Pflichtfelder: anrede, nachname, strasse, plz_ort, email, objekt_adresse, vorhaben_kurz, vorlage, rows, summe. Alles andere darf leer bleiben. Beträge als Zahlen ohne Punkt, das Skript formatiert. gewerk je Zeile: heizung, bad, wasser, waermepumpe, solar, pv, klima, lueftung, elektro. Steuert das Piktogramm im PDF und die Farbe in der Mail.",
+  "ks_nummer": "KS-2026-0031",
+  "datum": "03.09.2026",
+  "bearbeiter": "Sabri Demir",
+  "bearbeiter_rolle": "Geschäftsführer",
+  "bearbeiter_mail": "info@bad-energie.de",
+  "anrede": "Frau",
+  "vorname": "Tamara",
+  "nachname": "Musterfrau",
+  "strasse": "Musterstraße 1",
+  "plz_ort": "35578 Wetzlar",
+  "email": "kundin@example.de",
+  "telefon": "",
+  "objekt_adresse": "Hainbachstraße 3, 35641 Schöffengrund",
+  "vorhaben_kurz": "Heizungsersatz durch Multisplit Klimaanlage und Badumgestaltung",
+  "vorlage": "klima_multisplit_bad",
+  "persoenlicher_satz": "Vielen Dank für das Gespräch am Donnerstag und die Fotos vom Bad, das hilft mir bei der Einschätzung sehr.",
+  "rows": [
+    {
+      "titel": "Klimaanlage mit Heizfunktion",
+      "text": "Bosch Multisplit, 1 Außeneinheit auf Wandkonsole, 5 Innengeräte, Kältemittel und Kondensatleitungen, Elektroanschluss, Inbetriebnahme",
+      "von": 11800,
+      "bis": 14600,
+      "gewerk": "klima"
+    },
+    {
+      "titel": "Demontage Bestandsheizung",
+      "text": "Ausbau und Entsorgung von Kessel, Heizkörpern und Verrohrung, Umfang nach Bestandsaufnahme",
+      "von": 1400,
+      "bis": 2600,
+      "gewerk": "heizung"
+    },
+    {
+      "titel": "Badumgestaltung",
+      "text": "Badewanne mit Aufputzarmatur und Brausestange, Waschtisch, Waschmaschinenanschluss, Leitungen unter Putz, Trockenbauwand als Rückwand",
+      "von": 6900,
+      "bis": 9200,
+      "gewerk": "bad"
+    },
+    {
+      "titel": "Warmwasser elektrisch",
+      "text": "Durchlauferhitzer mit Starkstromzuleitung durch Elektrofachbetrieb",
+      "von": 1300,
+      "bis": 1900,
+      "gewerk": "wasser"
+    }
+  ],
+  "summe_netto_von": 21400,
+  "summe_netto_bis": 28300,
+  "foerderung": null,
+  "_foerderung_beispiel_waermepumpe": {
+    "kosten": 30000,
+    "satz": 55,
+    "zuschuss": 16500,
+    "eigenanteil_von": 14200,
+    "eigenanteil_bis": 18900
+  },
+  "annahmen": [
+    "Die fünf Innengeräte werden auf Räume mit zusammen ca. 70 m² verteilt, Gerätegröße je Raum nach Aufmaß.",
+    "Der vorhandene Hausanschluss und Zählerschrank reichen für Klimageräte und Durchlauferhitzer aus. Falls nicht, entstehen Mehrkosten für die Ertüchtigung.",
+    "Fliesen und Malerarbeiten im Bad sind nicht enthalten.",
+    "Das WC bleibt bestehen."
+  ],
+  "terminvorschlag": "Dienstag, 9. September, zwischen 9 und 11 Uhr, oder Donnerstag, 11. September, ab 14 Uhr",
+  "ausfuehrung_satz": "Nach Auftrag stimmen wir den Termin ab. Die Klimaanlage ist in zwei bis drei Arbeitstagen montiert, das Bad braucht etwa eine Woche.",
+  "mail_betreff": "Ihre Kostenschätzung für Klimaanlage und Bad",
+  "mail_preheader": "Eine erste Einschätzung mit Zahlen und zwei Terminvorschlägen für den Ortstermin.",
+  "gewerk_haupt": "klima"
+}

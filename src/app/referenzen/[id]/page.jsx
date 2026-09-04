@@ -2,20 +2,17 @@
 import React, { useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, MapPin, CheckCircle2, Ruler, Clock, ArrowRight, Quote } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, CheckCircle2, Ruler, Clock, ArrowRight, Quote, ShieldCheck, Sparkles } from 'lucide-react';
 import { useContent } from '@/contexts/ContentContext';
-import { Button } from '@/components/ui/button';
-import PageWrapper from '@/components/common/PageWrapper';
-import { createPageUrl } from '@/utils';
 import { projects as configProjects, categories } from '@/config/projects';
-import ResponsiveImage from '@/components/ui/ResponsiveImage';
+import { COMPANY_DATA } from '@/config/company';
+import QualityPromise from '@/components/sections/QualityPromise';
 
-const ProjectDetail = () => {
+export default function ProjectDetailPage() {
     const { id } = useParams();
     const router = useRouter();
     const content = useContent();
 
-    // Simplify data loading: prioritize context, fall back to config
     const projectsData = content?.projects || configProjects;
     const projectList = Array.isArray(projectsData) ? projectsData : (projectsData?.projects || []);
 
@@ -23,218 +20,180 @@ const ProjectDetail = () => {
 
     if (!project) {
         return (
-            <PageWrapper>
-                <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-[var(--spacing-4)]">
-                    <h1 className="text-3xl font-bold text-[var(--color-neutral-900)] mb-[var(--spacing-4)]">Projekt nicht gefunden</h1>
-                    <p className="text-[var(--color-text-secondary)] mb-[var(--spacing-8)]">Das gesuchte Projekt existiert leider nicht.</p>
-                    <Link href="/referenzen">
-                        <Button>Zurück zur Projekt-Übersicht</Button>
-                    </Link>
-                </div>
-            </PageWrapper>
+            <div className="min-h-screen pt-32 flex flex-col items-center justify-center text-center px-4">
+                <h1 className="text-3xl font-black text-slate-900 mb-4">Projekt nicht gefunden</h1>
+                <p className="text-xs text-slate-500 mb-8">Das gesuchte Referenzprojekt existiert leider nicht.</p>
+                <Link href="/referenzen" className="px-6 py-3 rounded-full bg-[#0C3A87] text-white font-bold text-xs shadow-md">
+                    Zurück zur Projekt-Übersicht
+                </Link>
+            </div>
         );
     }
 
     const categoryName = categories.find(c => c.id === project.category)?.name || project.category;
     const primaryImage = project.images?.find(img => img.type === 'after')?.url || project.images?.[0]?.url;
-    const beforeImages = project.images?.filter(img => img.type === 'before') || [];
-    const afterImages = project.images?.filter(img => img.type === 'after' && img.url !== primaryImage) || [];
 
     return (
-        <PageWrapper>
-            {/* Hero Section */}
-            <div className="relative h-[60vh] min-h-[400px]">
-                <div className="absolute inset-0 bg-[var(--color-neutral-900)]">
-                    {primaryImage && (
-                        <ResponsiveImage
-                            src={primaryImage}
-                            alt={project.title}
-                            containerClassName="w-full h-full opacity-60"
-                            priority={true}
-                            sizes="100vw"
-                        />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-neutral-900)] via-transparent to-transparent"></div>
-                </div>
+        <div className="pt-32 pb-24 min-h-screen relative overflow-hidden">
+            {/* Ambient Glow */}
+            <div className="ambient-glow-blue -top-20 -left-20" />
+            <div className="ambient-glow-cyan top-96 -right-20" />
 
-                <div className="absolute inset-0 flex flex-col justify-end pb-[var(--spacing-12)] md:pb-[var(--spacing-24)] px-[var(--spacing-4)] sm:px-[var(--spacing-6)] lg:px-[var(--spacing-8)] max-w-7xl mx-auto">
-                    <Link href="/referenzen" className="inline-flex items-center text-white/80 hover:text-white mb-[var(--spacing-6)] transition-colors group">
-                        <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-                        Zurück zur Projekt-Übersicht
+            {/* Hero Section */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 relative z-10">
+                <div className="glass-surface-dark rounded-[3rem] p-8 sm:p-14 space-y-6 relative overflow-hidden">
+                    <Link href="/referenzen" className="inline-flex items-center text-xs font-bold text-blue-200/80 hover:text-white transition-colors group">
+                        <ArrowLeft className="w-4 h-4 mr-1.5 group-hover:-translate-x-1 transition-transform" />
+                        Zurück zur Referenzen-Übersicht
                     </Link>
 
-                    <div className="flex flex-wrap items-center gap-[var(--spacing-3)] mb-[var(--spacing-4)]">
-                        <span className="bg-[var(--color-brand-primary)] text-white px-3 py-1 rounded-full text-sm font-semibold uppercase tracking-wide">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <span className="bg-white/10 backdrop-blur-md text-cyan-300 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider border border-white/15">
                             {categoryName}
                         </span>
-                        <span className="text-white/90 flex items-center text-sm font-medium backdrop-blur-md bg-white/10 px-3 py-1 rounded-full border border-white/20">
-                            <Calendar className="w-4 h-4 mr-2" />
-                            {project.year}
+                        {project.year && (
+                            <span className="text-white/80 flex items-center text-xs font-bold backdrop-blur-md bg-white/10 px-3 py-1 rounded-full border border-white/15">
+                                <Calendar className="w-3.5 h-3.5 mr-1.5 text-cyan-300" />
+                                {project.year}
+                            </span>
+                        )}
+                        <span className="text-white/80 flex items-center text-xs font-bold backdrop-blur-md bg-white/10 px-3 py-1 rounded-full border border-white/15">
+                            <MapPin className="w-3.5 h-3.5 mr-1.5 text-cyan-300" />
+                            {project.location}
                         </span>
                     </div>
 
-                    <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-[var(--spacing-4)] font-display">
+                    <h1 className="text-3xl sm:text-5xl font-black text-white leading-tight max-w-4xl">
                         {project.title}
                     </h1>
-                    <div className="flex items-center text-white/90 text-lg">
-                        <MapPin className="w-5 h-5 mr-2 text-[var(--color-brand-secondary)]" />
-                        {project.location}
-                    </div>
+
+                    <p className="text-sm sm:text-base text-blue-100 max-w-2xl leading-relaxed font-normal">
+                        {project.description}
+                    </p>
                 </div>
             </div>
 
             {/* Content Section */}
-            <div className="max-w-7xl mx-auto px-[var(--spacing-4)] sm:px-[var(--spacing-6)] lg:px-[var(--spacing-8)] py-[var(--spacing-16)] md:py-[var(--spacing-24)]">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-[var(--spacing-12)] lg:gap-[var(--spacing-24)]">
-                    {/* Main Content */}
-                    <div className="lg:col-span-2 space-y-[var(--spacing-12)]">
-
-                        {/* Description */}
-                        <div>
-                            <h2 className="text-2xl font-bold text-[var(--color-neutral-900)] mb-[var(--spacing-4)] font-display">
-                                Projekt-Überblick: {project.title} in {project.location}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                    
+                    {/* Main Content Column */}
+                    <div className="lg:col-span-2 space-y-8">
+                        <div className="glass-surface p-8 sm:p-10 rounded-[2.5rem] space-y-6">
+                            <h2 className="text-2xl font-black text-slate-900">
+                                Projekt-Überblick: {project.title}
                             </h2>
-                            <p className="text-lg text-[var(--color-text-secondary)] leading-relaxed whitespace-pre-line mb-4">
-                                {project.description}
+                            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+                                Für dieses Projekt im Bereich {categoryName} in {project.location} übernahm unser Meisterbetrieb die vollständige Konzeption, Demontage der Altanlage, präzise Neuinstallation und fachgerechte Inbetriebnahme. Durch die enge Abstimmung mit dem Bauherrn konnten alle Arbeiten termingerecht und im vereinbarten Festpreisrahmen abgeschlossen werden.
                             </p>
-                            <p className="text-base text-gray-700 leading-relaxed">
-                                Für dieses Projekt im Bereich {categoryName} in {project.location} übernahm unser Meisterbetrieb die vollständige Konzeption, Demontage der Altanlage, präzise Neuinstallation und fachgerechte Inbetriebnahme. Durch die enge Abstimmung mit dem Bauherrn konnten alle Arbeiten termingerecht und im vereinbarten Budgetrahmen abgeschlossen werden.
-                            </p>
-                        </div>
 
-                        {/* Challenge & Solution */}
-                        <div className="grid md:grid-cols-2 gap-[var(--spacing-8)]">
-                            {project.challenge && (
-                                <div className="bg-[var(--color-feedback-error-bg)] p-[var(--spacing-6)] rounded-[var(--radius-lg)] border border-[var(--color-feedback-error-border)]">
-                                    <h3 className="text-lg font-bold text-[var(--color-feedback-error-text)] mb-[var(--spacing-3)]">Herausforderung vor Ort</h3>
-                                    <p className="text-[var(--color-text-secondary)] leading-relaxed">{project.challenge}</p>
-                                </div>
-                            )}
-                            {project.solution && (
-                                <div className="bg-[var(--color-feedback-success-bg)] p-[var(--spacing-6)] rounded-[var(--radius-lg)] border border-[var(--color-feedback-success-border)]">
-                                    <h3 className="text-lg font-bold text-[var(--color-feedback-success-text)] mb-[var(--spacing-3)]">Handwerkliche Meisterlösung</h3>
-                                    <p className="text-[var(--color-text-secondary)] leading-relaxed">{project.solution}</p>
-                                </div>
-                            )}
-                        </div>
+                            {/* Challenge & Solution */}
+                            <div className="grid sm:grid-cols-2 gap-4 pt-2">
+                                {project.challenge && (
+                                    <div className="p-5 rounded-2xl bg-amber-50/80 border border-amber-200/60">
+                                        <h3 className="text-xs font-black text-amber-900 uppercase tracking-wider mb-2">Herausforderung vor Ort</h3>
+                                        <p className="text-xs text-amber-800 leading-relaxed font-medium">{project.challenge}</p>
+                                    </div>
+                                )}
+                                {project.solution && (
+                                    <div className="p-5 rounded-2xl bg-emerald-50/80 border border-emerald-200/60">
+                                        <h3 className="text-xs font-black text-emerald-900 uppercase tracking-wider mb-2">Meisterlösung</h3>
+                                        <p className="text-xs text-emerald-800 leading-relaxed font-medium">{project.solution}</p>
+                                    </div>
+                                )}
+                            </div>
 
-                        {/* Implementation Details & Technology */}
-                        <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                            <h3 className="text-2xl font-bold text-gray-900">Technische Besonderheiten & Ausführung</h3>
-                            <p className="text-gray-700 leading-relaxed">
-                                Bei der handwerklichen Umsetzung von &bdquo;{project.title}&ldquo; legte unser Team besonderen Wert auf Langlebigkeit, Energieeffizienz und höchste Betriebssicherheit. Alle Anschlüsse wurden normgerecht nach DIN und den Vorgaben der Hersteller realisiert. Ein hydraulischer Abgleich sowie eine umfassende Einweisung des Kunden rundeten das Projekt erfolgreich ab.
-                            </p>
-                            <div className="grid sm:grid-cols-2 gap-3 pt-2">
-                                <div className="flex items-center gap-2 text-sm text-gray-700">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                    <span>Normgerechte Meisterausführung</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-700">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                    <span>Hochwertige Markenkomponenten</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-700">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                    <span>Maximale Energieeffizienz</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-700">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                    <span>Vollständige Dokumentation & Garantie</span>
+                            {/* Key Highlights */}
+                            <div className="pt-4 border-t border-slate-200/60">
+                                <h3 className="text-lg font-black text-slate-900 mb-3">Qualitätsmerkmale der Ausführung</h3>
+                                <div className="grid sm:grid-cols-2 gap-3">
+                                    <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        <span>Normgerechte Meisterausführung</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        <span>Geprüfte Markenkomponenten</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        <span>Höchste Energieeffizienz</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        <span>Verbindlicher Festpreis &amp; Garantie</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Quality Section */}
-                        <div>
-                            <h3 className="text-2xl font-bold text-[var(--color-neutral-900)] mb-[var(--spacing-4)] font-display">Qualität, die langfristig überzeugt</h3>
-                            <p className="text-lg text-[var(--color-text-secondary)] leading-relaxed mb-4">
-                                Bei der Umsetzung dieses Projekts in {project.location} haben wir modernste Technologien und zertifizierte Werkstoffe eingesetzt. Unser Anspruch ist es, langlebige Systeme zu schaffen, die den Wohnkomfort spürbar erhöhen und die Betriebskosten nachhaltig senken.
-                            </p>
-                            <p className="text-base text-gray-600 leading-relaxed">
-                                Auch nach der Fertigstellung stehen wir unserem Kunden mit regelmäßigen Wartungen und unserem zuverlässigen 24h-Service jederzeit zur Seite.
-                            </p>
-                        </div>
-
                         {/* Testimonial */}
                         {project.testimonial && (
-                            <div className="bg-[var(--color-background-surface-secondary)] p-[var(--spacing-8)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] relative">
-                                <Quote className="absolute top-8 left-8 w-12 h-12 text-[var(--color-brand-primary)] opacity-10" />
-                                <blockquote className="relative z-10">
-                                    <p className="text-lg italic text-[var(--color-text-secondary)] mb-[var(--spacing-4)]">
-                                        &quot;{project.testimonial.text}&quot;
+                            <div className="glass-surface p-8 rounded-[2rem] border-l-4 border-[#0C3A87]">
+                                <blockquote className="space-y-3">
+                                    <p className="text-xs sm:text-sm italic text-slate-700 font-medium leading-relaxed">
+                                        &bdquo;{project.testimonial.text}&ldquo;
                                     </p>
-                                    <footer className="font-semibold text-[var(--color-neutral-900)]">
+                                    <footer className="text-xs font-black text-slate-900">
                                         — {project.testimonial.author}
-                                        {project.testimonial.role && <span className="text-[var(--color-text-tertiary)] font-normal">, {project.testimonial.role}</span>}
+                                        {project.testimonial.role && <span className="text-slate-500 font-normal">, {project.testimonial.role}</span>}
                                     </footer>
                                 </blockquote>
                             </div>
                         )}
                     </div>
 
-                    {/* Sidebar Stats */}
-                    <div className="lg:col-span-1">
-                        <div className="bg-[var(--color-background-elevated)] rounded-[var(--radius-2xl)] shadow-[var(--shadow-lg)] border border-[var(--color-border-default)] p-[var(--spacing-8)] sticky top-24">
-                            <h3 className="text-xl font-bold text-[var(--color-neutral-900)] mb-[var(--spacing-6)] flex items-center font-display">
+                    {/* Double-Bezel Sidebar */}
+                    <div className="glass-bezel-outer shadow-2xl sticky top-28">
+                        <div className="glass-bezel-inner p-8 space-y-6">
+                            <h3 className="text-xl font-black text-slate-900">
                                 Projektdaten im Detail
                             </h3>
 
-                            <div className="space-y-[var(--spacing-6)]">
+                            <div className="space-y-3 text-xs">
                                 {project.duration && (
-                                    <div className="flex items-center justify-between py-[var(--spacing-3)] border-b border-[var(--color-border-default)]">
-                                        <span className="text-[var(--color-text-tertiary)] flex items-center">
-                                            <Clock className="w-4 h-4 mr-2" />
-                                            Dauer
+                                    <div className="flex items-center justify-between py-2 border-b border-slate-200/60">
+                                        <span className="text-slate-500 font-medium flex items-center gap-1.5">
+                                            <Clock className="w-3.5 h-3.5 text-[#0C3A87]" />
+                                            Bauzeit
                                         </span>
-                                        <span className="font-semibold text-[var(--color-neutral-900)]">{project.duration}</span>
+                                        <span className="font-black text-slate-900">{project.duration}</span>
                                     </div>
                                 )}
-                                <div className="flex items-center justify-between py-[var(--spacing-3)] border-b border-[var(--color-border-default)]">
-                                    <span className="text-[var(--color-text-tertiary)] flex items-center">
-                                        <Ruler className="w-4 h-4 mr-2" />
+                                <div className="flex items-center justify-between py-2 border-b border-slate-200/60">
+                                    <span className="text-slate-500 font-medium flex items-center gap-1.5">
+                                        <Ruler className="w-3.5 h-3.5 text-[#0C3A87]" />
                                         Kategorie
                                     </span>
-                                    <span className="font-semibold text-[var(--color-neutral-900)] capitalize">{categoryName}</span>
+                                    <span className="font-black text-slate-900 capitalize">{categoryName}</span>
                                 </div>
-                                <div className="flex items-center justify-between py-[var(--spacing-3)] border-b border-[var(--color-border-default)]">
-                                    <span className="text-[var(--color-text-tertiary)] flex items-center">
-                                        <MapPin className="w-4 h-4 mr-2" />
+                                <div className="flex items-center justify-between py-2 border-b border-slate-200/60">
+                                    <span className="text-slate-500 font-medium flex items-center gap-1.5">
+                                        <MapPin className="w-3.5 h-3.5 text-[#0C3A87]" />
                                         Standort
                                     </span>
-                                    <span className="font-semibold text-[var(--color-neutral-900)]">{project.location}</span>
+                                    <span className="font-black text-slate-900">{project.location}</span>
                                 </div>
                             </div>
 
-                            {/* Tags */}
-                            {project.tags && (
-                                <div className="mt-[var(--spacing-6)]">
-                                    <div className="flex flex-wrap gap-[var(--spacing-2)]">
-                                        {project.tags.map((tag, idx) => (
-                                            <span key={idx} className="text-xs bg-[var(--color-background-surface-secondary)] text-[var(--color-text-secondary)] px-2 py-1 rounded-full border border-[var(--color-border-default)]">
-                                                {tag}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="mt-[var(--spacing-8)] pt-[var(--spacing-6)] border-t border-[var(--color-border-default)]">
-                                <p className="text-sm text-[var(--color-text-secondary)] mb-[var(--spacing-4)] text-center">
+                            <div className="pt-2">
+                                <p className="text-xs text-slate-600 mb-3 font-medium text-center">
                                     Planen Sie ein ähnliches Projekt?
                                 </p>
-                                <Link href="/kontakt">
-                                    <Button className="w-full bg-[var(--color-button-primary-bg)] hover:bg-[var(--color-button-primary-hover)] text-white min-h-[44px]">
-                                        Projekt anfragen
-                                        <ArrowRight className="w-4 h-4 ml-2" />
-                                    </Button>
+                                <Link
+                                    href="/termin"
+                                    className="block w-full py-3.5 px-4 rounded-full bg-gradient-to-r from-[#E4040E] to-[#B91C1C] text-white font-black text-xs text-center shadow-md hover:shadow-lg transition-all border border-white/20"
+                                >
+                                    Jetzt Beratung anfragen &rarr;
                                 </Link>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
-        </PageWrapper>
-    );
-};
 
-export default ProjectDetail;
+            <QualityPromise />
+        </div>
+    );
+}

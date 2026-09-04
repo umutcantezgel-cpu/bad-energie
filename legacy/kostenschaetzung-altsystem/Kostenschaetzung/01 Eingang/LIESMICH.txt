@@ -1,0 +1,1 @@
+Diese Mappe leer lassen. Neue Anfragen kommen als Unterordner hier rein, Claude verarbeitet sie um 7:30 und 13:00.

@@ -1,0 +1,6 @@
+Kostenschätzung Bad & Energie GmbH
+
+Für Menschen: ANWEISUNGEN/einrichtung.md lesen, dann geht es in 30 Minuten.
+Für Claude:   CLAUDE.md wird automatisch gelesen, wenn dieser Ordner der Arbeitsordner ist.
+
+Vor dem ersten echten Lauf: 00 Vorlagen/richtpreis-matrix.md ausfüllen und die Spannen in die vorlage_*.json eintragen. Solange dort null steht, baut Claude nichts.

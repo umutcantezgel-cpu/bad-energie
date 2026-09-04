@@ -1,0 +1,37 @@
+{
+  "_hinweis": "Ein Datenblatt je Mappe. Beträge als Zahlen ohne Punkt. Leere Werte bleiben leer und stehen in Annahmen.md unter Fehlende Angaben. gewerk je Zeile: heizung, bad, wasser, waermepumpe, solar, pv, klima, lueftung, elektro.",
+  "ks_nummer": "",
+  "datum": "",
+  "bearbeiter": "Sabri Demir",
+  "bearbeiter_rolle": "Geschäftsführer",
+  "bearbeiter_mail": "info@bad-energie.de",
+  "anrede": "",
+  "vorname": "",
+  "nachname": "",
+  "strasse": "",
+  "plz_ort": "",
+  "email": "",
+  "telefon": "",
+  "objekt_adresse": "",
+  "vorhaben_kurz": "",
+  "vorlage": "",
+  "gewerk_haupt": "",
+  "persoenlicher_satz": "",
+  "rows": [
+    {
+      "titel": "",
+      "gewerk": "",
+      "text": "",
+      "von": null,
+      "bis": null
+    }
+  ],
+  "summe_netto_von": null,
+  "summe_netto_bis": null,
+  "foerderung": null,
+  "annahmen": [],
+  "terminvorschlag": "",
+  "ausfuehrung_satz": "",
+  "mail_betreff": "",
+  "mail_preheader": ""
+}

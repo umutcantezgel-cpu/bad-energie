@@ -7,6 +7,8 @@ import Footer from '@/components/common/Footer';
 import TrackingScripts from '@/components/common/TrackingScripts';
 import { ContentProvider } from '@/contexts/ContentContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { buildRootGraph } from '@/lib/schema';
+import JsonLd from '@/components/seo/JsonLd';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -28,26 +30,35 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.batherm.de'),
+  metadataBase: new URL('https://bad-energie.de'),
   title: {
-    default: 'Sanitär, Heizung & Solar in Wetzlar | Batherm Haustechnik',
-    template: '%s | Batherm Haustechnik'
+    default: 'Bad & Energie GmbH | Meisterbetrieb für Badsanierung & Heiztechnik Wetzlar',
+    template: '%s | Bad & Energie GmbH'
   },
-  description: 'Ihr zuverlässiger Partner für Sanitär, Heizung, Solar und Wärmepumpen in Wetzlar und Umgebung. Professionelle Haustechnik von Batherm.',
-  keywords: ['Sanitär', 'Heizung', 'Wärmepumpen', 'Solar', 'Wetzlar', 'Batherm Haustechnik', 'Klempner', 'Haustechnik'],
-  authors: [{ name: 'Batherm Haustechnik' }],
-  creator: 'Batherm Haustechnik',
-  publisher: 'Batherm Haustechnik',
+  description: 'Ihr Meisterbetrieb für schlüsselfertige Badsanierung, NIBE Wärmepumpen, Gas-Brennwert, Wohnraumlüftung & Trinkwasserhygiene in Wetzlar & Lahn-Dill. Bis zu 70% BEG-Förderung.',
+  keywords: [
+    'Bad & Energie GmbH',
+    'Badsanierung Wetzlar',
+    'Wärmepumpe Wetzlar',
+    'NIBE Effizienz Partner',
+    'Barrierefreies Bad',
+    'Lüftungstechnik Wetzlar',
+    'Trinkwasserhygiene Legionellen',
+    'Heizungstausch Lahn-Dill'
+  ],
+  authors: [{ name: 'Bad & Energie GmbH' }],
+  creator: 'Bad & Energie GmbH',
+  publisher: 'Bad & Energie GmbH',
   alternates: {
-    canonical: 'https://www.batherm.de/',
+    canonical: 'https://bad-energie.de/',
   },
   openGraph: {
     type: 'website',
     locale: 'de_DE',
-    url: 'https://www.batherm.de/',
-    title: 'Sanitär, Heizung & Solar in Wetzlar | Batherm Haustechnik',
-    description: 'Ihr zuverlässiger Partner für Sanitär, Heizung, Solar und Wärmepumpen in Wetzlar und Umgebung. Professionelle Haustechnik von Batherm.',
-    siteName: 'Batherm Haustechnik',
+    url: 'https://bad-energie.de/',
+    title: 'Bad & Energie GmbH | Meisterbetrieb für Badsanierung & Heiztechnik Wetzlar',
+    description: 'Ihr Meisterbetrieb für schlüsselfertige Badsanierung, NIBE Wärmepumpen, Gas-Brennwert, Wohnraumlüftung & Trinkwasserhygiene in Wetzlar & Lahn-Dill.',
+    siteName: 'Bad & Energie GmbH',
   },
   robots: {
     index: true,
@@ -63,11 +74,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#1C1F26',
+  themeColor: '#0C3A87',
 };
-
-import { buildRootGraph } from '@/lib/schema';
-import JsonLd from '@/components/seo/JsonLd';
 
 export default function RootLayout({
   children,

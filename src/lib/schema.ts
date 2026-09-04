@@ -1,9 +1,9 @@
 /**
- * Type-safe Schema.org Linked Data & Knowledge Graph builder.
+ * Type-safe Schema.org Linked Data & Knowledge Graph builder for Bad & Energie GmbH.
  * Uses interconnected canonical @id URIs and standard @graph notation.
  */
 
-export const SITE_URL = 'https://www.batherm.de';
+export const SITE_URL = 'https://bad-energie.de';
 export const ORG_ID = `${SITE_URL}/#organization`;
 export const WEBSITE_ID = `${SITE_URL}/#website`;
 export const FOUNDER_ID = `${SITE_URL}/#founder`;
@@ -68,27 +68,27 @@ export function buildOrganizationNode(): SchemaNode {
   return {
     '@type': 'Organization',
     '@id': ORG_ID,
-    name: 'Batherm Haustechnik',
-    legalName: 'Baris Aydin Batherm Haustechnik',
-    alternateName: 'Baris Aydin Batherm Haustechnik',
+    name: 'Bad & Energie GmbH',
+    legalName: 'Bad & Energie GmbH',
+    alternateName: 'Bad & Energie GmbH Lahn-Dill',
     url: SITE_URL,
     logo: {
       '@type': 'ImageObject',
       '@id': LOGO_ID,
-      url: `${SITE_URL}/images/batherm-logo.png`,
-      contentUrl: `${SITE_URL}/images/batherm-logo.png`,
-      caption: 'Batherm Haustechnik Logo',
+      url: `${SITE_URL}/images/logo.png`,
+      contentUrl: `${SITE_URL}/images/logo.png`,
+      caption: 'Bad & Energie GmbH Logo',
     },
-    image: `${SITE_URL}/images/batherm-logo.png`,
+    image: `${SITE_URL}/images/logo.png`,
     founder: { '@id': FOUNDER_ID },
     contactPoint: {
       '@type': 'ContactPoint',
-      telephone: '+49 172 9475061',
+      telephone: '+49 6441 2039053',
       contactType: 'customer service',
       areaServed: 'DE',
-      availableLanguage: ['German', 'Turkish', 'English'],
+      availableLanguage: ['German', 'English'],
     },
-    sameAs: ['https://www.instagram.com/bathermhaustechnik'],
+    sameAs: [],
   };
 }
 
@@ -100,19 +100,11 @@ export function buildWebSiteNode(): SchemaNode {
     '@type': 'WebSite',
     '@id': WEBSITE_ID,
     url: SITE_URL,
-    name: 'Batherm Haustechnik',
+    name: 'Bad & Energie GmbH',
     description:
-      'Ihr Meisterbetrieb für Sanitär, Heizung, Wärmepumpen und Klimatechnik in Wetzlar und Mittelhessen.',
+      'Ihr Meisterbetrieb für Badsanierung, NIBE Wärmepumpen, Gas-Brennwerttechnik, Wohnraumlüftung und Trinkwasserhygiene in Wetzlar und im Lahn-Dill-Kreis.',
     publisher: { '@id': ORG_ID },
     inLanguage: 'de-DE',
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: {
-        '@type': 'EntryPoint',
-        urlTemplate: `${SITE_URL}/blog?q={search_term_string}`,
-      },
-      'query-input': 'required name=search_term_string',
-    },
   };
 }
 
@@ -123,30 +115,23 @@ export function buildFounderNode(): SchemaNode {
   return {
     '@type': 'Person',
     '@id': FOUNDER_ID,
-    name: 'Baris Aydin',
-    givenName: 'Baris',
-    familyName: 'Aydin',
-    jobTitle: 'Geschäftsführer & Handwerksmeister für SHK',
+    name: 'Sabri Demir',
+    givenName: 'Sabri',
+    familyName: 'Demir',
+    jobTitle: 'Geschäftsführer & Handwerksmeister',
     worksFor: { '@id': ORG_ID },
     alumniOf: {
       '@type': 'EducationalOrganization',
       name: 'Handwerkskammer Wiesbaden',
     },
     knowsAbout: [
-      'Sanitärtechnik',
-      'Heizungstechnik',
-      'Wärmepumpen',
-      'Klimatechnik',
       'Badsanierung',
+      'Barrierefreie Bäder nach DIN 18040-2',
+      'NIBE Wärmepumpen',
+      'Gas-Brennwerttechnik',
+      'Wohnraumlüftung',
+      'Trinkwasserhygiene & Legionellenschutz',
       'Hydraulischer Abgleich',
-      'Trinkwasserhygiene',
-    ],
-    hasCredential: [
-      {
-        '@type': 'EducationalOccupationalCredential',
-        credentialCategory: 'Meisterbrief',
-        name: 'Meister im Handwerk – Sanitär-, Heizungs- und Klimatechnik',
-      },
     ],
   };
 }
@@ -156,25 +141,24 @@ export function buildFounderNode(): SchemaNode {
  */
 export function buildLocalBusinessNode(): SchemaNode {
   return {
-    '@type': ['Plumber', 'HVACBusiness', 'LocalBusiness'],
+    '@type': ['Plumber', 'HVACBusiness', 'GeneralContractor', 'LocalBusiness'],
     '@id': LOCAL_BUSINESS_ID,
-    name: 'Batherm Haustechnik',
-    alternateName: 'Baris Aydin Batherm Haustechnik',
-    legalName: 'Baris Aydin Batherm Haustechnik',
+    name: 'Bad & Energie GmbH',
+    alternateName: 'Bad & Energie GmbH Lahn-Dill',
+    legalName: 'Bad & Energie GmbH',
     description:
-      'Zertifizierter Meisterbetrieb für Sanitär, Heizung, Wärmepumpen und Klimatechnik in Wetzlar und Region. Fachgerechte Installation, Modernisierung und 24h Notdienst.',
+      'Meisterbetrieb seit 2001 (Handwerkstradition seit 1926). Badsanierung aus einer Hand, NIBE Effizienz Partner für Wärmepumpen, Wohnraumlüftung und Trinkwasserhygiene in Wetzlar.',
     url: SITE_URL,
-    telephone: '+49 172 9475061',
-    email: 'info@batherm.de',
-    image: `${SITE_URL}/images/batherm-logo.png`,
+    telephone: '+49 6441 2039053',
+    email: 'anfrage@bad-energie-profi.de',
     parentOrganization: { '@id': ORG_ID },
     founder: { '@id': FOUNDER_ID },
     address: {
       '@type': 'PostalAddress',
-      streetAddress: 'Linsenbergstrasse 9',
+      streetAddress: 'Hans-Sachs-Straße 12',
       addressLocality: 'Wetzlar',
       addressRegion: 'Hessen',
-      postalCode: '35586',
+      postalCode: '35576',
       addressCountry: 'DE',
     },
     geo: {
@@ -182,44 +166,36 @@ export function buildLocalBusinessNode(): SchemaNode {
       latitude: 50.5567,
       longitude: 8.5022,
     },
-    hasMap: 'https://www.google.com/maps?cid=batherm+haustechnik+wetzlar',
     areaServed: [
       { '@type': 'City', name: 'Wetzlar', sameAs: 'https://de.wikipedia.org/wiki/Wetzlar' },
       { '@type': 'City', name: 'Gießen', sameAs: 'https://de.wikipedia.org/wiki/Gie%C3%9Fen' },
-      { '@type': 'City', name: 'Marburg', sameAs: 'https://de.wikipedia.org/wiki/Marburg' },
-      { '@type': 'City', name: 'Limburg an der Lahn' },
-      { '@type': 'City', name: 'Bad Nauheim' },
-      { '@type': 'City', name: 'Friedberg (Hessen)' },
-      { '@type': 'City', name: 'Butzbach' },
-      { '@type': 'City', name: 'Herborn' },
-      { '@type': 'City', name: 'Dillenburg' },
-      { '@type': 'City', name: 'Haiger' },
+      { '@type': 'City', name: 'Aßlar' },
       { '@type': 'City', name: 'Braunfels' },
       { '@type': 'City', name: 'Solms' },
+      { '@type': 'City', name: 'Herborn' },
+      { '@type': 'City', name: 'Dillenburg' },
       { '@type': 'City', name: 'Lahnau' },
-      { '@type': 'City', name: 'Aßlar' },
       { '@type': 'City', name: 'Hüttenberg' },
       { '@type': 'City', name: 'Linden' },
       { '@type': 'City', name: 'Pohlheim' },
     ],
-    priceRange: '€€',
+    priceRange: '€€€',
     currenciesAccepted: 'EUR',
     paymentAccepted: 'Überweisung, EC-Karte, Bar',
     openingHoursSpecification: [
       {
         '@type': 'OpeningHoursSpecification',
-        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday'],
         opens: '07:00',
-        closes: '17:00',
+        closes: '16:45',
       },
       {
         '@type': 'OpeningHoursSpecification',
-        dayOfWeek: ['Saturday'],
-        opens: '08:00',
-        closes: '13:00',
+        dayOfWeek: ['Friday'],
+        opens: '07:00',
+        closes: '13:30',
       },
     ],
-    sameAs: ['https://www.instagram.com/bathermhaustechnik'],
   };
 }
 
@@ -347,25 +323,8 @@ export function buildServiceNode(options: {
       ? { '@type': 'City', name: options.areaServedCity }
       : {
           '@type': 'AdministrativeArea',
-          name: 'Mittelhessen (Wetzlar, Gießen, Marburg & Lahn-Dill-Kreis)',
+          name: 'Lahn-Dill-Kreis & Mittelhessen (Wetzlar, Gießen)',
         },
-    image: options.image
-      ? (options.image.startsWith('http') ? options.image : `${SITE_URL}${options.image}`)
-      : undefined,
-    hasOfferCatalog: options.offers && options.offers.length > 0
-      ? {
-          '@type': 'OfferCatalog',
-          name: `${options.name} Leistungen`,
-          itemListElement: options.offers.map((offer) => ({
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: offer.name,
-              description: offer.description,
-            },
-          })),
-        }
-      : undefined,
   };
 }
 
@@ -382,11 +341,11 @@ export function buildCityLocalBusinessNode(options: {
   return {
     '@type': ['Plumber', 'HVACBusiness', 'LocalBusiness'],
     '@id': `${url}#localbusiness`,
-    name: `Batherm Haustechnik – ${options.cityName}`,
+    name: `Bad & Energie GmbH – ${options.cityName}`,
     description: options.description,
     url,
-    telephone: '+49 172 9475061',
-    email: 'info@batherm.de',
+    telephone: '+49 6441 2039053',
+    email: 'anfrage@bad-energie-profi.de',
     parentOrganization: { '@id': ORG_ID },
     areaServed: {
       '@type': 'City',
@@ -394,10 +353,10 @@ export function buildCityLocalBusinessNode(options: {
     },
     address: {
       '@type': 'PostalAddress',
-      streetAddress: 'Linsenbergstrasse 9',
+      streetAddress: 'Hans-Sachs-Straße 12',
       addressLocality: 'Wetzlar',
       addressRegion: 'Hessen',
-      postalCode: '35586',
+      postalCode: '35576',
       addressCountry: 'DE',
     },
   };
@@ -422,14 +381,11 @@ export function buildArticleNode(options: {
     description: options.description,
     url: options.url,
     mainEntityOfPage: options.url,
-    datePublished: options.datePublished || '2024-01-15T08:00:00+01:00',
-    dateModified: options.dateModified || options.datePublished || '2024-03-20T10:00:00+01:00',
+    datePublished: options.datePublished || '2025-01-15T08:00:00+01:00',
+    dateModified: options.dateModified || options.datePublished || '2025-03-20T10:00:00+01:00',
     inLanguage: 'de-DE',
     author: { '@id': FOUNDER_ID },
     publisher: { '@id': ORG_ID },
-    image: options.image
-      ? (options.image.startsWith('http') ? options.image : `${SITE_URL}${options.image}`)
-      : `${SITE_URL}/images/batherm-logo.png`,
     keywords: options.keywords?.join(', '),
   };
 }
@@ -492,7 +448,7 @@ export function buildJobPostingNode(job: JobItem, url: string): SchemaNode {
     '@id': `${url}#job-${jobSlug}`,
     title: job.title,
     description: job.description,
-    datePosted: job.datePosted || '2024-01-01',
+    datePosted: job.datePosted || '2025-01-01',
     validThrough: '2026-12-31T23:59:59+01:00',
     employmentType: job.employmentType || 'FULL_TIME',
     hiringOrganization: { '@id': ORG_ID },
@@ -500,10 +456,10 @@ export function buildJobPostingNode(job: JobItem, url: string): SchemaNode {
       '@type': 'Place',
       address: {
         '@type': 'PostalAddress',
-        streetAddress: 'Linsenbergstrasse 9',
+        streetAddress: 'Hans-Sachs-Straße 12',
         addressLocality: 'Wetzlar',
         addressRegion: 'Hessen',
-        postalCode: '35586',
+        postalCode: '35576',
         addressCountry: 'DE',
       },
     },
@@ -530,9 +486,6 @@ export function buildProjectNode(options: {
     creator: { '@id': ORG_ID },
     locationCreated: options.locationCreated
       ? { '@type': 'Place', name: options.locationCreated }
-      : undefined,
-    image: options.image
-      ? (options.image.startsWith('http') ? options.image : `${SITE_URL}${options.image}`)
       : undefined,
   };
 }

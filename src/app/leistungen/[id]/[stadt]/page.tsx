@@ -6,6 +6,8 @@ import { COMPANY_DATA } from '@/config/company';
 import { notFound } from 'next/navigation';
 import { buildGraph, buildServiceNode, buildBreadcrumbNode, buildWebPageNode, SITE_URL } from '@/lib/schema';
 import JsonLd from '@/components/seo/JsonLd';
+import { MapPin, Phone, Calendar, ArrowRight, ShieldCheck, CheckCircle2, Sparkles, Award } from 'lucide-react';
+import QualityPromise from '@/components/sections/QualityPromise';
 
 // ---------------------------------------------------------------------------
 // Static Params – generates a page for every service × city combination
@@ -22,7 +24,6 @@ export function generateStaticParams() {
 
 // ---------------------------------------------------------------------------
 // Dynamic Metadata – unique title, description & OG tags per combination
-// Next.js 16: params is a Promise and must be awaited
 // ---------------------------------------------------------------------------
 export async function generateMetadata({
   params,
@@ -34,13 +35,12 @@ export async function generateMetadata({
   const city = CITIES.find((c) => c.slug === stadt);
   if (!service || !city) return {};
 
-  const title = `${service.name} in ${city.name} – Meisterbetrieb`;
-  const fullTitle = `${title} | Batherm Haustechnik`;
+  const title = `${service.name} in ${city.name} – Meisterbetrieb | Bad & Energie GmbH`;
   const description = `${service.name} in ${city.name}: Fachgerechte Montage & Wartung vom Meisterbetrieb. ${
-    city.distanceKm === 0 ? 'Direkt vor Ort.' : `Nur ${city.distanceKm} km entfernt.`
-  } Jetzt anfragen!`;
+    city.distanceKm === 0 ? 'Direkt vor Ort in Wetzlar.' : `Nur ${city.distanceKm} km entfernt.`
+  } Bis zu 70% Förderung & Festpreisgarantie.`;
 
-  const url = `https://www.batherm.de/leistungen/${service.id}/${city.slug}`;
+  const url = `https://bad-energie.de/leistungen/${service.id}/${city.slug}`;
 
   return {
     title,
@@ -53,17 +53,12 @@ export async function generateMetadata({
       },
     },
     openGraph: {
-      title: fullTitle,
+      title,
       description,
       url,
-      siteName: 'Batherm Haustechnik',
+      siteName: 'Bad & Energie GmbH',
       locale: 'de_DE',
       type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: fullTitle,
-      description,
     },
     robots: { 
       index: true, 
@@ -84,39 +79,27 @@ export async function generateMetadata({
 // ---------------------------------------------------------------------------
 const PROCESS_STEPS = [
   {
-    step: 1,
-    title: 'Beratung',
-    description:
-      'Wir besprechen Ihre Wünsche und Anforderungen in einem persönlichen Gespräch.',
-    emoji: '💬',
+    step: '01',
+    title: 'Meister-Beratung vor Ort',
+    description: 'Wir besprechen Ihre Wünsche und baulichen Anforderungen direkt bei Ihnen vor Ort in '
   },
   {
-    step: 2,
-    title: 'Planung',
-    description:
-      'Wir erstellen ein maßgeschneidertes Konzept mit transparenter Kostenaufstellung.',
-    emoji: '📐',
+    step: '02',
+    title: '3D-Planung & Festpreis',
+    description: 'Exakte Grundriss- und Heizlastberechnung mit transparenter Gesamtkalkulation ohne Überraschungen.'
   },
   {
-    step: 3,
-    title: 'Umsetzung',
-    description:
-      'Unsere Fachleute führen die Arbeiten termingerecht und sauber aus.',
-    emoji: '🔧',
+    step: '03',
+    title: 'Fachgerechte Umsetzung',
+    description: 'Unsere festangestellten SHK-Monteure führen alle Arbeiten sauber, staubarm und termingerecht aus.'
   },
   {
-    step: 4,
-    title: 'Übergabe',
-    description:
-      'Wir übergeben Ihnen das fertige Projekt und erklären alle Funktionen.',
-    emoji: '🏠',
+    step: '04',
+    title: 'Übergabe & Werksgarantie',
+    description: 'Gemeinsame Endabnahme, Einweisung in alle Funktionen und langfristiger Kundendienst-Support.'
   },
 ];
 
-// ---------------------------------------------------------------------------
-// Page Component (Server Component – no 'use client')
-// Next.js 16: params is a Promise and must be awaited
-// ---------------------------------------------------------------------------
 export default async function ServiceCityPage({
   params,
 }: {
@@ -127,8 +110,7 @@ export default async function ServiceCityPage({
   const city = CITIES.find((c) => c.slug === stadt);
   if (!service || !city) notFound();
 
-  const pageUrl = `https://www.batherm.de/leistungen/${service.id}/${city.slug}`;
-  const phoneClean = COMPANY_DATA.contact.phone.replace(/\s/g, '');
+  const pageUrl = `https://bad-energie.de/leistungen/${service.id}/${city.slug}`;
 
   // Build feature & subcategory strings for rich content
   const featureList = (service.features ?? []).join(', ');
@@ -151,7 +133,7 @@ export default async function ServiceCityPage({
   const serviceCityGraph = buildGraph([
     buildWebPageNode({
       url: pageUrl,
-      name: `${service.name} in ${city.name} | Batherm Haustechnik`,
+      name: `${service.name} in ${city.name} | Bad & Energie GmbH`,
       description: `${service.shortDescription} – professionell ausgeführt in ${city.name} und Umgebung.`,
       breadcrumbItems: breadcrumbs,
     }),
@@ -168,17 +150,20 @@ export default async function ServiceCityPage({
   ]);
 
   return (
-    <>
-      {/* ── Structured Data ──────────────────────────────────────────────── */}
+    <div className="pt-32 pb-24 min-h-screen relative overflow-hidden">
       <JsonLd schema={serviceCityGraph} />
 
+      {/* Ambient Glow */}
+      <div className="ambient-glow-blue -top-20 -left-20" />
+      <div className="ambient-glow-cyan top-96 -right-20" />
+
       {/* ── Hero Section ─────────────────────────────────────────────────── */}
-      <section className="relative pt-[var(--spacing-32)] pb-20 px-4 bg-gradient-to-br from-[#1a3a52] to-[#0e1f2b] overflow-hidden">
-        <div className="max-w-5xl mx-auto relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 relative z-10">
+        <div className="glass-surface-dark rounded-[3rem] p-8 sm:p-14 text-center space-y-5 relative overflow-hidden">
           {/* Breadcrumbs */}
           <nav
             aria-label="Breadcrumb"
-            className="mb-6 text-sm text-white/60 flex flex-wrap items-center gap-1"
+            className="mb-2 text-xs text-blue-200/80 flex flex-wrap items-center justify-center gap-1.5 font-medium"
           >
             <Link href="/" className="hover:text-white transition-colors">
               Home
@@ -198,279 +183,150 @@ export default async function ServiceCityPage({
               {service.name}
             </Link>
             <span>/</span>
-            <span className="text-white/90">{city.name}</span>
+            <span className="text-white font-bold">{city.name}</span>
           </nav>
 
-          {/* Distance badge (only for cities other than Wetzlar) */}
-          {city.distanceKm > 0 && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/80 text-sm mb-8">
-              <span>📍</span>
-              <span>
-                {city.region} · {city.distanceKm} km von Wetzlar
-              </span>
-            </div>
-          )}
-          {city.distanceKm === 0 && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#c69c6d]/20 backdrop-blur-sm border border-[#c69c6d]/40 text-[#c69c6d] text-sm mb-8 font-semibold">
-              <span>🏠</span>
-              <span>Unser Standort – {city.region}</span>
-            </div>
-          )}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-cyan-300 text-xs font-black uppercase tracking-wider">
+            <MapPin className="w-3.5 h-3.5" />
+            <span>
+              {city.region} &middot;{' '}
+              {city.distanceKm === 0
+                ? 'Hauptsitz Wetzlar'
+                : `${city.distanceKm} km von Wetzlar`}
+            </span>
+          </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white leading-tight">
             {service.name} in{' '}
-            <span className="text-[#c69c6d]">{city.name}</span> – Meisterbetrieb Batherm
+            <span className="bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">{city.name}</span>
           </h1>
 
-          <p className="text-xl text-white/80 max-w-3xl mx-auto mb-10 leading-relaxed">
-            Batherm Haustechnik ist Ihr Meisterbetrieb für {service.name} in{' '}
+          <p className="text-sm sm:text-base text-blue-100 max-w-3xl mx-auto leading-relaxed font-normal">
+            Bad &amp; Energie GmbH ist Ihr Meisterbetrieb für {service.name} in{' '}
             {city.name} und {city.region}. {service.shortDescription}.{' '}
             {city.distanceKm > 0
-              ? `Mit unserem Standort in Wetzlar trennen uns nur ${city.distanceKm} km von ${city.name} – für eine reibungslose Betreuung und rasche Einsatzzeiten.`
+              ? `Mit unserem Standort in Wetzlar trennen uns nur ${city.distanceKm} km von ${city.name} – für rasche Anfahrt und persönliche Betreuung.`
               : 'Direkt vor Ort in Wetzlar für kürzeste Anfahrtswege und persönliche Betreuung.'}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-wrap gap-3.5 justify-center pt-2">
             <Link
-              href="/kontakt"
-              className="inline-flex items-center justify-center px-8 py-4 bg-[#c69c6d] hover:bg-[#a67c52] text-white font-bold rounded-full transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+              href="/termin"
+              className="inline-flex items-center justify-center px-7 py-3.5 bg-gradient-to-r from-[#E4040E] to-[#B91C1C] hover:shadow-[0_12px_28px_rgba(228,4,14,0.4)] text-white font-black rounded-full transition-all text-xs shadow-md border border-white/20 transform hover:-translate-y-0.5"
             >
-              Kostenlos Angebot anfordern
+              Kostenlose Meisterberatung für {city.name} &rarr;
             </Link>
             <a
-              href={`tel:${phoneClean}`}
-              className="inline-flex items-center justify-center px-8 py-4 border-2 border-white/30 text-white hover:bg-white/10 font-bold rounded-full transition-all"
+              href={`tel:${COMPANY_DATA.contact.phoneLink}`}
+              className="inline-flex items-center justify-center px-6 py-3.5 border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold rounded-full transition-all text-xs backdrop-blur-md"
             >
               📞 {COMPANY_DATA.contact.phone}
             </a>
           </div>
         </div>
+      </div>
 
-        {/* Decorative blurs */}
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#c69c6d]/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-[#1a3a52]/30 rounded-full blur-[80px]" />
-      </section>
-
-      {/* ── Rich Intro / Anti-Thin-Content ────────────────────────────────── */}
-      <section className="py-20 px-4 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-[#1a3a52] mb-6">
-            Fachkompetenz &amp; Meisterqualität in {city.name}
-          </h2>
-
-          <p className="text-lg text-gray-700 leading-relaxed mb-6">
-            Egal ob Neubau, Altbausanierung oder laufende Instandhaltung: Als konzessionierter Handwerks-Meisterbetrieb realisieren wir anspruchsvolle Projekte im Bereich {service.name} für Privat- und Gewerbekunden in {city.name} sowie der gesamten Region {city.region}. {city.description}
-          </p>
-
-          <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            Im Mittelpunkt unserer Arbeit stehen Energieeffizienz, Langlebigkeit und höchste Ausführungsqualität nach aktuellen DIN- und VDI-Standards. Unser Portfolio umfasst {featureList}. {subcategoryNames ? `Wir decken alle Kernbereiche wie ${subcategoryNames} lückenlos ab.` : ''} Durch die Nähe zu {city.name} ({distanceInfo}) garantieren wir termingerechte Ausführung und faire Konditionen.
-          </p>
-
-          {/* Stats row */}
-          <div className="grid sm:grid-cols-3 gap-6">
-            <div className="bg-[#f9f8f6] rounded-xl p-6 text-center">
-              <div className="text-3xl font-bold text-[#c69c6d] mb-2">
-                {city.distanceKm === 0 ? 'Vor Ort' : `${city.distanceKm} km`}
-              </div>
-              <div className="text-sm text-gray-600">
-                {city.distanceKm === 0 ? 'Standort Wetzlar' : 'Kurze Anfahrt'}
-              </div>
+      {/* ── Rich Intro - Double Bezel Console ────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+        <div className="glass-bezel-outer shadow-2xl max-w-5xl mx-auto">
+          <div className="glass-bezel-inner p-8 sm:p-12 space-y-6">
+            <div>
+              <span className="text-xs uppercase font-black tracking-wider text-[#0C3A87] bg-blue-50 px-3.5 py-1 rounded-full inline-block border border-blue-200/60 shadow-xs mb-2">
+                Meisterbetrieb seit 2001
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                Fachkompetenz &amp; Meisterqualität für {city.name}
+              </h2>
             </div>
-            <div className="bg-[#f9f8f6] rounded-xl p-6 text-center">
-              <div className="text-3xl font-bold text-[#c69c6d] mb-2">
-                {(service.features ?? []).length}+
+
+            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+              Egal ob Neubau, Altbausanierung oder laufende Instandhaltung: Als konzessionierter Handwerks-Meisterbetrieb realisieren wir anspruchsvolle Projekte im Bereich {service.name} für Privat- und Gewerbekunden in {city.name} sowie der gesamten Region {city.region}. {city.description}
+            </p>
+
+            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+              Im Mittelpunkt unserer Arbeit stehen Energieeffizienz, Langlebigkeit und höchste Ausführungsqualität nach aktuellen DIN- und VDI-Standards. Unser Portfolio umfasst {featureList}. {subcategoryNames ? `Wir decken alle Kernbereiche wie ${subcategoryNames} lückenlos ab.` : ''} Durch die Nähe zu {city.name} ({distanceInfo}) garantieren wir termingerechte Ausführung und faire Festpreise.
+            </p>
+
+            {/* Stats row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+              <div className="glass-surface p-6 rounded-[2rem] text-center border border-white/80">
+                <div className="text-2xl font-black text-[#0C3A87] mb-1">
+                  {city.distanceKm === 0 ? 'Vor Ort' : `${city.distanceKm} km`}
+                </div>
+                <div className="text-xs text-slate-500 font-medium">
+                  {city.distanceKm === 0 ? 'Standort Wetzlar' : 'Kurze Anfahrt'}
+                </div>
               </div>
-              <div className="text-sm text-gray-600">Spezialisierungen</div>
-            </div>
-            <div className="bg-[#f9f8f6] rounded-xl p-6 text-center">
-              <div className="text-3xl font-bold text-[#c69c6d] mb-2">
-                100%
+              <div className="glass-surface p-6 rounded-[2rem] text-center border border-white/80">
+                <div className="text-2xl font-black text-[#0C3A87] mb-1">
+                  {(service.features ?? []).length}+
+                </div>
+                <div className="text-xs text-slate-500 font-medium">Spezialisierungen</div>
               </div>
-              <div className="text-sm text-gray-600">Meisterbetrieb</div>
+              <div className="glass-surface p-6 rounded-[2rem] text-center border border-white/80">
+                <div className="text-2xl font-black text-[#0C3A87] mb-1">100%</div>
+                <div className="text-xs text-slate-500 font-medium">Meisterbetrieb</div>
+              </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* ── Service Features ─────────────────────────────────────────────── */}
+      {/* ── Service Features Grid ────────────────────────────────────────── */}
       {service.features && service.features.length > 0 && (
-        <section className="py-20 px-4 bg-[#f9f8f6]">
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-3xl font-bold text-[#1a3a52] mb-4 text-center">
-              Detailliertes Leistungsspektrum
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+              Detailliertes Leistungsspektrum in {city.name}
             </h2>
-            <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-              Maßgeschneiderte Handwerkslösungen für maximale Zuverlässigkeit in {city.name}.
+            <p className="text-slate-600 text-xs sm:text-sm mt-2 font-medium">
+              Maßgeschneiderte Handwerkslösungen für maximale Zuverlässigkeit und Energieeffizienz.
             </p>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {service.features.map((feature: string, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-3 bg-white rounded-xl p-5 border border-gray-100 hover:shadow-md transition-shadow"
-                >
-                  <div className="w-10 h-10 rounded-full bg-[#c69c6d]/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-[#c69c6d] font-bold text-lg">✓</span>
-                  </div>
-                  <span className="text-gray-800 font-medium">{feature}</span>
-                </div>
-              ))}
-            </div>
           </div>
-        </section>
-      )}
 
-      {/* ── Subcategories Grid ───────────────────────────────────────────── */}
-      {service.subcategories && service.subcategories.length > 0 && (
-        <section className="py-20 px-4 bg-white">
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-3xl font-bold text-[#1a3a52] mb-4 text-center">
-              Spezialisierte Fachbereiche für {city.name}
-            </h2>
-            <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-              Von der Erstberatung bis zur regelmäßigen Wartung alle Gewerke aus Meisterhand.
-            </p>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {service.subcategories.map((sub: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="group bg-[#f9f8f6] rounded-xl p-6 text-center border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all"
-                >
-                  <div className="w-14 h-14 bg-[#1a3a52]/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[#c69c6d]/20 transition-colors">
-                    <span className="text-2xl text-[#1a3a52] group-hover:text-[#c69c6d] transition-colors">
-                      🔧
-                    </span>
-                  </div>
-                  <h3 className="font-semibold text-[#1a3a52] group-hover:text-[#c69c6d] transition-colors">
-                    {sub.name}
-                  </h3>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {service.features.map((feature: string, idx: number) => (
+              <div
+                key={idx}
+                className="glass-surface p-5 rounded-2xl flex items-center gap-3.5 hover:shadow-[0_15px_30px_rgba(12,58,135,0.08)] hover:-translate-y-0.5 transition-all duration-300"
+              >
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0C3A87] flex items-center justify-center shrink-0 font-bold border border-blue-200/60 shadow-xs">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── Process Steps ────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-[#1a3a52]">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-white text-center mb-4">
-            Schritt für Schritt zu Ihrem Projekterfolg
-          </h2>
-          <p className="text-white/70 text-center mb-12 max-w-2xl mx-auto">
-            Von der ersten Kontaktaufnahme bis zur Endabnahme transparent und strukturiert.
-          </p>
-
-          <div className="grid md:grid-cols-4 gap-8">
-            {PROCESS_STEPS.map((step, idx) => (
-              <div key={idx} className="text-center relative">
-                <div className="w-16 h-16 bg-[#c69c6d] rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg">
-                  {step.emoji}
-                </div>
-                <div className="text-sm text-[#c69c6d] font-bold mb-1">
-                  Schritt {step.step}
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2">
-                  {step.title}
-                </h3>
-                <p className="text-white/60 text-sm leading-relaxed">
-                  {step.description}
-                </p>
-                {idx < PROCESS_STEPS.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-white/10" />
-                )}
+                <span className="text-xs font-black text-slate-800">{feature}</span>
               </div>
             ))}
           </div>
         </div>
-      </section>
+      )}
 
-      {/* ── CTA Section ──────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-gradient-to-br from-[#c69c6d] to-[#a67c52]">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Unverbindliche Beratung für Ihr Vorhaben in {city.name}
+      {/* ── Process Steps ────────────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
+        <div className="text-center max-w-3xl mx-auto mb-14">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+            Schritt für Schritt zu Ihrem Projekterfolg
           </h2>
-          <p className="text-lg text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Kontaktieren Sie uns jetzt für eine persönliche Beratung und ein transparentes Angebot für {service.name} in {city.name}!
+          <p className="text-slate-600 text-xs sm:text-sm mt-2 font-medium">
+            Von der ersten Kontaktaufnahme bis zur Endabnahme transparent und strukturiert.
           </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href={`tel:${phoneClean}`}
-              className="inline-flex items-center justify-center px-10 py-4 bg-white text-[#1a3a52] font-bold rounded-full transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 text-lg"
-            >
-              📞 {COMPANY_DATA.contact.phone}
-            </a>
-            <Link
-              href="/kontakt"
-              className="inline-flex items-center justify-center px-10 py-4 bg-[#1a3a52] hover:bg-[#0e1f2b] text-white font-bold rounded-full transition-all shadow-lg hover:shadow-xl text-lg"
-            >
-              Kontakt aufnehmen
-            </Link>
-          </div>
         </div>
-      </section>
 
-      {/* ── Internal Links ───────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-[#f9f8f6]">
-        <div className="max-w-6xl mx-auto">
-          {/* Back links */}
-          <div className="grid sm:grid-cols-2 gap-6 mb-16">
-            {/* Link to parent service page */}
-            <Link
-              href={`/leistungen/${service.id}`}
-              className="group bg-white rounded-xl p-6 border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all text-center"
-            >
-              <div className="text-3xl mb-3">🔧</div>
-              <h3 className="font-bold text-lg text-[#1a3a52] group-hover:text-[#c69c6d] transition-colors mb-1">
-                {service.name}
-              </h3>
-              <p className="text-sm text-gray-600">
-                Alle Details zu unserem {service.name}-Angebot
-              </p>
-              <span className="inline-block mt-3 text-sm text-[#c69c6d] font-semibold">
-                Zur Hauptseite {service.name} →
-              </span>
-            </Link>
-
-            {/* Link to city page */}
-            <Link
-              href={`/standorte/${city.slug}`}
-              className="group bg-white rounded-xl p-6 border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all text-center"
-            >
-              <div className="text-3xl mb-3">📍</div>
-              <h3 className="text-lg font-bold text-[#1a3a52] mb-2 group-hover:text-[#c69c6d] transition-colors">
-                Standort {city.name}
-              </h3>
-              <p className="text-sm text-gray-600">
-                Alle Leistungen in {city.name}
-              </p>
-              <span className="inline-block mt-3 text-sm text-[#c69c6d] font-semibold">
-                Zum Standort →
-              </span>
-            </Link>
-
-            {/* Link to contact page */}
-            <Link
-              href="/kontakt"
-              className="group bg-white rounded-xl p-6 border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all text-center"
-            >
-              <div className="text-3xl mb-3">✉️</div>
-              <h3 className="text-lg font-bold text-[#1a3a52] mb-2 group-hover:text-[#c69c6d] transition-colors">
-                Kontakt
-              </h3>
-              <p className="text-sm text-gray-600">
-                Kostenlose Beratung anfragen
-              </p>
-              <span className="inline-block mt-3 text-sm text-[#c69c6d] font-semibold">
-                Kontakt aufnehmen →
-              </span>
-            </Link>
-          </div>
+        <div className="grid md:grid-cols-4 gap-6">
+          {PROCESS_STEPS.map((step, idx) => (
+            <div key={idx} className="glass-surface p-6 rounded-[2rem] flex flex-col justify-between hover:shadow-[0_20px_40px_rgba(12,58,135,0.1)] hover:-translate-y-1 transition-all duration-500">
+              <div>
+                <span className="text-2xl sm:text-3xl font-black text-[#0C3A87] mb-2 block">{step.step}</span>
+                <h3 className="text-base font-black text-slate-900 mb-2">{step.title}</h3>
+                <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                  {step.description}{step.step === '01' ? city.name + '.' : ''}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
-      </section>
-    </>
+      </div>
+
+      <QualityPromise />
+    </div>
   );
 }

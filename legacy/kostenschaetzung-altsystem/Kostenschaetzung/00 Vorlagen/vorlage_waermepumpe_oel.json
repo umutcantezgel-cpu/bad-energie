@@ -1,0 +1,72 @@
+{
+  "_hinweis": "Wärmepumpe Luft/Wasser, Bestand Öl. Wie Gas, aber Zeile 2 enthält die Tankentsorgung.",
+  "vorhaben_kurz": "Luft/Wasser Wärmepumpe statt Ölheizung",
+  "mail_betreff": "Ihre Kostenschätzung für die Wärmepumpe",
+  "mail_preheader": "Erste Zahlen inklusive Förderung und zwei Terminvorschläge für den Ortstermin.",
+  "foerderung_standard": true,
+  "rows": [
+    {
+      "titel": "Wärmepumpe und Speicher",
+      "gewerk": "waermepumpe",
+      "text": "Buderus Luft/Wasser Wärmepumpe [kW] kW mit Inneneinheit, Regelung und [Liter] Liter Trinkwasserspeicher, Montagesockel, Verbindungsleitungen",
+      "von": null,
+      "bis": null,
+      "_matrix": "Matrix 1 bis 3"
+    },
+    {
+      "titel": "Demontage Ölheizung und Tank",
+      "gewerk": "heizung",
+      "text": "Ausbau und Entsorgung des Ölkessels, Tank entleeren, reinigen und entsorgen, Restölentsorgung, Abmeldung beim Schornsteinfeger",
+      "von": null,
+      "bis": null,
+      "_matrix": "Matrix 5, je Tank"
+    },
+    {
+      "titel": "Rohrleitungen und Armaturen",
+      "gewerk": "heizung",
+      "text": "Anbindung an das vorhandene Heizkörpernetz, Armaturen, Dämmung, Befüllung nach VDI 2035",
+      "von": null,
+      "bis": null,
+      "_matrix": "Matrix 6"
+    },
+    {
+      "titel": "Elektro und Anmeldung",
+      "gewerk": "elektro",
+      "text": "Absicherung, Anmeldung beim Netzbetreiber nach §14a, Zuleitung zur Wärmepumpe",
+      "von": null,
+      "bis": null,
+      "_matrix": "Matrix 7"
+    },
+    {
+      "titel": "Heizlast, Abgleich, Förderservice",
+      "gewerk": "waermepumpe",
+      "text": "Raumweise Heizlastberechnung, hydraulischer Abgleich, Fachunternehmererklärung, Inbetriebnahme, Fernüberwachung",
+      "von": null,
+      "bis": null,
+      "_matrix": "Matrix 8"
+    },
+    {
+      "titel": "Zuschlag Heizkörpertausch",
+      "gewerk": "heizung",
+      "text": "Austausch von [Anzahl] Heizkörpern gegen größere Modelle zur Absenkung der Vorlauftemperatur",
+      "von": null,
+      "bis": null,
+      "zuschlag": true,
+      "_matrix": "Matrix 9, je Stück"
+    },
+    {
+      "titel": "Zuschlag Zählerschrank",
+      "gewerk": "elektro",
+      "text": "Erneuerung des Zählerschranks nach Vorgabe des Netzbetreibers",
+      "von": null,
+      "bis": null,
+      "zuschlag": true,
+      "_matrix": "Matrix 10"
+    }
+  ],
+  "annahmen_standard": [
+    "Die vorhandenen Heizkörper bleiben und reichen bei der bisherigen Vorlauftemperatur aus.",
+    "Der Öltank ist zugänglich und kann im Keller zerlegt werden.",
+    "Der Zählerschrank muss nicht erneuert werden."
+  ]
+}

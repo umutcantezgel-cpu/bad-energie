@@ -1,224 +1,107 @@
-"use client";
 import React from 'react';
-import { Euro, FileCheck, Leaf, ArrowRight, CheckCircle2, Building2, Zap, HelpCircle, ShieldCheck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import PageWrapper from '@/components/common/PageWrapper';
-import SEO from '@/components/SEO';
+import { BadgePercent, CheckCircle2, ShieldCheck, Phone, Calendar, ArrowRight, Sparkles, Award } from 'lucide-react';
+import { COMPANY_DATA } from '@/config/company';
+import HeizungKonfigurator from '@/components/funnels/HeizungKonfigurator';
+import QualityPromise from '@/components/sections/QualityPromise';
 
-const subsidyPrograms = [
-    {
-        id: 'kfw-458',
-        icon: Building2,
-        title: 'KfW Heizungsförderung (Zuschuss 458)',
-        subtitle: 'Bundesförderung für effiziente Gebäude (BEG) für Privatpersonen',
-        color: 'bg-blue-600',
-        items: [
-            { name: 'Grundförderung', subsidy: '30%', description: 'Für alle selbstnutzenden Eigentümer und Vermieter beim Einbau einer förderfähigen Wärmepumpe oder Biomasseheizung.' },
-            { name: 'Klima-Geschwindigkeitsbonus', subsidy: '+20%', description: 'Für den frühzeitigen Austausch funktionstüchtiger Öl-, Kohle-, Nachtspeicher- oder mind. 20 Jahre alter Gasheizungen.' },
-            { name: 'Einkommensbonus', subsidy: '+30%', description: 'Für selbstnutzende Immobilieneigentümer mit einem zu versteuernden Haushaltsjahreseinkommen von bis zu 40.000 Euro.' },
-            { name: 'Effizienzbonus Wärmepumpe', subsidy: '+5%', description: 'Für Wärmepumpen mit natürlichen Kältemitteln (z.B. R290 Propan) oder bei Nutzung von Erd-/Wasser-Wärmequellen.' },
-            { name: 'Maximaler Fördersatz', subsidy: 'bis zu 70%', description: 'Kombinierbar bis zu einer maximalen Förderhöhe von 70% der anrechenbaren Kosten (max. 30.000 € für die 1. Wohneinheit).' }
-        ]
-    },
-    {
-        id: 'bafa-ebn',
-        icon: Leaf,
-        title: 'BAFA Einzelmaßnahmen (BEG EM)',
-        subtitle: 'Gebäudehülle, Anlagentechnik & Heizungsoptimierung',
-        color: 'bg-emerald-600',
-        items: [
-            { name: 'Heizungsoptimierung', subsidy: 'bis zu 20%', description: 'Hydraulischer Abgleich, Tausch alter Heizungspumpen und Einbau moderner Thermostate inklusive iSFP-Bonus.' },
-            { name: 'Solarthermie-Anlagen', subsidy: 'bis zu 30%', description: 'Förderung für thermische Solaranlagen zur Warmwasserbereitung und kombinierten Heizungsunterstützung.' },
-            { name: 'Ergänzungskredit KfW 358/359', subsidy: 'bis 120.000 €', description: 'Zinsvergünstigter Ergänzungskredit für geförderte Heizungstausch- und Sanierungsmaßnahmen.' }
-        ]
-    }
-];
+export const metadata = {
+    title: 'Fördermittelberatung Heizung & Bad 2025/2026 | Bis 70% BEG/KfW | Bad & Energie GmbH',
+    description: 'Staatliche Fördermittel für Wärmepumpen & Badsanierung in Wetzlar: Bis zu 70% KfW 458 Zuschuss + bis zu 4.000 € Pflegekassen-Zuschuss für barrierefreie Bäder.',
+    alternates: { canonical: 'https://bad-energie.de/foerderung' }
+};
 
-const benefits = [
-    { icon: Euro, title: 'Bis zu 70% Zuschuss', description: 'Sparen Sie bis zu 21.000 Euro Direktzuschuss beim Umstieg auf eine moderne Wärmepumpe.' },
-    { icon: FileCheck, title: 'Antragsservice inklusive', description: 'Wir stellen alle technischen Nachweise (BzA-ID) aus und begleiten Ihren Förderantrag.' },
-    { icon: Zap, title: 'Laufende Heizkosten senken', description: 'Moderne Heiztechnik reduziert Ihren Energieverbrauch und schützt vor steigenden CO2-Preisen.' }
-];
-
-const foerderFaqs = [
-    {
-        q: 'Wie läuft der Antrag auf KfW-Heizungsförderung ab?',
-        a: 'Zuerst schließen Sie mit uns einen Lieferungs- oder Leistungsvertrag mit aufschiebender oder auflösender Bedingung der Förderzusage ab. Anschließend erstellen wir für Sie die Bestätigung zum Antrag (BzA). Mit dieser BzA-ID registrieren Sie sich im Kundenportal „Meine KfW“ und stellen den Antrag online vor Beginn der eigentlichen Montage.'
-    },
-    {
-        q: 'Welche Voraussetzungen gelten für die maximale 70% Förderung?',
-        a: 'Die 70% Maximalförderung setzt sich zusammen aus der Grundförderung (30%), dem Geschwindigkeitsbonus (20%) beim Austausch alter fossiler Heizungen sowie dem Einkommensbonus (30% bei Haushaltseinkommen unter 40.000 €) oder dem Effizienzbonus (5%). Die Boni sind kombinierbar und werden bei 70% gedeckelt.'
-    },
-    {
-        q: 'Gibt es auch Fördermittel für die Badsanierung?',
-        a: 'Ja, über das KfW-Programm 159 („Altersgerecht Umbauen“) können barrierefreie Bäder, bodengleiche Duschen und altersgerechte Sanierungen mit zinsgünstigen Krediten gefördert werden. Zudem bezuschusst die Pflegekasse Maßnahmen zur Wohnumfeldverbesserung mit bis zu 4.000 Euro pro pflegebedürftiger Person.'
-    },
-    {
-        q: 'Unterstützt Batherm Haustechnik mich bei allen Formalitäten?',
-        a: 'Selbstverständlich! Wir erstellen sämtliche für die Bewilligung erforderlichen Fachunternehmererklärungen, hydraulischen Abgleichsberechnungen nach Verfahren B und helfen Ihnen Schritt für Schritt durch das Online-Portal.'
-    }
-];
-
-export default function Foerderung() {
+export default function FoerderungPage() {
     return (
-        <PageWrapper>
-            <SEO
-                title="Förderung & Finanzierung | Batherm Haustechnik"
-                description="Maximale Förderung nutzen: Bis zu 70% Zuschuss für Ihre neue Heizung. Wir helfen bei KfW & BAFA-Anträgen."
-                keywords="Heizungsförderung, KfW 458, BAFA Förderung, Wärmepumpe Förderung, Heizungstausch Wetzlar"
-            />
+        <div className="pt-32 pb-24 min-h-screen relative overflow-hidden">
+            {/* Ambient Glow */}
+            <div className="ambient-glow-red -top-20 -right-20" />
+            <div className="ambient-glow-blue top-96 -left-20" />
 
-            {/* ── Hero Section ─────────────────────────────────────────── */}
-            <section className="relative bg-gradient-to-br from-[var(--color-brand-primary)] via-[#163045] to-[var(--color-neutral-900)] pt-32 pb-20 px-4 text-white">
-                <div className="max-w-5xl mx-auto text-center">
-                    <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 px-4 py-2 rounded-full text-blue-200 text-sm mb-6 font-semibold backdrop-blur-sm">
-                        <Euro className="w-4 h-4 text-[#c69c6d]" />
-                        Staatliche Förderprogramme &amp; Zuschüsse
-                    </div>
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 font-display leading-tight">
-                        Förderung &amp; Zuschüsse für Heizung in Wetzlar
+            {/* Hero */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 relative z-10">
+                <div className="glass-surface-dark rounded-[3rem] p-8 sm:p-12 text-center space-y-4 relative overflow-hidden">
+                    <span className="text-xs uppercase font-black tracking-wider text-amber-300 bg-white/10 px-4 py-1.5 rounded-full border border-white/15 inline-block backdrop-blur-md">
+                        BEG &middot; KfW 458 &middot; Pflegekasse (§ 40 SGB XI)
+                    </span>
+                    <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+                        Fördermittelberatung für Heizung &amp; Bad
                     </h1>
-                    <p className="text-lg md:text-xl text-neutral-200 max-w-3xl mx-auto mb-8 leading-relaxed">
-                        Nutzen Sie maximale Förderung &amp; Finanzierung sowie bis zu 70% staatliche Zuschüsse für Ihre neue Heizung in Wetzlar durch Meisterbetrieb Batherm Haustechnik. Wir prüfen Ihre Ansprüche und begleiten Sie von der Planung bis zur Auszahlung.
+                    <p className="text-sm sm:text-base text-blue-100 max-w-2xl mx-auto leading-relaxed font-normal">
+                        Verschenken Sie kein Geld: Für den Einbau einer neuen NIBE Wärmepumpe erhalten Sie bis zu 70 % staatlichen Zuschuss – für barrierefreie Bäder bis zu 4.000 € von der Pflegekasse. Wir begleiten Ihren Antrag von Anfang an.
                     </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <Link href="/beratung">
-                            <Button size="lg" className="bg-[#c69c6d] hover:bg-[#b58c5c] text-white font-bold px-8 py-6 rounded-full shadow-lg">
-                                Fördermittel-Check buchen
-                                <ArrowRight className="ml-2 w-5 h-5" />
-                            </Button>
-                        </Link>
-                        <Link href="/kontakt">
-                            <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8 py-6 rounded-full">
-                                Direkte Anfrage stellen
-                            </Button>
+
+                    <div className="flex flex-wrap items-center justify-center gap-3.5 pt-4">
+                        <Link
+                            href="/heizung/heizungskonfigurator"
+                            className="px-7 py-3.5 rounded-full bg-gradient-to-r from-[#E4040E] to-[#B91C1C] hover:shadow-[0_12px_28px_rgba(228,4,14,0.4)] text-white font-black text-xs shadow-md transition-all transform hover:-translate-y-0.5 border border-white/20"
+                        >
+                            Förderquote online berechnen &rarr;
                         </Link>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            {/* ── Benefits Section ─────────────────────────────────────── */}
-            <section className="py-16 bg-neutral-50 border-b border-neutral-200">
-                <div className="max-w-7xl mx-auto px-4">
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {benefits.map((benefit, index) => {
-                            const Icon = benefit.icon;
-                            return (
-                                <div key={index} className="bg-white p-8 rounded-2xl border border-neutral-200 shadow-sm text-center">
-                                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                                        <Icon className="w-8 h-8" />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-neutral-900 mb-2">{benefit.title}</h3>
-                                    <p className="text-neutral-600 text-sm leading-relaxed">{benefit.description}</p>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Subsidy Programs ─────────────────────────────────────── */}
-            <section className="py-20 px-4 bg-white">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4 font-display">
-                            Übersicht der Förderprogramme für Heizung &amp; Sanierung
-                        </h2>
-                        <p className="text-neutral-600 max-w-2xl mx-auto">
-                            Die aktuellen Konditionen der Kreditanstalt für Wiederaufbau (KfW) und des BAFA im Überblick.
-                        </p>
-                    </div>
-
-                    <div className="grid lg:grid-cols-2 gap-8">
-                        {subsidyPrograms.map((program) => {
-                            const Icon = program.icon;
-                            return (
-                                <div key={program.id} className="bg-neutral-50 rounded-2xl border border-neutral-200 shadow-md overflow-hidden flex flex-col justify-between">
-                                    <div>
-                                        <div className={`${program.color} p-6 text-white`}>
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                                                    <Icon className="w-6 h-6" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-2xl font-bold">{program.title}</h3>
-                                                    <p className="text-white/80 text-sm">{program.subtitle}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="p-6 space-y-4">
-                                            {program.items.map((item, idx) => (
-                                                <div key={idx} className="flex items-start gap-4 p-4 bg-white rounded-xl border border-neutral-100 shadow-xs">
-                                                    <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" />
-                                                    <div className="flex-grow">
-                                                        <div className="flex justify-between items-start mb-1">
-                                                            <h4 className="font-semibold text-neutral-900">{item.name}</h4>
-                                                            <span className="text-sm font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
-                                                                {item.subsidy}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-sm text-neutral-600">{item.description}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </section>
-
-            {/* ── FAQ Section ──────────────────────────────────────────── */}
-            <section className="py-20 bg-neutral-50 border-t border-neutral-200">
-                <div className="max-w-4xl mx-auto px-4">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl font-bold text-neutral-900 mb-4 font-display">
-                            Häufige Fragen zur staatlichen Heizungsförderung
-                        </h2>
-                        <p className="text-neutral-600">
-                            Praxiswissen für Eigentümer in Wetzlar, Gießen und Umgebung.
-                        </p>
-                    </div>
-
-                    <div className="space-y-4">
-                        {foerderFaqs.map((faq, index) => (
-                            <div key={index} className="p-6 rounded-2xl bg-white border border-neutral-200 shadow-xs">
-                                <h3 className="font-bold text-lg text-neutral-900 mb-2 flex items-center gap-2">
-                                    <HelpCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                                    {faq.q}
-                                </h3>
-                                <p className="text-neutral-700 text-sm leading-relaxed pl-7">
-                                    {faq.a}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ── CTA Section ──────────────────────────────────────────── */}
-            <section className="py-20 bg-neutral-900 px-4 text-white">
-                <div className="max-w-4xl mx-auto text-center">
-                    <div className="inline-flex items-center justify-center p-3 bg-blue-600/20 rounded-2xl mb-6 text-blue-400">
-                        <ShieldCheck className="w-8 h-8" />
-                    </div>
-                    <h2 className="text-3xl md:text-4xl font-bold mb-6 font-display">
-                        Jetzt Fördermittel sichern &amp; Kosten sparen
+            {/* Grant Details Matrix */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
+                <div className="text-center max-w-3xl mx-auto mb-14">
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
+                        So setzt sich die 70 % Heizungsförderung zusammen (KfW 458)
                     </h2>
-                    <p className="text-neutral-300 text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
-                        Vereinbaren Sie ein persönliches Beratungsgespräch mit unserem Meisterbetrieb. Wir berechnen Ihre individuelle Förderquote und erstellen ein passgenaues Angebot.
+                    <p className="mt-2 text-sm text-slate-600">
+                        Maximale förderfähige Investitionskosten: 30.000 € für ein Einfamilienhaus (max. Zuschuss 21.000 €).
                     </p>
-                    <Link href="/beratung">
-                        <Button size="lg" className="bg-[#c69c6d] hover:bg-[#b58c5c] text-white font-bold px-10 py-6 rounded-full shadow-xl">
-                            Jetzt kostenlose Beratung anfordern
-                            <ArrowRight className="ml-2 w-5 h-5" />
-                        </Button>
-                    </Link>
                 </div>
-            </section>
-        </PageWrapper>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+                    {[
+                        { rate: '30 %', title: 'Grundförderung', desc: 'Für alle Eigentümer beim Einbau einer Wärmepumpe oder Biomasseheizung.' },
+                        { rate: '+ 20 %', title: 'Geschwindigkeits-Bonus', desc: 'Für selbstnutzende Eigentümer bei vorzeitigem Austausch alter funktionierender Öl-/Gasheizungen.' },
+                        { rate: '+ 30 %', title: 'Einkommens-Bonus', desc: 'Für selbstnutzende Eigentümer mit einem zu versteuernden Haushaltsjahreseinkommen bis 40.000 €.' },
+                        { rate: '+ 5 %', title: 'Effizienz-Bonus', desc: 'Für Wärmepumpen mit natürlichem Kältemittel wie Propan (R290 bei NIBE) oder Erdwärme.' }
+                    ].map((item, idx) => (
+                        <div key={idx} className="glass-surface p-6 rounded-[2rem] hover:shadow-[0_20px_40px_rgba(228,4,14,0.1)] hover:-translate-y-1 transition-all duration-500 flex flex-col justify-between">
+                            <div>
+                                <span className="text-3xl sm:text-4xl font-black text-[#E4040E] mb-1 block">{item.rate}</span>
+                                <h3 className="font-black text-base text-slate-900 mb-2">{item.title}</h3>
+                                <p className="text-xs text-slate-600 leading-relaxed font-medium">{item.desc}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Bathroom Grant - Double Bezel */}
+                <div className="glass-bezel-outer shadow-2xl">
+                    <div className="glass-bezel-inner p-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                        <div className="md:col-span-2 space-y-2">
+                            <span className="text-xs font-black uppercase tracking-wider text-[#0C3A87] bg-blue-50 px-3.5 py-1 rounded-full inline-block border border-blue-200/60">
+                                Barrierefreie Bäder (§ 40 SGB XI)
+                            </span>
+                            <h3 className="text-2xl font-black text-slate-900">
+                                Bis zu 4.000 € Zuschuss für Ihr barrierefreies Bad
+                            </h3>
+                            <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                                Für Pflegebedürftige (Pflegegrad 1–5) übernimmt die Pflegekasse bis zu 4.000 € für Maßnahmen zur Wohnumfeldverbesserung (z. B. bodengleiche Dusche statt Badewanne, schwellenlose Zugänge). Wir erstellen den prüffähigen Kostenvoranschlag.
+                            </p>
+                        </div>
+                        <div className="text-center md:text-right">
+                            <Link
+                                href="/termin"
+                                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-[#0C3A87] to-[#0E1C76] text-white font-black text-xs shadow-md hover:shadow-lg transition-all"
+                            >
+                                <span>Beratung vereinbaren</span>
+                                <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <QualityPromise />
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
+                <HeizungKonfigurator />
+            </div>
+        </div>
     );
 }

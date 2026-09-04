@@ -3,8 +3,8 @@ import { buildGraph, buildBreadcrumbNode, buildWebPageNode, SITE_URL, ORG_ID } f
 import JsonLd from '@/components/seo/JsonLd';
 
 export const metadata = createMetadata({
-  title: 'Ratgeber zu Heizung, Sanitär & Solar',
-  description: 'Expertenwissen rund um Heizung, Sanitär und Solartechnik in Wetzlar. Aktuelle Tipps zu Förderung, Wartung und Energiesparen.',
+  title: 'Ratgeber zu Badsanierung, Heizung & Wärmepumpen | Bad & Energie GmbH',
+  description: 'Expertenwissen rund um Badsanierung, NIBE Wärmepumpen, Wohnraumlüftung und Trinkwasserhygiene in Wetzlar & Lahn-Dill.',
   path: '/blog',
 });
 
@@ -17,7 +17,7 @@ const breadcrumbs = [
 const blogSchema = buildGraph([
   buildWebPageNode({
     url: pageUrl,
-    name: 'Haustechnik Ratgeber & Blog | Batherm Haustechnik',
+    name: 'Haustechnik Ratgeber & Blog | Bad & Energie GmbH',
     description:
       'Fundierte Fachartikel zu Wärmepumpen, Badsanierung, Heizungswartung und Fördermitteln vom Meisterbetrieb in Wetzlar.',
     breadcrumbItems: breadcrumbs,
@@ -26,8 +26,8 @@ const blogSchema = buildGraph([
   {
     '@type': 'Blog',
     '@id': `${pageUrl}#blog`,
-    name: 'Batherm Haustechnik Ratgeber & Insights',
-    description: 'Fachwissen, Anleitungen und Ratgeber rund um Sanitär, Heizung und Klimatechnik.',
+    name: 'Bad & Energie GmbH Ratgeber & Insights',
+    description: 'Fachwissen, Anleitungen und Ratgeber rund um Badsanierung, Heizung und Haustechnik.',
     publisher: { '@id': ORG_ID },
     url: pageUrl,
   },
@@ -41,4 +41,3 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-

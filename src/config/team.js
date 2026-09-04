@@ -1,38 +1,37 @@
 /**
- * Default Team Configuration
- * Initial data for the "About Us" team section
+ * Default Team Configuration - Bad & Energie GmbH
  */
 
 export const teamMembers = [
     {
         id: 1,
-        name: 'Baris Aydin',
-        role: 'Geschäftsführer & Meister',
-        email: 'info@batherm.de',
-        phone: '+49 6441 123456',
+        name: 'Sabri Demir',
+        role: 'Geschäftsführer & Projektleitung',
+        email: 'anfrage@bad-energie-profi.de',
+        phone: '+49 6441 2039053',
         image: '',
-        specializations: ['Sanitärtechnik', 'Heizungsbau', 'Projektleitung'],
-        bio: 'Geschäftsführer mit über 20 Jahren Erfahrung in der Haustechnik.'
+        specializations: ['Badsanierung', 'NIBE Wärmepumpen', 'Projektleitung'],
+        bio: 'Geschäftsführer und Leitung der Bad & Energie GmbH in Wetzlar.'
     },
     {
         id: 2,
-        name: 'Max Mustermann',
-        role: 'Meister Sanitärtechnik',
-        email: 'max@batherm.de',
-        phone: '+49 6441 123457',
+        name: 'Meisterleitung SHK',
+        role: 'Bauleitung & 3D-Badplanung',
+        email: 'anfrage@bad-energie-profi.de',
+        phone: '+49 6441 2039053',
         image: '',
-        specializations: ['Sanitärtechnik', 'Badsanierung'],
-        bio: 'Spezialist für komplexe Badsanierungen und moderne Sanitärinstallationen.'
+        specializations: ['3D-Planung', 'Hydraulischer Abgleich', 'Trinkwasserhygiene'],
+        bio: 'Spezialisten für präzise Ausführungsplanung und Baustellenkoordination vor Ort.'
     },
     {
         id: 3,
-        name: 'Anna Schmidt',
-        role: 'Kundenberatung',
-        email: 'anna@batherm.de',
-        phone: '+49 6441 123458',
+        name: 'Service- & Montageteam',
+        role: 'Anlagenmechaniker & Servicetechniker',
+        email: 'info@bad-energie.de',
+        phone: '+49 6441 42956',
         image: '',
-        specializations: ['Kundenberatung', 'Planung'],
-        bio: 'Erste Anlaufstelle für Kundenanfragen und Projektplanung.'
+        specializations: ['Heizungsbau', 'Badsanierung', 'Kundendienst'],
+        bio: 'Erfahrene Fachhandwerker für saubere, staubarme Montage und zuverlässigen Notdienst.'
     },
 ];
 

@@ -6,18 +6,13 @@ import { COMPANY_DATA } from '@/config/company';
 import { notFound } from 'next/navigation';
 import { buildGraph, buildCityLocalBusinessNode, buildBreadcrumbNode, buildWebPageNode, SITE_URL } from '@/lib/schema';
 import JsonLd from '@/components/seo/JsonLd';
+import { MapPin, Phone, Calendar, ArrowRight, ShieldCheck, CheckCircle2, Sparkles, Award } from 'lucide-react';
+import QualityPromise from '@/components/sections/QualityPromise';
 
-// ---------------------------------------------------------------------------
-// Static Params – generates a page for every city at build time
-// ---------------------------------------------------------------------------
 export function generateStaticParams() {
   return CITIES.map((city) => ({ stadt: city.slug }));
 }
 
-// ---------------------------------------------------------------------------
-// Dynamic Metadata – city-specific title, description & OG tags
-// Next.js 16: params is a Promise and must be awaited
-// ---------------------------------------------------------------------------
 export async function generateMetadata({
   params,
 }: {
@@ -27,14 +22,13 @@ export async function generateMetadata({
   const city = CITIES.find((c) => c.slug === stadt);
   if (!city) return {};
 
-  const pageUrl = `https://www.batherm.de/standorte/${city.slug}`;
-  const title = city.name.length > 15 ? `${city.name}: Sanitär & Heizung` : `Sanitär & Heizung in ${city.name}`;
-  const fullTitle = `${title} | Batherm Haustechnik`;
-  const description = `Ihr Meisterbetrieb für Sanitär, Heizung & Klima in ${city.name}. ${
+  const pageUrl = `https://bad-energie.de/standorte/${city.slug}`;
+  const title = `${city.name}: Badsanierung & Heiztechnik | Bad & Energie GmbH`;
+  const description = `Ihr Meisterbetrieb für Badsanierung, Wärmepumpen & Haustechnik in ${city.name}. ${
     city.distanceKm === 0
-      ? 'Direkt vor Ort.'
+      ? 'Direkt vor Ort in Wetzlar.'
       : `Nur ${city.distanceKm} km entfernt.`
-  } Kostenlose Beratung & 24h Notdienst.`;
+  } Kostenlose Beratung & bis zu 70% Förderung.`;
 
   return {
     title,
@@ -47,17 +41,12 @@ export async function generateMetadata({
       },
     },
     openGraph: {
-      title: fullTitle,
+      title,
       description,
       url: pageUrl,
-      siteName: 'Batherm Haustechnik',
+      siteName: 'Bad & Energie GmbH',
       locale: 'de_DE',
       type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: fullTitle,
-      description,
     },
     robots: { 
       index: true, 
@@ -73,9 +62,6 @@ export async function generateMetadata({
   };
 }
 
-// ---------------------------------------------------------------------------
-// Helper – get nearby cities sorted by proximity (closest first)
-// ---------------------------------------------------------------------------
 function getNearbyCities(currentSlug: string, count: number = 5) {
   const current = CITIES.find((c) => c.slug === currentSlug);
   if (!current) return [];
@@ -83,20 +69,14 @@ function getNearbyCities(currentSlug: string, count: number = 5) {
   return CITIES
     .filter((c) => c.slug !== currentSlug)
     .sort((a, b) => {
-      // Sort by absolute distance difference from current city
       const distA = Math.abs(a.distanceKm - current.distanceKm);
       const distB = Math.abs(b.distanceKm - current.distanceKm);
-      // For same distance diff, prefer closer to Wetzlar
       if (distA === distB) return a.distanceKm - b.distanceKm;
       return distA - distB;
     })
     .slice(0, count);
 }
 
-// ---------------------------------------------------------------------------
-// Page Component (Server Component – no 'use client')
-// Next.js 16: params is a Promise and must be awaited
-// ---------------------------------------------------------------------------
 export default async function StandortPage({
   params,
 }: {
@@ -106,20 +86,20 @@ export default async function StandortPage({
   const city = CITIES.find((c) => c.slug === stadt);
   if (!city) notFound();
 
-  const nearbyCities = getNearbyCities(city.slug, 5);
+  const nearbyCities = getNearbyCities(city.slug, 6);
 
   const pageUrl = `${SITE_URL}/standorte/${city.slug}`;
   const breadcrumbs = [
     { name: 'Home', path: '/' },
-    { name: 'Standorte', path: '/standorte/wetzlar' },
+    { name: 'Standorte', path: '/standorte' },
     { name: city.name, path: pageUrl },
   ];
 
   const cityGraph = buildGraph([
     buildWebPageNode({
       url: pageUrl,
-      name: `Sanitär, Heizung & Klimatechnik in ${city.name} | Batherm Haustechnik`,
-      description: `Ihr Meisterbetrieb für Sanitär, Heizung & Klima in ${city.name}. Kostenlose Beratung & 24h Notdienst.`,
+      name: `Badsanierung, Heizung & Wärmepumpen in ${city.name} | Bad & Energie GmbH`,
+      description: `Ihr Meisterbetrieb für Badsanierung, Heizung & Wärmepumpen in ${city.name}. Kostenlose Beratung & Festpreisgarantie.`,
       breadcrumbItems: breadcrumbs,
     }),
     buildBreadcrumbNode(breadcrumbs, pageUrl),
@@ -127,199 +107,138 @@ export default async function StandortPage({
       cityName: city.name,
       citySlug: city.slug,
       distanceKm: city.distanceKm,
-      description: `Ihr lokaler Meisterbetrieb für Sanitär, Heizung und Klimatechnik in ${city.name}. Fachgerechte Installation und 24h Service.`,
+      description: `Ihr Meisterbetrieb für Badsanierung und regenerative Heizsysteme in ${city.name}. Meisterbetrieb seit 2001.`,
     }),
   ]);
 
   return (
-    <>
+    <div className="pt-32 pb-24 min-h-screen relative overflow-hidden">
       <JsonLd schema={cityGraph} />
 
+      {/* Ambient Glow */}
+      <div className="ambient-glow-blue -top-20 -left-20" />
+      <div className="ambient-glow-cyan top-96 -right-20" />
+
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative pt-[var(--spacing-32)] pb-20 px-4 bg-gradient-to-br from-[#1a3a52] to-[#0e1f2b]">
-        <div className="max-w-5xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/80 text-sm mb-8">
-            <span>📍</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 relative z-10">
+        <div className="glass-surface-dark rounded-[3rem] p-8 sm:p-14 text-center space-y-5 relative overflow-hidden">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-cyan-300 text-xs font-black uppercase tracking-wider">
+            <MapPin className="w-3.5 h-3.5" />
             <span>
-              {city.region} ·{' '}
+              {city.region} &middot;{' '}
               {city.distanceKm === 0
-                ? 'Ihr lokaler Meisterbetrieb'
+                ? 'Hauptsitz Wetzlar'
                 : `${city.distanceKm} km von Wetzlar`}
             </span>
           </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-            Sanitär, Heizung &amp; Klimatechnik in{' '}
-            <span className="text-[#c69c6d]">{city.name}</span>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white leading-tight">
+            Badsanierung &amp; Heiztechnik in{' '}
+            <span className="bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">{city.name}</span>
           </h1>
 
-          <p className="text-xl text-white/80 max-w-3xl mx-auto mb-10 leading-relaxed">
-            Batherm Haustechnik – Ihr Meisterbetrieb für professionelle Sanitär-,
-            Heizungs- und Klimatechnik in {city.name} und Umgebung.
+          <p className="text-sm sm:text-base text-blue-100 max-w-3xl mx-auto leading-relaxed font-normal">
+            Bad &amp; Energie GmbH – Ihr Meisterbetrieb für schlüsselfertige Komplettbäder,
+            NIBE Wärmepumpen, Gas-Brennwert und Haustechnik in {city.name} und Umgebung.
             {city.distanceKm > 0 &&
-              ` Nur ${city.distanceKm} km von unserem Standort in Wetzlar.`}
+              ` Nur ${city.distanceKm} km von unserem Standort in Wetzlar entfernt.`}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-wrap gap-3.5 justify-center pt-2">
             <Link
-              href="/kontakt"
-              className="inline-flex items-center justify-center px-8 py-4 bg-[#c69c6d] hover:bg-[#a67c52] text-white font-bold rounded-full transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+              href="/termin"
+              className="inline-flex items-center justify-center px-7 py-3.5 bg-gradient-to-r from-[#E4040E] to-[#B91C1C] hover:shadow-[0_12px_28px_rgba(228,4,14,0.4)] text-white font-black rounded-full transition-all text-xs shadow-md border border-white/20 transform hover:-translate-y-0.5"
             >
-              Kostenlos Angebot anfordern
+              Beratungstermin in {city.name} anfragen &rarr;
             </Link>
             <a
-              href={`tel:${COMPANY_DATA.contact.phone.replace(/\s/g, '')}`}
-              className="inline-flex items-center justify-center px-8 py-4 border-2 border-white/30 text-white hover:bg-white/10 font-bold rounded-full transition-all"
+              href={`tel:${COMPANY_DATA.contact.phoneLink}`}
+              className="inline-flex items-center justify-center px-6 py-3.5 border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold rounded-full transition-all text-xs backdrop-blur-md"
             >
               📞 {COMPANY_DATA.contact.phone}
             </a>
           </div>
         </div>
+      </div>
 
-        {/* Decorative blur */}
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#c69c6d]/10 rounded-full blur-[100px]" />
-      </section>
-
-      {/* ── About this city ──────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-[#1a3a52] mb-6">
-            Ihre Haustechnik-Experten für {city.name}
-          </h2>
-
-          <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            {city.description}
-          </p>
-
-          <div className="grid sm:grid-cols-3 gap-6">
-            <div className="bg-[#f9f8f6] rounded-xl p-6 text-center">
-              <div className="text-3xl font-bold text-[#c69c6d] mb-2">
-                {city.distanceKm === 0 ? '✓' : `${city.distanceKm} km`}
-              </div>
-              <div className="text-sm text-gray-600">
-                {city.distanceKm === 0 ? 'Vor Ort in Wetzlar' : 'Entfernung'}
-              </div>
+      {/* ── About this city - Double Bezel Console ───────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+        <div className="glass-bezel-outer shadow-2xl max-w-5xl mx-auto">
+          <div className="glass-bezel-inner p-8 sm:p-12 space-y-8">
+            <div>
+              <span className="text-xs uppercase font-black tracking-wider text-[#0C3A87] bg-blue-50 px-3.5 py-1 rounded-full inline-block border border-blue-200/60 shadow-xs mb-2">
+                Regionaler Meister-Service
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                Ihr Fachhandwerksbetrieb für {city.name}
+              </h2>
             </div>
-            <div className="bg-[#f9f8f6] rounded-xl p-6 text-center">
-              <div className="text-3xl font-bold text-[#c69c6d] mb-2">24h</div>
-              <div className="text-sm text-gray-600">Schnelle Reaktionszeit</div>
-            </div>
-            <div className="bg-[#f9f8f6] rounded-xl p-6 text-center">
-              <div className="text-3xl font-bold text-[#c69c6d] mb-2">100%</div>
-              <div className="text-sm text-gray-600">Meisterqualität</div>
+
+            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+              {city.description}
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div className="glass-surface p-6 rounded-[2rem] text-center border border-white/80">
+                <div className="text-2xl font-black text-[#0C3A87] mb-1">
+                  {city.distanceKm === 0 ? '✓ Vor Ort' : `${city.distanceKm} km`}
+                </div>
+                <div className="text-xs text-slate-500 font-medium">
+                  {city.distanceKm === 0 ? 'Hauptstandort Wetzlar' : 'Entfernung zu Ihnen'}
+                </div>
+              </div>
+              <div className="glass-surface p-6 rounded-[2rem] text-center border border-white/80">
+                <div className="text-2xl font-black text-[#0C3A87] mb-1">Bis 70 %</div>
+                <div className="text-xs text-slate-500 font-medium">BEG / KfW 458 Förderung</div>
+              </div>
+              <div className="glass-surface p-6 rounded-[2rem] text-center border border-white/80">
+                <div className="text-2xl font-black text-[#0C3A87] mb-1">100 %</div>
+                <div className="text-xs text-slate-500 font-medium">Meisterqualität seit 2001</div>
+              </div>
             </div>
           </div>
         </div>
-      </section>
-
-      {/* ── Services ─────────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-[#f9f8f6]">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-[#1a3a52] mb-4 text-center">
-            Unsere Leistungen in {city.name}
-          </h2>
-          <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-            Das volle Spektrum der Haustechnik – von der Beratung bis zur
-            Wartung.
-          </p>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {SERVICES.map((service) => (
-              <Link
-                key={service.id}
-                href={`/leistungen/${service.id}`}
-                className="group bg-white rounded-xl p-6 border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all"
-              >
-                <h3 className="text-lg font-bold text-[#1a3a52] mb-2 group-hover:text-[#c69c6d] transition-colors">
-                  {service.name}
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  {service.shortDescription}
-                </p>
-                <span className="text-sm text-[#c69c6d] font-semibold">
-                  Mehr erfahren →
-                </span>
-              </Link>
-            ))}
-          </div>
-
-          {/* ── Service × City Links ─────────────────────────────────────── */}
-          <div className="mt-12 bg-white rounded-xl border border-gray-100 p-8">
-            <h3 className="text-xl font-bold text-[#1a3a52] mb-6">
-              Unsere Fachbereiche in {city.name}
-            </h3>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {SERVICES.map((service) => (
-                <Link
-                  key={service.id}
-                  href={`/leistungen/${service.id}/${city.slug}`}
-                  className="flex items-center gap-2 px-4 py-3 rounded-lg bg-[#f9f8f6] hover:bg-[#c69c6d]/10 text-[#1a3a52] hover:text-[#c69c6d] transition-colors text-sm font-medium"
-                >
-                  <span>→</span>
-                  <span>{service.name} in {city.name}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      </div>
 
       {/* ── Nearby Cities ────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-[#1a3a52] mb-4 text-center">
-            Weitere Standorte in der Nähe
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+            Weitere Einsatzgebiete in der Region
           </h2>
-          <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-            Wir sind auch in diesen Städten und Gemeinden für Sie im Einsatz.
+          <p className="text-slate-600 text-xs sm:text-sm mt-2 font-medium">
+            Wir sind in allen Städten und Gemeinden im Lahn-Dill-Kreis und Landkreis Gießen für Sie aktiv.
           </p>
+        </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {nearbyCities.map((nearbyCity) => (
-              <Link
-                key={nearbyCity.slug}
-                href={`/standorte/${nearbyCity.slug}`}
-                className="group bg-[#f9f8f6] rounded-xl p-6 border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold text-[#1a3a52] group-hover:text-[#c69c6d] transition-colors">
-                    {nearbyCity.name}
-                  </h3>
-                  <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                    {nearbyCity.distanceKm === 0
-                      ? 'Vor Ort'
-                      : `${nearbyCity.distanceKm} km`}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 mb-3">{nearbyCity.region}</p>
-                <span className="text-sm text-[#c69c6d] font-semibold">
-                  Mehr erfahren →
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {nearbyCities.map((nearbyCity) => (
+            <Link
+              key={nearbyCity.slug}
+              href={`/standorte/${nearbyCity.slug}`}
+              className="glass-surface p-6 rounded-[2rem] hover:shadow-[0_20px_40px_rgba(12,58,135,0.1)] hover:-translate-y-1 transition-all duration-500 group block"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-black text-slate-900 group-hover:text-[#0C3A87] transition-colors">
+                  {nearbyCity.name}
+                </h3>
+                <span className="text-[11px] text-slate-600 bg-white/90 px-3 py-1 rounded-full font-black border border-slate-200/60 shadow-xs">
+                  {nearbyCity.distanceKm === 0
+                    ? 'Vor Ort'
+                    : `${nearbyCity.distanceKm} km`}
                 </span>
-              </Link>
-            ))}
-          </div>
+              </div>
+              <p className="text-xs text-slate-500 mb-3 font-medium">{nearbyCity.region}</p>
+              <span className="text-xs text-[#0C3A87] font-black flex items-center gap-1">
+                <span>Details ansehen</span>
+                <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </Link>
+          ))}
         </div>
-      </section>
+      </div>
 
-      {/* ── CTA ──────────────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-[#1a3a52]">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Jetzt Projekt in {city.name} starten
-          </h2>
-          <p className="text-lg text-white/80 mb-10 max-w-2xl mx-auto">
-            Kontaktieren Sie uns für eine kostenlose Beratung und ein
-            unverbindliches Angebot. Wir freuen uns auf Ihr Projekt in{' '}
-            {city.name}!
-          </p>
-          <Link
-            href="/kontakt"
-            className="inline-flex items-center justify-center px-10 py-4 bg-[#c69c6d] hover:bg-[#a67c52] text-white font-bold rounded-full transition-all shadow-lg hover:shadow-xl text-lg"
-          >
-            Kontakt aufnehmen
-          </Link>
-        </div>
-      </section>
-    </>
+      <QualityPromise />
+    </div>
   );
 }

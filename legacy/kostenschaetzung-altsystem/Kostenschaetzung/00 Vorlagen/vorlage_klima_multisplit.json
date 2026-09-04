@@ -1,0 +1,47 @@
+{
+  "_hinweis": "Multisplit Klimaanlage mit Heizfunktion als Heizungsersatz. Kein Förderblock. Warmwasser läuft dann elektrisch, dafür die Zuschlagszeile Durchlauferhitzer.",
+  "vorhaben_kurz": "Heizungsersatz durch Multisplit Klimaanlage",
+  "mail_betreff": "Ihre Kostenschätzung für die Klimaanlage mit Heizfunktion",
+  "mail_preheader": "Eine erste Einschätzung mit Zahlen und zwei Terminvorschlägen für den Ortstermin.",
+  "foerderung_standard": false,
+  "rows": [
+    {
+      "titel": "Klimaanlage mit Heizfunktion",
+      "gewerk": "klima",
+      "text": "Bosch Multisplit, 1 Außeneinheit auf Wandkonsole, [Anzahl] Innengeräte, Kältemittel und Kondensatleitungen, Elektroanschluss, Inbetriebnahme",
+      "von": null,
+      "bis": null,
+      "_matrix": "Matrix 11 oder 12"
+    },
+    {
+      "titel": "Demontage Bestandsheizung",
+      "gewerk": "heizung",
+      "text": "Ausbau und Entsorgung von Kessel, Heizkörpern und Verrohrung, Umfang nach Bestandsaufnahme",
+      "von": null,
+      "bis": null,
+      "_matrix": "Matrix 13"
+    },
+    {
+      "titel": "Warmwasser elektrisch",
+      "gewerk": "wasser",
+      "text": "Durchlauferhitzer mit Starkstromzuleitung durch Elektrofachbetrieb",
+      "von": null,
+      "bis": null,
+      "zuschlag": true,
+      "_matrix": "Matrix 16"
+    },
+    {
+      "titel": "Zuschlag Zählerschrank",
+      "gewerk": "elektro",
+      "text": "Erneuerung des Zählerschranks oder der Unterverteilung nach Vorgabe des Netzbetreibers",
+      "von": null,
+      "bis": null,
+      "zuschlag": true,
+      "_matrix": "Matrix 10"
+    }
+  ],
+  "annahmen_standard": [
+    "Der vorhandene Hausanschluss und Zählerschrank reichen für die Klimageräte aus.",
+    "Die Innengeräte werden an Außenwänden oder mit kurzen Leitungswegen montiert."
+  ]
+}

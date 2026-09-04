@@ -15,8 +15,8 @@ export async function generateMetadata({ params }) {
 
   const pageUrl = `${SITE_URL}/blog/${post.slug}`;
   const title = post.title;
-  const fullTitle = post.title.length > 38 ? post.title : `${post.title} | Batherm Haustechnik`;
-  const description = post.excerpt ? (post.excerpt.length > 155 ? `${post.excerpt.slice(0, 152)}...` : post.excerpt) : 'Ratgeber von Batherm Haustechnik';
+  const fullTitle = post.title.length > 38 ? post.title : `${post.title} | Bad & Energie GmbH`;
+  const description = post.excerpt ? (post.excerpt.length > 155 ? `${post.excerpt.slice(0, 152)}...` : post.excerpt) : 'Ratgeber der Bad & Energie GmbH';
 
   return {
     title: post.title.length > 38 ? { absolute: post.title } : title,
@@ -32,10 +32,10 @@ export async function generateMetadata({ params }) {
       title: fullTitle,
       description,
       url: pageUrl,
-      siteName: 'Batherm Haustechnik',
+      siteName: 'Bad & Energie GmbH',
       locale: 'de_DE',
       type: 'article',
-      publishedTime: post.created_date || '2024-03-15T08:00:00+01:00',
+      publishedTime: post.created_date || '2025-01-15T08:00:00+01:00',
       images: post.image ? [{ url: `${SITE_URL}${post.image}`, width: 1200, height: 630 }] : [],
     },
     twitter: {
@@ -73,7 +73,7 @@ export default async function Layout({ children, params }) {
     postSchemaGraph = buildGraph([
       buildWebPageNode({
         url: pageUrl,
-        name: `${post.title} | Batherm Haustechnik`,
+        name: `${post.title} | Bad & Energie GmbH`,
         description: post.excerpt || post.title,
         breadcrumbItems: breadcrumbs,
       }),
@@ -82,9 +82,9 @@ export default async function Layout({ children, params }) {
         headline: post.title,
         description: post.excerpt || post.title,
         url: pageUrl,
-        datePublished: post.created_date || '2024-03-15T08:00:00+01:00',
+        datePublished: post.created_date || '2025-01-15T08:00:00+01:00',
         image: post.image,
-        keywords: [post.category, 'Haustechnik', 'Wetzlar', 'Sanitär', 'Heizung'],
+        keywords: [post.category, 'Badsanierung', 'Wärmepumpe', 'Wetzlar', 'Bad & Energie GmbH'],
       }),
     ]);
   }
@@ -96,4 +96,3 @@ export default async function Layout({ children, params }) {
     </>
   );
 }
-

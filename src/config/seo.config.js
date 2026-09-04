@@ -1,69 +1,69 @@
-// seo.config.js
-// Source: Gemini 3 Pro Official Reference Documentation (v1.0)
+// seo.config.js - Bad & Energie GmbH
 
 export const SEO_CONFIG = {
     // Global SEO
     global: {
-        siteName: "Baris Aydin Batherm Haustechnik",
-        author: "Baris Aydin",
+        siteName: "Bad & Energie GmbH",
+        author: "Sabri Demir",
         language: "de",
         locale: "de_DE",
         charset: "UTF-8"
     },
 
-    // Target Keywords (Lokale Sucheintentionen)
+    // Target Keywords (Lokale Suchintentionen)
     keywords: {
         primary: [
-            "Installateur Wetzlar",
-            "Sanitärinstallateur Wetzlar",
-            "Heizungstechnik Wetzlar",
-            "Badezimmer Renovierung Wetzlar"
+            "Badsanierung Wetzlar",
+            "Wärmepumpen Wetzlar",
+            "NIBE Effizienz Partner Wetzlar",
+            "Barrierefreies Bad Wetzlar",
+            "Heizungsbau Lahn-Dill"
         ],
         secondary: [
-            "Sanitär Service Wetzlar",
-            "Klimaanlage Wetzlar",
-            "Heizungswartung Wetzlar",
-            "Rohrreinigung Wetzlar",
-            "Wärmepumpe Wetzlar"
+            "Wohnraumlüftung Wetzlar",
+            "Trinkwasserhygiene Legionellen Wetzlar",
+            "Gas-Brennwerttechnik Wetzlar",
+            "Photovoltaik Wärmepumpe",
+            "Bad aus einer Hand Wetzlar"
         ],
         long_tail: [
-            "Sanitärinstallateur in meiner Nähe",
-            "Hilfe bei Heizungsausfall Wetzlar",
-            "Badezimmer umbauen Wetzlar kosten"
+            "Badsanierung Wetzlar Kosten Festpreis",
+            "KfW Förderung Heizungstausch bis 70 Prozent",
+            "Pflegekassenzuschuss barrierefreies Bad Wetzlar"
         ]
     },
 
     // Pages SEO Configuration
     pages: {
         home: {
-            title: "Baris Aydin Batherm Haustechnik - Sanitär & Heizung in Wetzlar",
-            description: "Professionelle Sanitär-, Heizungs- und Klimatechnik in Wetzlar. Meister im Handwerk mit Garantieleistung.",
-            keywords: ["Installateur", "Sanitär", "Heizung", "Wetzlar"],
-            canonical: "https://batherm-haustechnik.de/",
+            title: "Bad & Energie GmbH - Meisterbetrieb für Badsanierung & Heiztechnik Wetzlar",
+            description: "Ihr Meisterbetrieb für schlüsselfertige Badsanierung, NIBE Wärmepumpen, Gas-Brennwert, Wohnraumlüftung und Trinkwasserhygiene in Wetzlar & Lahn-Dill.",
+            keywords: ["Badsanierung", "Wärmepumpe", "Heizung", "Wetzlar", "NIBE Partner"],
+            canonical: "https://bad-energie.de/",
             ogImage: "/images/og/home.jpg",
-            ogDescription: "Ihr Fachbetrieb für Sanitär-, Heizungs- und Klimatechnik in Wetzlar"
+            ogDescription: "Ihr Fachbetrieb für Badsanierung, Wärmepumpen und Haustechnik in Wetzlar"
         },
 
         services: {
-            title: "Unsere Leistungen | Baris Aydin Batherm Haustechnik Wetzlar",
-            description: "Sanitärtechnik, Heizungstechnik, Klimatechnik - alle Leistungen im Detail. Kostenlose Beratung für Ihre Anfrage.",
-            keywords: ["Sanitärinstallation", "Heizungsinstallation", "Klimatechnik", "Wetzlar"],
-            canonical: "https://batherm-haustechnik.de/leistungen",
+            title: "Unsere Leistungen | Bad & Energie GmbH Wetzlar",
+            description: "Badsanierung, innovative Heiztechnik, Wohnraumlüftung, Trinkwasserhygiene und regenerative Energien. Beratung mit Festpreisgarantie.",
+            keywords: ["Badsanierung", "Heizungstausch", "Wohnraumlüftung", "Wetzlar"],
+            canonical: "https://bad-energie.de/leistungen",
             ogImage: "/images/og/services.jpg"
         },
 
         portfolio: {
-            title: "Projekte & Referenzen | Batherm Haustechnik Wetzlar",
-            description: "Schauen Sie sich unsere abgeschlossenen Projekte an. Von Badezimmer-Renovierungen bis Heizungsinstallationen.",
-            keywords: ["Projekte", "Referenzen", "Portfolio", "Wetzlar"],
-            canonical: "https://batherm-haustechnik.de/portfolio"
+            title: "Referenzen & Kundenprojekte | Bad & Energie GmbH Wetzlar",
+            description: "Entdecken Sie über 1.000 erfolgreich realisierte Komplettbäder, Wärmepumpenanlagen und Haustechnikprojekte.",
+            keywords: ["Projekte", "Referenzen", "Musterbäder", "Wetzlar"],
+            canonical: "https://bad-energie.de/referenzen"
         },
 
         contact: {
-            title: "Kontakt & Terminbuchung | Batherm Haustechnik Wetzlar",
-            description: "Kontaktieren Sie uns für ein kostenloses Angebot. Schnelle Reaktionszeit garantiert.",
-            keywords: ["Kontakt", "Terminbuchung", "Angebot", "Wetzlar"],
-            canonical: "https://batherm-haustechnik.de/kontakt"
+            title: "Kontakt & Standorte | Bad & Energie GmbH Wetzlar",
+            description: "Hans-Sachs-Str. 12 & Siegmund-Hiepe-Str. 20 in Wetzlar. Telefon 06441 20 39 053. Schnelle Terminvergabe.",
+            keywords: ["Kontakt", "Standort Wetzlar", "Beratungstermin", "Bad & Energie"],
+            canonical: "https://bad-energie.de/kontakt"
         }
     },
 
@@ -71,25 +71,25 @@ export const SEO_CONFIG = {
     getOrganizationSchema: () => ({
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
-        "name": "Baris Aydin Batherm Haustechnik",
-        "description": "Professionelle Sanitär-, Heizungs- und Klimatechnik in Wetzlar",
-        "image": "https://batherm-haustechnik.de/logo.png",
-        "url": "https://batherm-haustechnik.de",
+        "name": "Bad & Energie GmbH",
+        "description": "Meisterbetrieb für Badsanierung, NIBE Wärmepumpen, Wohnraumlüftung und Trinkwasserhygiene in Wetzlar",
+        "image": "https://bad-energie.de/logo.png",
+        "url": "https://bad-energie.de",
         "address": {
             "@type": "PostalAddress",
-            "streetAddress": "Linsenbergstrasse 9",
+            "streetAddress": "Hans-Sachs-Straße 12",
             "addressLocality": "Wetzlar",
-            "postalCode": "35586",
+            "postalCode": "35576",
             "addressCountry": "DE"
         },
-        "telephone": "+49 172 9475061",
-        "email": "info@batherm.de",
-        "areaServed": ["Wetzlar", "Gießen", "Lahn-Dill"],
-        "priceRange": "€€",
+        "telephone": "+49 6441 2039053",
+        "email": "anfrage@bad-energie-profi.de",
+        "areaServed": ["Wetzlar", "Gießen", "Lahn-Dill-Kreis"],
+        "priceRange": "€€€",
         "sameAs": [],
         "openingHours": [
-            "Mo-Fr 07:00-17:00",
-            "Sa 08:00-13:00"
+            "Mo-Do 07:00-16:45",
+            "Fr 07:00-13:30"
         ]
     })
 };

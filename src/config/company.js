@@ -1,115 +1,245 @@
-// OFFICIAL COMPANY DATA - DO NOT MODIFY
-// Source: Gemini 3 Pro Official Reference Documentation (v1.0)
+// OFFICIAL COMPANY DATA - BAD & ENERGIE GMBH
+// Master Data Hub for Wetzlar & Lahn-Dill
+
+import { Award, Users, Target, Heart, Clock, Shield, CheckCircle, Zap, Droplet, Flame, PhoneCall, Sparkles } from 'lucide-react';
 
 export const COMPANY_DATA = {
     // Legal Information (Handelsregister)
-    legalName: "Baris Aydin Batherm Haustechnik",
+    legalName: "Bad & Energie GmbH",
+    tradeName: "Bad & Energie GmbH Lahn-Dill",
     owner: {
-        firstName: "Baris",
-        lastName: "Aydin",
-        title: "Geschäftsführer & Inhaber"
+        firstName: "Sabri",
+        lastName: "Demir",
+        title: "Geschäftsführer",
+        fullName: "Sabri Demir"
     },
 
-    // Address & Contact (Betriebsstätte)
+    // Headquarters & Branch Addresses
+    headquarters: {
+        street: "Hans-Sachs-Straße 12",
+        postalCode: "35576",
+        city: "Wetzlar",
+        state: "Hessen",
+        country: "Deutschland",
+        fullAddress: "Hans-Sachs-Straße 12, 35576 Wetzlar, Deutschland",
+        phone: "06441 20 39 053",
+        phoneLink: "064412039053",
+        email: "anfrage@bad-energie-profi.de",
+        mapsUrl: "https://maps.app.goo.gl/txCk3uNgQjeTJWux9"
+    },
+
+    branchLahnDill: {
+        street: "Siegmund-Hiepe-Straße 20",
+        postalCode: "35578",
+        city: "Wetzlar",
+        state: "Hessen",
+        country: "Deutschland",
+        fullAddress: "Siegmund-Hiepe-Straße 20, 35578 Wetzlar, Deutschland",
+        phone: "06441 42956",
+        phoneLink: "0644142956",
+        fax: "06441 48781",
+        email: "info@bad-energie.de"
+    },
+
+    // Address & Contact (Backwards compatibility)
     address: {
-        street: "Linsenbergstrasse 9",
-        postalCode: "35586",
+        street: "Hans-Sachs-Straße 12",
+        postalCode: "35576",
         city: "Wetzlar",
         state: "Hessen",
         country: "Deutschland",
         countryCode: "DE",
-        fullAddress: "Linsenbergstrasse 9, 35586 Wetzlar, Deutschland"
+        fullAddress: "Hans-Sachs-Straße 12, 35576 Wetzlar, Deutschland"
     },
 
     // Tax & Registration
     tax: {
-        ustId: "DE450483432", // Umsatzsteuer-Identifikationsnummer
-        registerNumber: null, // Handelsregisternummer nicht vorhanden
-        registerStatus: "Einzelunternehmen oder Gesellschaft ohne HR-Eintrag"
+        ustId: "DE215 933 612", // Umsatzsteuer-Identifikationsnummer
+        taxNumber: "FA GI 020 229 01420",
+        registerNumber: "HRB 2449",
+        court: "Amtsgericht Wetzlar",
+        registerStatus: "Eingetragene Gesellschaft mit beschränkter Haftung (HRB 2449 AG Wetzlar)"
     },
 
     // Authority & Compliance
     authority: {
-        name: "Berufsgenossenschaft der Bauwirtschaft",
-        shortName: "BG BAU",
-        type: "Berufsgenossenschaft",
-        responsibility: "Unfallverhütung und Rehabilitation im Bauwesen",
-        certification: "Meister im Handwerk (Sanitär-, Heizungs- und Klimatechnik)"
+        name: "Handwerkskammer Wiesbaden",
+        shortName: "HWK Wiesbaden",
+        type: "Handwerkskammer",
+        responsibility: "Meisterbetrieb für Sanitär-, Heizungs- und Klimatechnik",
+        certification: "Meisterbetrieb seit 2001 (Tradition seit 1926)"
     },
 
     // Business Information
     business: {
-        industryType: "Sanitär-, Heizungs- und Klimatechnik",
-        businessType: "Handwerksbetrieb (HWK-Zugehörigkeit)",
-        primaryServices: ["Sanitärtechnik", "Heizungstechnik", "Klimatechnik"],
-        serviceArea: ["Wetzlar", "Gießen", "Marburg", "Limburg an der Lahn", "Bad Nauheim", "Friedberg", "Butzbach", "Herborn", "Dillenburg", "Haiger", "Braunfels", "Solms", "Lahnau", "Aßlar", "Hüttenberg", "Linden", "Pohlheim"],
-        establishmentYear: 2025
+        industryType: "Sanitär-, Heizungs-, Lüftungs- und Klimatechnik (SHK)",
+        businessType: "Meisterbetrieb & NIBE Effizienz Partner",
+        primaryServices: [
+            "Badsanierung & Bad aus einer Hand",
+            "Barrierefreie Badmodernisierung",
+            "Wärmepumpen & NIBE Partnertechnik",
+            "Gas-Brennwerttechnik & Hybridsysteme",
+            "Zentrale & Dezentrale Wohnraumlüftung",
+            "Trinkwasserhygiene & Legionellenprüfung",
+            "Solarthermie & Photovoltaik",
+            "Gewerblicher Objekt- und Anlagenbau"
+        ],
+        serviceArea: [
+            "Wetzlar",
+            "Gießen",
+            "Lahn-Dill-Kreis",
+            "Marburg",
+            "Limburg an der Lahn",
+            "Bad Nauheim",
+            "Friedberg",
+            "Butzbach",
+            "Herborn",
+            "Dillenburg",
+            "Haiger",
+            "Braunfels",
+            "Solms",
+            "Lahnau",
+            "Aßlar",
+            "Hüttenberg",
+            "Linden",
+            "Pohlheim"
+        ],
+        establishmentYear: 2001,
+        traditionYear: 1926
     },
 
     // Contact
     contact: {
-        phone: "+49 172 9475061", // Placeholder as per doc
-        phoneFormatted: "+49 172 9475061", // Format example
-        email: "info@batherm.de",
-        website: "https://www.batherm.de",
+        phone: "06441 20 39 053",
+        phoneSecondary: "06441 42956",
+        phoneFormatted: "06441 20 39 053",
+        phoneLink: "064412039053",
+        phoneSecondaryLink: "0644142956",
+        fax: "06441 48781",
+        email: "anfrage@bad-energie-profi.de",
+        emailSecondary: "info@bad-energie.de",
+        website: "https://bad-energie.de",
         emergency: {
-            available: false,
-            phone24_7: null,
-            note: "Kontaktieren Sie uns zu den Öffnungszeiten"
+            available: true,
+            phone: "06441 20 39 053",
+            phoneSecondary: "06441 42956",
+            note: "Zuverlässiger Notdienst-Service für unsere Bestandskunden"
         }
     },
 
     // Social Media
     social: {
-        instagram: "https://www.instagram.com/bathermhaustechnik"
+        instagram: "https://www.instagram.com/badundenergie",
+        facebook: ""
     },
 
     // Business Hours
     hours: {
-        monday: { open: "07:00", close: "17:00", type: "normal" },
-        tuesday: { open: "07:00", close: "17:00", type: "normal" },
-        wednesday: { open: "07:00", close: "17:00", type: "normal" },
-        thursday: { open: "07:00", close: "17:00", type: "normal" },
-        friday: { open: "07:00", close: "17:00", type: "normal" },
-        saturday: { open: "08:00", close: "13:00", type: "limited" },
-        sunday: { type: "closed", note: "Geschlossen" },
-        holidays: "Geschlossen"
-    }
+        monday: { open: "07:00", close: "16:45", type: "normal" },
+        tuesday: { open: "07:00", close: "16:45", type: "normal" },
+        wednesday: { open: "07:00", close: "16:45", type: "normal" },
+        thursday: { open: "07:00", close: "16:45", type: "normal" },
+        friday: { open: "07:00", close: "13:30", type: "short" },
+        saturday: { open: "00:00", close: "00:00", type: "emergency_only", note: "Notdienst für Bestandskunden" },
+        sunday: { open: "00:00", close: "00:00", type: "emergency_only", note: "Notdienst für Bestandskunden" },
+        formattedWeekdays: "Mo - Do: 07:00 – 16:45 Uhr",
+        formattedFriday: "Fr: 07:00 – 13:30 Uhr"
+    },
+
+    // 8-Punkte Qualitätsversprechen
+    qualityPromises: [
+        {
+            title: "Umfassende & individuelle Expertenberatung",
+            description: "Persönliche Vor-Ort-Analyse und maßgeschneiderte Konzepte durch unsere Meister und Fachingenieure."
+        },
+        {
+            title: "Kompetente Begleitung bis zur Umsetzung",
+            description: "Ihr fester Ansprechpartner begleitet Ihr Vorhaben von der ersten Skizze bis zur schlüsselfertigen Übergabe."
+        },
+        {
+            title: "Technisch fundierte & detaillierte Planung",
+            description: "Präzise 3D-Badplanung und exakte wärmetechnische Heizlastberechnungen nach DIN-Normen."
+        },
+        {
+            title: "Transparente Festpreisgarantie",
+            description: "Klare, verbindliche Kostenaufstellung ohne versteckte Überraschungen oder Nachforderungen."
+        },
+        {
+            title: "Langjährige Partnerschaft mit Top-Herstellern",
+            description: "Zertifizierter NIBE Effizienz Partner sowie enge Kooperation mit VIGOUR, COSMO, Duka und CONEL."
+        },
+        {
+            title: "Ausschließliche Verwendung von Markenprodukten",
+            description: "Geprüfte Premium-Komponenten garantieren höchste Langlebigkeit, Ersatzteilsicherheit und Werterhalt."
+        },
+        {
+            title: "Qualifiziertes Fachpersonal",
+            description: "Eigenes Team aus ausgebildeten Gesellen, Meistern und Auszubildenden mit regelmäßigen Herstellerschulungen."
+        },
+        {
+            title: "Hohe Termintreue & proaktive Kommunikation",
+            description: "Verlässliche Bauzeitpläne, saubere Ausführung mit Staubschutz und transparente Absprachen."
+        }
+    ]
 };
 
-// Marketing / Content Data (Restored for About Page compatibility)
-import { Award, Users, Target, Heart, Clock, Shield } from 'lucide-react';
-
 export const values = [
-    { icon: Shield, title: "Qualität", description: "Höchste Standards in Material und Ausführung." },
-    { icon: Clock, title: "Zuverlässigkeit", description: "Termingerechte und sorgfältige Arbeit." },
-    { icon: Heart, title: "Leidenschaft", description: "Wir lieben, was wir tun." },
-    { icon: Users, title: "Kundenfokus", description: "Ihre Zufriedenheit steht an erster Stelle." },
-    { icon: Target, title: "Präzision", description: "Exaktes Arbeiten bis ins Detail." },
-    { icon: Award, title: "Kompetenz", description: "Ständige Weiterbildung unseres Teams." },
-    { icon: Shield, title: "Sicherheit", description: "Geprüfte Sicherheit bei allen Installationen." },
-    { icon: Users, title: "Teamgeist", description: "Gemeinsam stark für Ihr Projekt." }
+    { icon: Shield, title: "Meisterqualität seit 2001", description: "Verbindung aus fast 100 Jahren Handwerkstradition und neuester Energietechnik." },
+    { icon: Clock, title: "Termintreue & Festpreis", description: "Verbindliche Zeitpläne und transparente Kostenkalkulation ohne versteckte Aufschläge." },
+    { icon: Heart, title: "Alles aus einer Hand", description: "Komplette Gewerke-Koordination für stressfreie Badsanierung und Heizungserneuerung." },
+    { icon: Users, title: "Kundenfokus 5/5", description: "Erstklassige Kundenzufriedenheit und individuelle Betreuung im Lahn-Dill-Kreis." },
+    { icon: Target, title: "Zertifizierte Effizienz", description: "Als NIBE Effizienz Partner sichern wir maximale Förderung von bis zu 70 % über die BEG." },
+    { icon: Award, title: "Staubarme Sanierung", description: "Modernste Schutzsysteme und saubere Baustellenführung für maximalen Wohnkomfort." }
 ];
 
-export const team = [
-    { name: "Baris Aydin", position: "Geschäftsführer", description: "Meister für Sanitär-, Heizungs- und Klimatechnik." },
-    { name: "Team-Mitglied", position: "Haustechniker", description: "Ihr Experte für zuverlässige Installationen und Wartung." }
+export const historyTimeline = [
+    {
+        year: "1926",
+        title: "Gründung durch Karl Schmidt",
+        description: "Gründung des SHK-Handwerksbetriebs in Wetzlar, Hintergasse. Wachstum bis zum 2. Weltkrieg mit bis zu 20 Mitarbeitern."
+    },
+    {
+        year: "1945",
+        title: "Übernahme durch Rudolf Schmidt",
+        description: "Weiterführung des Betriebs nach dem 2. Weltkrieg. In den 1950ern Kauf und Umzug in die Garbenheimer Str. 4 in Wetzlar."
+    },
+    {
+        year: "2001",
+        title: "Umfirmierung in Bad & Energie GmbH",
+        description: "Übernahme durch Rudolf Giesbert Diesfeld. Etablierung als führende Größe für Sanitär- und Heiztechnik im Lahn-Dill-Kreis."
+    },
+    {
+        year: "2021 - Heute",
+        title: "Zukunft & Leitung durch Sabri Demir",
+        description: "Übernahme durch Sabri Demir mit komplettem Team, Kundenstamm und Maschinenpark. Umzug an den modernen Hauptstandort Hans-Sachs-Straße 12 mit starkem Fokus auf erneuerbare Energien und digitale Planung."
+    }
 ];
 
-// Mein Team - Flexible team section for additional team members
-// Update this array to add/remove team members without changing the page code
-export const meinTeam = [
-    { name: "Mitarbeiter 1", position: "Fachkraft", description: "Spezialist für Sanitärtechnik und Installationen." },
-    { name: "Mitarbeiter 2", position: "Fachkraft", description: "Experte für Heizungstechnik und Wartung." }
+export const partnerBrands = [
+    { name: "NIBE", category: "Wärmepumpen & Effizienztechnik", partnerStatus: "Offizieller NIBE Effizienz Partner" },
+    { name: "VIGOUR", category: "Sanitärkeramik & Armaturen", partnerStatus: "Fachpartner (derby, white, one, clivia)" },
+    { name: "COSMO", category: "Design-Heizkörper & Fußbodenheizung", partnerStatus: "Fachpartner" },
+    { name: "Duka", category: "Echtglas-Duschwände & Walk-In", partnerStatus: "Fachpartner" },
+    { name: "CONEL", category: "Installationstechnik & Vorwandelemente", partnerStatus: "Fachpartner VIS" },
+    { name: "Buderus / Bosch", category: "Heizsysteme & Brennwerttechnik", partnerStatus: "Fachpartner" },
+    { name: "Wolf", category: "Lüftungs- & Heizsysteme", partnerStatus: "Fachpartner" },
+    { name: "Kermi", category: "Heizkörper & Duschkabinen", partnerStatus: "Fachpartner" }
 ];
 
 export const certifications = [
-    { title: "Meisterbrief", image: "/images/certificates/meisterbrief.jpg" },
-    { title: "Zusatz zur TRGI-Seminarbescheinigung", image: "/images/certificates/trgi_seminar.jpg" },
-    { title: "Ausbildereignungsprüfung", image: "/images/certificates/ausbilder_eignung.jpg" },
-    { title: "Zusatz zur TRWI-Seminarbescheinigung", image: "/images/certificates/trwi_seminar.jpg" },
-    { title: "Teilnahmebescheinigung Flüssiggasseminar", image: "/images/certificates/fluessiggas_seminar.jpg" },
-    { title: "Hilti Brandschutzschulung Anwender Professional", image: "/images/certificates/hilti_brandschutz.jpg" }
+    { name: "Handwerksmeister SHK", issuer: "HWK Wiesbaden", year: "2001" },
+    { name: "NIBE Effizienz Partner", issuer: "NIBE Systemtechnik", year: "2024" },
+    { name: "Zertifizierter Fachbetrieb für Trinkwasserhygiene", issuer: "DVGW / VDI 6023", year: "2023" },
+    { name: "TRF-Fachbetrieb Flüssiggas", issuer: "DVFG", year: "2022" }
 ];
 
+export const team = [
+    { name: "Sabri Demir", role: "Geschäftsführer & Projektleitung", experience: "Meisterbetrieb seit 2001", image: "" },
+    { name: "SHK Meisterteam", role: "Bauleitung & 3D-Planung", experience: "Langjährige Fachexpertise", image: "" },
+    { name: "Monteurteam", role: "Anlagenmechaniker & Servicetechniker", experience: "Fachhandwerker", image: "" }
+];
+
+export const meinTeam = team;
+
 export default COMPANY_DATA;
+

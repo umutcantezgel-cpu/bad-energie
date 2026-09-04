@@ -3,8 +3,8 @@ import { buildGraph, buildContactPageNode, buildBreadcrumbNode, SITE_URL } from 
 import JsonLd from '@/components/seo/JsonLd';
 
 export const metadata = createMetadata({
-  title: 'Kontakt – Ihr Meisterbetrieb in Wetzlar',
-  description: 'Kontaktieren Sie Batherm Haustechnik in Wetzlar. Sanitär, Heizung & Klimatechnik – kostenlose Beratung und schnelle Terminvergabe.',
+  title: 'Kontakt & Standorte Wetzlar | Bad & Energie GmbH',
+  description: 'Kontaktieren Sie die Bad & Energie GmbH in Wetzlar. Badsanierung, Heizung & Haustechnik – persönliche Beratung und schnelle Terminvergabe.',
   path: '/kontakt',
 });
 
@@ -17,9 +17,9 @@ const breadcrumbs = [
 const contactSchema = buildGraph([
   buildContactPageNode({
     url: pageUrl,
-    name: 'Kontakt aufnehmen | Batherm Haustechnik Wetzlar',
+    name: 'Kontakt aufnehmen | Bad & Energie GmbH Wetzlar',
     description:
-      'Kontaktieren Sie Ihren Meisterbetrieb Batherm Haustechnik für Sanitär, Heizung und Klimatechnik in Wetzlar und Mittelhessen.',
+      'Kontaktieren Sie Ihren Meisterbetrieb Bad & Energie GmbH für Badsanierung, Heizung und Haustechnik in Wetzlar und im Lahn-Dill-Kreis.',
   }),
   buildBreadcrumbNode(breadcrumbs, pageUrl),
 ]);
@@ -32,4 +32,3 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-
