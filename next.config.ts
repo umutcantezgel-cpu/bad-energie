@@ -38,8 +38,6 @@ const nextConfig: NextConfig = {
   },
   outputFileTracingIncludes: {
     "/api/intern/[...slug]": ["src/lib/dokumente/assets/**/*"],
-    "/api/jobs/[job]": ["src/lib/dokumente/assets/**/*"],
-    "/api/estimate": ["src/lib/dokumente/assets/**/*"],
     "/intern/[[...slug]]": ["src/lib/dokumente/assets/**/*"],
   },
   experimental: {
@@ -48,6 +46,13 @@ const nextConfig: NextConfig = {
       "@phosphor-icons/react/dist/ssr",
       "framer-motion",
     ],
+  },
+  async rewrites() {
+    return [
+      { source: "/api/estimate", destination: "/api/intern/estimate" },
+      { source: "/api/jobs/:job", destination: "/api/intern/jobs/:job" },
+      { source: "/api/webhooks/resend", destination: "/api/intern/webhooks/resend" },
+    ];
   },
   async redirects() {
     return [

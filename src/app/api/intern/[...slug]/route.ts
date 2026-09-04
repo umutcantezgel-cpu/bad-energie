@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import { and, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
+import { Webhook } from 'svix';
 import { getDb } from '@/db/client';
 import {
   anfrage as anfrageTabelle,
@@ -16,10 +17,12 @@ import {
   richtpreis,
   terminfenster,
   terminfensterReservierung,
+  versandauftrag,
   vorbehalt,
 } from '@/db/schema';
 import {
   abmelden as authAbmelden,
+  aktuelleSession,
   anmelden as authAnmelden,
   deaktiviereBenutzer,
   verifySessionApi,
@@ -38,6 +41,7 @@ import {
   ladeEntwuerfe as ladeEntwuerfeService,
   ladeInternAnfrage,
   ladeTerminfenster as ladeTerminfensterService,
+  legeAusKundenAnfrage,
   speichereInternAnfrage,
   stornieren as stornierenService,
 } from '@/lib/services/estimates';
@@ -51,25 +55,284 @@ import {
 import { pinGueltig, pinHashen } from '@/lib/services/pin';
 import { pruefeLimit } from '@/lib/services/ratelimit';
 import { schreibeEreignis } from '@/lib/services/statusmaschine';
-import { getStorage, speichereFoto } from '@/lib/services/storage';
+import { ausDataUrl, getStorage, speichereFoto, speichereSkizze } from '@/lib/services/storage';
 import { euro } from '@/lib/services/calculation';
+import {
+  sendeBueroHinweis,
+  sendeEingangsbestaetigung,
+  stelleAuftragBereit,
+} from '@/lib/services/versand';
+import { bereinigungJob } from '@/lib/jobs/bereinigung';
+import { eingangJob } from '@/lib/jobs/eingang';
+import { speicherfristJob } from '@/lib/jobs/speicherfrist';
+import { versandJob } from '@/lib/jobs/versand';
+import { wiedervorlageJob } from '@/lib/jobs/wiedervorlage';
+import { istJobName, mitJobSperre, type JobErgebnis, type JobName } from '@/lib/jobs/runner';
 import type { DispatchBefehl } from '@/lib/services/dispatch-parser';
-import type { AnfrageStatus, FoerderRegeln, Gewerk, InternAnfrage, Rolle } from '@/lib/types';
+import {
+  estimateRequestSchema,
+  type AnfrageStatus,
+  type FoerderRegeln,
+  type Gewerk,
+  type InternAnfrage,
+  type Rolle,
+} from '@/lib/types';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
+
+// ---------------------------------------------------------------------------
+// Jobs Hilfsfunktionen
+// ---------------------------------------------------------------------------
+
+const JOB_ARBEIT: Record<JobName, (jetzt: Date) => Promise<JobErgebnis>> = {
+  versand: versandJob,
+  wiedervorlage: wiedervorlageJob,
+  eingang: eingangJob,
+  speicherfrist: speicherfristJob,
+  bereinigung: bereinigungJob,
+};
+
+function timingGleich(a: string, b: string): boolean {
+  const links = createHash('sha256').update(a).digest();
+  const rechts = createHash('sha256').update(b).digest();
+  return timingSafeEqual(links, rechts);
+}
+
+async function darfJobLaufen(request: NextRequest): Promise<'cron' | 'manuell' | null> {
+  const geheim = process.env.CRON_SECRET;
+  const kopf = request.headers.get('authorization') ?? '';
+  if (geheim && kopf.startsWith('Bearer ') && timingGleich(kopf.slice(7), geheim)) return 'cron';
+  const session = await aktuelleSession();
+  if (session?.rolle === 'chef') return 'manuell';
+  return null;
+}
+
+async function starteJob(request: NextRequest, job: string): Promise<Response> {
+  if (!istJobName(job)) return Response.json({ ok: false, fehler: 'Unbekannter Job.' }, { status: 404 });
+  const ausloeser = await darfJobLaufen(request);
+  if (!ausloeser) return Response.json({ ok: false, fehler: 'Nicht berechtigt.' }, { status: 401 });
+
+  const ergebnis = await mitJobSperre(job, ausloeser, new Date(), () => JOB_ARBEIT[job](new Date()));
+  if (!ergebnis.ok && ergebnis.grund === 'gesperrt') {
+    return Response.json({ ok: false, job, slot: ergebnis.slot, fehler: 'Der Lauf für diesen Slot läuft bereits.' }, { status: 409 });
+  }
+  if (!ergebnis.ok) {
+    return Response.json({ ok: false, job, slot: ergebnis.slot, fehler: ergebnis.fehler ?? 'Fehler im Lauf.' }, { status: 500 });
+  }
+  return Response.json(ergebnis, { status: 200, headers: { 'Cache-Control': 'no-store' } });
+}
+
+// ---------------------------------------------------------------------------
+// POST Handler
+// ---------------------------------------------------------------------------
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string[] }> },
-): Promise<NextResponse> {
+): Promise<Response> {
   const { slug } = await params;
 
   // -------------------------------------------------------------------------
-  // Öffentliche Endpunkte (ohne vorherige Sitzung)
+  // 1. Estimate Endpoint: /api/intern/estimate (rewritten from /api/estimate)
   // -------------------------------------------------------------------------
+  if (slug.length === 1 && slug[0] === 'estimate') {
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ ok: false, fehler: 'Ungültiges JSON-Format.' }, { status: 400 });
+    }
 
-  // 1. PIN-Login: /api/intern/anmelden
+    const parse = estimateRequestSchema.safeParse(body);
+    if (!parse.success) {
+      const details = parse.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ');
+      return NextResponse.json({ ok: false, fehler: `Validierungsfehler: ${details}` }, { status: 400 });
+    }
+
+    const payload = parse.data;
+
+    // Kunden-Modus (Öffentlicher Funnel)
+    if (payload.modus === 'kunde') {
+      if (payload.honig) {
+        return NextResponse.json({ ok: false, fehler: 'Anfrage konnte nicht verarbeitet werden.' }, { status: 400 });
+      }
+
+      if (payload.gestartetUm && Date.now() - payload.gestartetUm < 2000) {
+        return NextResponse.json({ ok: false, fehler: 'Bitte nehmen Sie sich einen Moment Zeit zum Ausfüllen.' }, { status: 400 });
+      }
+
+      const ip = request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '127.0.0.1';
+      const limit = await pruefeLimit(`estimate:kunde:ip:${ip}`, 20, 10 * 60 * 1000);
+      if (!limit.erlaubt) {
+        return NextResponse.json(
+          { ok: false, fehler: 'Zu viele Anfragen. Bitte probieren Sie es in einigen Minuten erneut.' },
+          { status: 429 },
+        );
+      }
+
+      try {
+        const anlage = await legeAusKundenAnfrage(payload);
+
+        if (payload.kontakt.eingangsbestaetigung) {
+          await stelleAuftragBereit(anlage.anfrageId, 'eingangsbestaetigung', {
+            empfaenger: payload.kontakt.email,
+          });
+          sendeEingangsbestaetigung(anlage.anfrageId, payload.kontakt.email).catch((err) => {
+            console.error('[Mail] Eingangsbestätigung fehlgeschlagen:', err);
+          });
+        }
+
+        sendeBueroHinweis(anlage.anfrageId).catch((err) => {
+          console.error('[Mail] Büro-Hinweis fehlgeschlagen:', err);
+        });
+
+        return NextResponse.json({
+          ok: true,
+          modus: 'kunde',
+          ksNummer: anlage.ksNummer,
+          ergebnis: anlage.ergebnis,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Interner Fehler bei der Speicherung.';
+        return NextResponse.json({ ok: false, fehler: msg }, { status: 500 });
+      }
+    }
+
+    // Meister-Modus (Intern)
+    const session = await verifySessionApi();
+    if (!session) {
+      return NextResponse.json({ ok: false, fehler: 'Nicht autorisiert. Bitte anmelden.' }, { status: 401 });
+    }
+
+    try {
+      const anlage = await speichereInternAnfrage(payload, session);
+
+      if (payload.skizzen && payload.skizzen.length > 0) {
+        for (const skizze of payload.skizzen) {
+          try {
+            const { daten } = ausDataUrl(skizze.dataUrl);
+            await speichereSkizze(anlage.anfrageId, daten, skizze.name, {
+              breite: skizze.breite,
+              hoehe: skizze.hoehe,
+            });
+          } catch {
+            // Skizzen-Fehler blockiert nicht die Speicherung
+          }
+        }
+      }
+
+      if (payload.fotos && payload.fotos.length > 0) {
+        for (const foto of payload.fotos) {
+          try {
+            const { daten } = ausDataUrl(foto.dataUrl);
+            await speichereFoto(anlage.anfrageId, daten, foto.name, foto.beschreibung);
+          } catch {
+            // Foto-Fehler blockiert nicht die Speicherung
+          }
+        }
+      }
+
+      return NextResponse.json({
+        ok: true,
+        modus: 'intern',
+        anfrageId: anlage.anfrageId,
+        ksNummer: anlage.ksNummer,
+        status: anlage.status,
+        aktion: payload.aktion,
+        hinweise: anlage.hinweise,
+        rueckmeldung: anlage.rueckmeldung,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Interner Fehler bei der Speicherung.';
+      return NextResponse.json({ ok: false, fehler: msg }, { status: 500 });
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // 2. Jobs Endpoint: /api/intern/jobs/[job] (rewritten from /api/jobs/:job)
+  // -------------------------------------------------------------------------
+  if (slug.length === 2 && slug[0] === 'jobs') {
+    return starteJob(request, slug[1]);
+  }
+
+  // -------------------------------------------------------------------------
+  // 3. Resend Webhook: /api/intern/webhooks/resend (rewritten from /api/webhooks/resend)
+  // -------------------------------------------------------------------------
+  if (slug.length === 2 && slug[0] === 'webhooks' && slug[1] === 'resend') {
+    const secret = process.env.RESEND_WEBHOOK_SECRET;
+    const rawBody = await request.text();
+
+    let event: { type: string; data: { email_id?: string; id?: string; from?: string; to?: string[]; subject?: string } };
+
+    if (secret) {
+      const svixId = request.headers.get('svix-id');
+      const svixTimestamp = request.headers.get('svix-timestamp');
+      const svixSignature = request.headers.get('svix-signature');
+
+      if (!svixId || !svixTimestamp || !svixSignature) {
+        return NextResponse.json({ fehler: 'Svix-Header fehlen.' }, { status: 400 });
+      }
+
+      try {
+        const wh = new Webhook(secret);
+        event = wh.verify(rawBody, {
+          'svix-id': svixId,
+          'svix-timestamp': svixTimestamp,
+          'svix-signature': svixSignature,
+        }) as unknown as typeof event;
+      } catch {
+        return NextResponse.json({ fehler: 'Ungültige Signatur.' }, { status: 400 });
+      }
+    } else {
+      try {
+        event = JSON.parse(rawBody);
+      } catch {
+        return NextResponse.json({ fehler: 'Ungültiges JSON.' }, { status: 400 });
+      }
+    }
+
+    const resendId = event.data?.email_id || event.data?.id;
+    if (!resendId) {
+      return NextResponse.json({ received: true });
+    }
+
+    const db = await getDb();
+    const auftraege = await db.select().from(versandauftrag).where(eq(versandauftrag.resendId, resendId)).limit(1);
+    const auftrag = auftraege[0];
+
+    if (!auftrag) {
+      return NextResponse.json({ received: true });
+    }
+
+    const jetzt = new Date();
+
+    if (event.type === 'email.delivered') {
+      await db.update(versandauftrag).set({ zugestelltAm: jetzt }).where(eq(versandauftrag.id, auftrag.id));
+      await schreibeEreignis({
+        anfrageId: auftrag.anfrageId,
+        typ: 'mail:zugestellt',
+        payload: { auftragId: auftrag.id, art: auftrag.art, resendId },
+      });
+    } else if (event.type === 'email.bounced' || event.type === 'email.complained') {
+      await db.update(versandauftrag).set({
+        status: 'fehlgeschlagen',
+        fehler: `Zustellung fehlgeschlagen (${event.type}).`,
+      }).where(eq(versandauftrag.id, auftrag.id));
+      await schreibeEreignis({
+        anfrageId: auftrag.anfrageId,
+        typ: 'mail:fehlgeschlagen',
+        payload: { auftragId: auftrag.id, art: auftrag.art, resendId, typ: event.type },
+      });
+    }
+
+    return NextResponse.json({ received: true });
+  }
+
+  // -------------------------------------------------------------------------
+  // 4. PIN-Login: /api/intern/anmelden
+  // -------------------------------------------------------------------------
   if (slug.length === 1 && slug[0] === 'anmelden') {
     try {
       const body = await request.json();
@@ -83,7 +346,9 @@ export async function POST(
     }
   }
 
-  // 2. Termin-Bestätigung Kunde: /api/intern/termin-bestaetigen
+  // -------------------------------------------------------------------------
+  // 5. Termin-Bestätigung: /api/intern/termin-bestaetigen
+  // -------------------------------------------------------------------------
   if (slug.length === 1 && slug[0] === 'termin-bestaetigen') {
     try {
       const body = await request.json();
@@ -161,13 +426,13 @@ export async function POST(
     return NextResponse.json({ ok: false, fehler: 'Nicht autorisiert.' }, { status: 401 });
   }
 
-  // 3. Abmelden: /api/intern/abmelden
+  // Abmelden
   if (slug.length === 1 && slug[0] === 'abmelden') {
     await authAbmelden();
     return NextResponse.json({ ok: true });
   }
 
-  // 4. Vercel Blob Token: /api/intern/uploads/token
+  // Vercel Blob Token
   if (slug.length === 2 && slug[0] === 'uploads' && slug[1] === 'token') {
     const body = (await request.json()) as HandleUploadBody;
     try {
@@ -189,7 +454,7 @@ export async function POST(
     }
   }
 
-  // 5. Anhänge: /api/intern/anhaenge
+  // Anhänge hochladen
   if (slug.length === 1 && slug[0] === 'anhaenge') {
     try {
       const formData = await request.formData();
@@ -217,7 +482,7 @@ export async function POST(
     }
   }
 
-  // 6. Entwurf speichern: /api/intern/entwurf
+  // Entwurf speichern
   if (slug.length === 1 && slug[0] === 'entwurf') {
     try {
       const input = (await request.json()) as InternAnfrage;
@@ -237,7 +502,7 @@ export async function POST(
     }
   }
 
-  // 7. Freigabe: /api/intern/freigeben
+  // Freigabe
   if (slug.length === 1 && slug[0] === 'freigeben') {
     try {
       const { anfrageId, sofort } = await request.json();
@@ -248,7 +513,7 @@ export async function POST(
     }
   }
 
-  // 8. Stornieren: /api/intern/stornieren
+  // Stornieren
   if (slug.length === 1 && slug[0] === 'stornieren') {
     try {
       const { anfrageId } = await request.json();
@@ -259,7 +524,7 @@ export async function POST(
     }
   }
 
-  // 9. Richtpreis-Matrix Zeile: /api/intern/matrix/zeile
+  // Richtpreis-Matrix Zeile
   if (slug.length === 2 && slug[0] === 'matrix' && slug[1] === 'zeile') {
     if (session.rolle !== 'chef') {
       return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf Richtpreise ändern.' }, { status: 403 });
@@ -281,7 +546,7 @@ export async function POST(
     }
   }
 
-  // 10. Förderregeln: /api/intern/matrix/foerderregeln
+  // Förderregeln
   if (slug.length === 2 && slug[0] === 'matrix' && slug[1] === 'foerderregeln') {
     if (session.rolle !== 'chef') {
       return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf Förderregeln ändern.' }, { status: 403 });
@@ -307,7 +572,7 @@ export async function POST(
     }
   }
 
-  // 11. Vorbehalt toggle: /api/intern/matrix/vorbehalt-toggle
+  // Vorbehalt toggle
   if (slug.length === 2 && slug[0] === 'matrix' && slug[1] === 'vorbehalt-toggle') {
     try {
       const { id, aktiv } = await request.json();
@@ -319,7 +584,7 @@ export async function POST(
     }
   }
 
-  // 12. Vorbehalt neu: /api/intern/matrix/vorbehalt-neu
+  // Vorbehalt neu
   if (slug.length === 2 && slug[0] === 'matrix' && slug[1] === 'vorbehalt-neu') {
     try {
       const { text, gewerk } = await request.json();
@@ -335,7 +600,7 @@ export async function POST(
     }
   }
 
-  // 13. Mobile Dispatch: /api/intern/dispatch
+  // Mobile Dispatch
   if (slug.length === 1 && slug[0] === 'dispatch') {
     try {
       const befehl = (await request.json()) as DispatchBefehl;
@@ -450,7 +715,7 @@ export async function POST(
     }
   }
 
-  // 14. Benutzer anlegen: /api/intern/benutzer/neu
+  // Benutzer anlegen
   if (slug.length === 2 && slug[0] === 'benutzer' && slug[1] === 'neu') {
     if (session.rolle !== 'chef') {
       return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf Benutzer anlegen.' }, { status: 403 });
@@ -481,7 +746,7 @@ export async function POST(
     }
   }
 
-  // 15. PIN zurücksetzen: /api/intern/benutzer/pin
+  // PIN zurücksetzen
   if (slug.length === 2 && slug[0] === 'benutzer' && slug[1] === 'pin') {
     if (session.rolle !== 'chef') {
       return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf PINs zurücksetzen.' }, { status: 403 });
@@ -499,7 +764,7 @@ export async function POST(
     }
   }
 
-  // 16. Benutzer aktiv/inaktiv schalten: /api/intern/benutzer/toggle
+  // Benutzer aktiv/inaktiv schalten
   if (slug.length === 2 && slug[0] === 'benutzer' && slug[1] === 'toggle') {
     if (session.rolle !== 'chef') {
       return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf Benutzer aktivieren/deaktivieren.' }, { status: 403 });
@@ -521,7 +786,7 @@ export async function POST(
     }
   }
 
-  // 17. Terminfenster neu: /api/intern/termine/neu
+  // Terminfenster neu
   if (slug.length === 2 && slug[0] === 'termine' && slug[1] === 'neu') {
     try {
       const { beschriftung, beginnIso, endeIso } = await request.json();
@@ -541,7 +806,7 @@ export async function POST(
     }
   }
 
-  // 18. Terminfenster löschen: /api/intern/termine/loeschen
+  // Terminfenster löschen
   if (slug.length === 2 && slug[0] === 'termine' && slug[1] === 'loeschen') {
     try {
       const { id } = await request.json();
@@ -554,7 +819,7 @@ export async function POST(
     }
   }
 
-  // 19. Einstellungen speichern: /api/intern/einstellungen
+  // Einstellungen speichern
   if (slug.length === 1 && slug[0] === 'einstellungen') {
     if (session.rolle !== 'chef') {
       return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf Betriebseinstellungen ändern.' }, { status: 403 });
@@ -587,7 +852,7 @@ export async function POST(
     }
   }
 
-  // 20. Anfrage löschen: /api/intern/anfragen/[id]/loeschen
+  // Anfrage löschen
   if (slug.length === 3 && slug[0] === 'anfragen' && slug[2] === 'loeschen') {
     try {
       const anfrageId = slug[1];
@@ -636,7 +901,7 @@ export async function POST(
     }
   }
 
-  // 21. Anfrage Status ändern: /api/intern/anfragen/[id]/status
+  // Anfrage Status ändern
   if (slug.length === 3 && slug[0] === 'anfragen' && slug[2] === 'status') {
     try {
       const anfrageId = slug[1];
@@ -667,42 +932,53 @@ export async function POST(
   return NextResponse.json({ fehler: 'Endpunkt nicht gefunden.' }, { status: 404 });
 }
 
+// ---------------------------------------------------------------------------
+// GET Handler
+// ---------------------------------------------------------------------------
+
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ slug: string[] }> },
-): Promise<NextResponse> {
+): Promise<Response> {
   const { slug } = await params;
+
+  // Jobs GET: /api/intern/jobs/[job]
+  if (slug.length === 2 && slug[0] === 'jobs') {
+    return starteJob(request, slug[1]);
+  }
+
+  // Ab hier: Authentifizierung zwingend erforderlich
   const session = await verifySessionApi();
   if (!session) {
     return new NextResponse('Nicht autorisiert.', { status: 401 });
   }
 
-  // 1. Kalkulationsdaten: /api/intern/kalkulationsdaten
+  // Kalkulationsdaten
   if (slug.length === 1 && slug[0] === 'kalkulationsdaten') {
     const daten = await ladeKalkulationsdatenService();
     return NextResponse.json(daten);
   }
 
-  // 2. Terminfenster: /api/intern/terminfenster
+  // Terminfenster
   if (slug.length === 1 && slug[0] === 'terminfenster') {
     const fenster = await ladeTerminfensterService();
     return NextResponse.json(fenster);
   }
 
-  // 3. Entwürfe: /api/intern/entwuerfe
+  // Entwürfe
   if (slug.length === 1 && slug[0] === 'entwuerfe') {
     const karten = await ladeEntwuerfeService(session);
     return NextResponse.json(karten);
   }
 
-  // 4. Einzelne Anfrage: /api/intern/anfragen/[id]
+  // Einzelne Anfrage
   if (slug.length === 2 && slug[0] === 'anfragen') {
     const dto = await ladeInternAnfrage(slug[1]);
     if (!dto) return NextResponse.json({ fehler: 'Anfrage nicht gefunden.' }, { status: 404 });
     return NextResponse.json(dto);
   }
 
-  // 5. DSGVO Auskunft JSON: /api/intern/anfragen/[id]/auskunft
+  // DSGVO Auskunft JSON
   if (slug.length === 3 && slug[0] === 'anfragen' && slug[2] === 'auskunft') {
     const anfrageId = slug[1];
     const dto = await ladeInternAnfrage(anfrageId);
@@ -713,7 +989,7 @@ export async function GET(
     return NextResponse.json(dto);
   }
 
-  // 6. CSV-Export: /api/intern/anfragen/[id]/csv
+  // CSV-Export
   if (slug.length === 3 && slug[0] === 'anfragen' && slug[2] === 'csv') {
     const anfrageId = slug[1];
     const daten = await ladeVorgang(anfrageId);
@@ -730,7 +1006,7 @@ export async function GET(
     });
   }
 
-  // 7. Datei-Download Anhang: /api/intern/anfragen/[id]/anhaenge/[anhangId]
+  // Datei-Download Anhang
   if (slug.length === 4 && slug[0] === 'anfragen' && slug[2] === 'anhaenge') {
     const anfrageId = slug[1];
     const anhangId = slug[3];
