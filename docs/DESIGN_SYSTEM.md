@@ -1,75 +1,102 @@
-# Baris Installateur - Design System Documentation
+# Design System: Bad & Energie GmbH
 
-## Overview
+Umfassende Dokumentation der Design-Tokens, Glasflächen-Architektur, Typografie, Modi und Sicherheitsrichtlinien für die Website und das native Vertriebsmodul.
 
-This Design System enforces a premium, world-class aesthetic for the Baris Installateur digital presence. It uses a rigorous token-based architecture to ensure consistency, accessibility, and scalability.
+---
 
-## 1. Token System
+## 1. Farb-Tokens & Paletten
 
-All visual properties are defined as CSS variables in `src/styles/tokens.css`.
+### 1.1 Öffentliche Markenpalette (Corporate Brand)
+Die öffentliche Marketing-Präsenz nutzt die etablierte Meisterbetrieb-Farbwelt:
 
-### Colors
+- **Primärblau**: `#0C3A87` (Tiefes Vertrauensblau für Headlines, Primärelemente und Akzente)
+- **Akzentrot**: `#E4040E` / `#B91C1C` (Signal- & Aktionsrot für prominente Buttons, Badges und Dringlichkeiten)
+- **Cyan / Lichtblau**: `#35A7E9` / `#0284C7` (Technologie- und Lüftungsakzent)
+- **Smaragdgrün**: `#059669` / `#10B981` (Erfolgsmeldungen, Förderzusagen, positive Validierung)
+- **Neutraltöne**: Slate-Skala von `#0F172A` (Slate-900) über `#475569` (Slate-600) bis `#F8FAFC` (Slate-50)
 
-#### Tier 1: Primitive
+### 1.2 Briefbogen- und Gewerkepalette (Modul- und Dokumentenbereich)
+Für interne Berechnungen, PDF-Kostenschätzungen, E-Mail-Templates und Gewerk-Zuordnungen gilt die verbindliche Farbwelt des Meister-Briefbogens:
 
-The foundational palette. Do not use these directly in components.
+| Gewerk | Icon-Schlüssel | HEX-Farbcode | Semantische Bedeutung |
+|---|---|---|---|
+| **Heizung** | `flamme` | `#EE6C1F` | Warmorange: Gas-, Öl-, Pellet- und Biomasseheizungen |
+| **Bad & Wasser** | `wasser` | `#1FA0DC` | Sanitärblau: Badsanierung, Trinkwasserhygiene, Entkalkung |
+| **Wärmepumpe & Solar** | `sonne` | `#F0C000` | Sonnengelb/Gold: NIBE Wärmepumpen, PV, Solarthermie, Förderungen |
+| **Klima & Lüftung** | `luft` | `#8E959E` | Silbergrau: Wohnraumlüftung, Split-Klimageräte |
+| **Elektro & Technik** | `elektro` | `#475569` | Schiefer: Zählerschrank, Regelungstechnik, Vorwand |
 
-- **Neutrals**: `#0F1419` (950) to `#FFFFFF` (0).
-- **Blue (Primary)**: `#003D7A` (700).
-- **Feedback**: Green (Success), Amber (Warning), Red (Error).
+---
 
-#### Tier 2: Semantic
+## 2. Glasflächen-Architektur (Frosted Glass & Double Bezel)
 
-Context-aware aliases. Use these in your css/components.
+Die Benutzeroberfläche setzt auf moderne, haptische Glasflächen mit Tiefenwirkung:
 
-- `var(--color-background-surface-primary)`: Main page background.
-- `var(--color-text-primary)`: High-contrast text.
-- `var(--color-interactive-primary)`: Primary actions.
+### 2.1 Double-Bezel Glass
+- **Äußerer Rahmen (`glass-bezel-outer`)**: `p-1.5 rounded-[2.5rem] bg-gradient-to-b from-white/90 via-white/60 to-white/30 border border-white/80 shadow-[0_25px_60px_rgba(12,58,135,0.12)] backdrop-blur-2xl`
+- **Innerer Kern (`glass-bezel-inner`)**: `rounded-[calc(2.5rem-6px)] bg-white/90 backdrop-blur-xl p-6 sm:p-8 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)]`
 
-### Typography
+### 2.2 Oberflächen-Hierarchie
+- **Standard Glass Surface (`glass-surface`)**: `bg-white/80 backdrop-blur-xl border border-white/70 shadow-sm rounded-3xl`
+- **Dark Luxury Glass (`glass-surface-dark`)**: `bg-gradient-to-br from-[#0C3A87] via-[#0E1C76] to-[#0A1556] text-white backdrop-blur-2xl border border-white/15 shadow-2xl`
+- **Ambient Glow Orbs**: Subtile Lichtkegel im Hintergrund (`ambient-glow-blue`, `ambient-glow-cyan`, `ambient-glow-red`) mit `pointer-events-none` und `blur-3xl`.
 
-- **Display**: `Inter` (or `Outfit` as legacy). Used for Headings.
-- **Body**: `Inter`. High legibility.
-- **Mono**: `IBM Plex Mono`. For technical data.
+---
 
-### Spacing
+## 3. Typografie-Skala
 
-Strict 8px grid system.
+Verwendet wird das moderne System-Schriftbild (`Inter`, `sans-serif`):
 
-- `var(--spacing-2)` = 8px
-- `var(--spacing-4)` = 16px
-- `var(--spacing-8)` = 32px
+- **Hero Display**: `text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08]`
+- **Section Headlines (H2)**: `text-3xl sm:text-4xl font-black text-slate-900 tracking-tight`
+- **Card Headlines (H3)**: `text-xl font-black text-slate-900`
+- **Sub-Headlines / Labels (H4)**: `text-sm sm:text-base font-bold text-slate-900`
+- **Fließtext**: `text-sm sm:text-base text-slate-600 leading-relaxed font-normal`
+- **Metadaten & Hilfstexte**: `text-xs text-slate-500 font-medium`
+- **Zahlenwerte & Preise**: `tabular-nums font-mono font-bold` zur exakten Spaltenausrichtung bei Währungs- und Maßangaben.
 
-## 2. Component Guidelines
+---
 
-### Button
+## 4. Das Betriebs-Tripel: Modi & Oberflächen
 
-Use the `Button` component for all actions.
+### 4.1 Kunden-Modus (`modus: 'kunde'`)
+- Öffentliche geführte Journeys (Bad, Heizung, Wärmepumpe).
+- Beträge werden **ausschließlich als gerundete Bruttospanne** (inkl. Material, Montage und 19 % MwSt.) aus der Serverantwort dargestellt.
+- Keine Einzelpositionspreise, keine internen Kalkulationsfaktoren, keine Stundensätze.
+- Wiederaufnahme erhaltener Eingaben ohne Übermittlung sensibler Kontaktdaten.
 
-- **Primary**: Main calls to action (Blue).
-- **Secondary**: Alternative paths (Light/Gray).
-- **Outline**: Low emphasis.
+### 4.2 Meister-Modus (`modus: 'intern'`)
+- Optimiert für Meister und Bauleiter im Außendienst und Büro (`/intern`).
+- Schnelle Baustein-Aktivierung, Mengen-Stepper, Varianten-Segmented-Controls, Audio-Diktat/Notizfeld je Position.
+- Live-Kalkulationsleiste (`LiveCalcBar`): Netto-Spanne, Brutto-Spanne, Förderungszuschuss (gold hervorgehoben), Blockiert-Zähler.
+- Sofort-Versand oder Entwurfsablage mit automatischem 18:00-Uhr-Versandpuffer.
 
-```jsx
-<Button variant="default" onClick={...}>Primary Action</Button>
-<Button variant="secondary" onClick={...}>Secondary Action</Button>
-```
+### 4.3 Baustellen-Modus (`data-baustelle="true"`)
+- Aktivierbar manuell in der Toolbar oder automatisch bei Touchscreen (`pointer: coarse`) mit aktivierter Kontrastpräferenz (`prefers-reduced-transparency`).
+- **Opake Oberflächen**: Alle Glasflächen schalten auf `rgba(255,255,255,0.98)` ohne Blur um (blendfrei bei Sonnenlicht).
+- **Vergrößerte Touch-Ziele**: Mindestens 56 px für Handschuhbedienung.
+- **Größere Schriftgrößen** und deaktivierte Ambient-Glows für maximale Akkulaufzeit und Lesbarkeit.
 
-### Cards
+---
 
-Use `ServiceCard` for listing items. Ensure `hover` states are subtle (elevation lift).
+## 5. Kundenansicht & Deny-List im DOM
 
-### Hero
+Für Beratungsgespräche auf dem Tablet mit Kunden schaltet der Meister in die **Kundenansicht**:
 
-The `Hero` component should use high-quality photography with a scrum overlay to ensure text readability.
+- **Strikte Filterung**: Folgende Felder werden vollständig aus dem DOM entfernt (verifiziert per Test):
+  - `stundensatz`
+  - `material_zuschlag_prozent`
+  - `rabatt_prozent`
+  - `marge_hinweis`
+  - Positionsnotizen (`notizIntern`)
+  - Interne Vermerke & Triage-Einstufungen
+- Sichtbar bleiben lediglich Leistungsbeschreibungen, Bruttospannen und Förderungsblöcke.
 
-## 3. Accessibility (WCAG 2.2 AA)
+---
 
-- **Contrast**: All text must meet 4.5:1 (AA) or 7:1 (AAA).
-- **Focus**: Interactive elements must have a visible focus ring (`--color-interactive-focus`).
-- **Structure**: Use semantic HTML (`<main>`, `<nav>`, `<article>`).
+## 6. Barrierefreiheit & Animationen (WCAG 2.2 AA)
 
-## 4. Workflows
-
-- **New Component**: Create a `.contract.json` first, then implement.
-- **Update Tokens**: Modify `tokens.css`, then verify `tailwind.config.js` mapping.
+- **Bewegungsreduktion**: Volle Unterstützung für `prefers-reduced-motion`. Alle Übergänge fallen verzögerungsfrei aus.
+- **Kontraste**: Alle Textfarben erfüllen ein Kontrastverhältnis von mindestens 4.5:1 (Normaltext) bzw. 7:1 (High-Contrast).
+- **Fokus-Ringe**: Tastaturnavigation über sichtbare Fokusringe mit `focus:ring-2 focus:ring-[#0C3A87]`.
+- **Screenreader**: Vollständige ARIA-Attribute (`aria-live="polite"`, `aria-hidden="true"`, aussagekräftige Labels auf allen Icon-Buttons).

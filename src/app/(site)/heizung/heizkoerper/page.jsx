@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Layers, CheckCircle2, ShieldCheck, Phone, Calendar, ArrowRight } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
-import HeizungKonfigurator from '@/components/funnels/HeizungKonfigurator';
+import TouchConfigurator from '@/components/calculator/TouchConfigurator';
 import QualityPromise from '@/components/sections/QualityPromise';
 
 export const metadata = {
@@ -49,7 +49,7 @@ export default function HeizkoerperPage() {
             <QualityPromise />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-                <HeizungKonfigurator />
+                <TouchConfigurator modus="kunde" journey="heizung" quelle="web_heizung" />
             </div>
         </div>
     );

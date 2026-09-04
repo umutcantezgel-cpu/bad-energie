@@ -31,4 +31,29 @@ test.describe('Öffentliche Website', () => {
     expect(antwort?.url()).toContain('/intern');
     await expect(page.locator('body')).not.toContainText('Stundensatz');
   });
+
+  test('Kunden-Journey Bad lädt TouchConfigurator ohne interne Faktoren im DOM', async ({ page }) => {
+    await page.goto('/bad/badanfrage');
+    await expect(page.getByRole('button', { name: /Weiter/i })).toBeVisible({ timeout: 15_000 });
+    const content = await page.content();
+    expect(content).not.toContain('stundensatz');
+    expect(content).not.toContain('material_zuschlag_prozent');
+    expect(content).not.toContain('rabatt_prozent');
+    expect(content).not.toContain('marge_hinweis');
+  });
+
+  test('Kunden-Journey Heizung lädt TouchConfigurator', async ({ page }) => {
+    await page.goto('/heizung/heizungskonfigurator');
+    await expect(page.getByRole('button', { name: /Weiter/i })).toBeVisible({ timeout: 15_000 });
+  });
+
+  test('Wärmepumpen-Check lädt TouchConfigurator mit Eignungs-Ampel', async ({ page }) => {
+    await page.goto('/heizung/waermepumpe/check');
+    await expect(page.getByRole('button', { name: /Weiter/i })).toBeVisible({ timeout: 15_000 });
+  });
+
+  test('Termin-Seite enthält Formular mit direkter Anbindung', async ({ page }) => {
+    await page.goto('/termin');
+    await expect(page.getByRole('button', { name: /Termin jetzt unverbindlich buchen/i })).toBeVisible({ timeout: 15_000 });
+  });
 });

@@ -232,32 +232,36 @@ export default function JourneyStep({
           );
         }
 
-        const textWert = String(leseWert(zustand, frage) ?? '');
-        return (
-          <div key={frage.id} className="max-w-sm">
-            <label htmlFor={`feld-${frage.id}`} className="font-bold text-slate-900" style={{ fontSize: 'var(--font-size-base)' }}>
-              {frage.frage}
-            </label>
-            {frage.erklaerung ? (
-              <p className="mt-1 text-slate-600" style={{ fontSize: 'var(--font-size-sm)' }}>
-                {frage.erklaerung}
-              </p>
-            ) : null}
-            <input
-              id={`feld-${frage.id}`}
-              type="text"
-              inputMode={frage.eingabemodus === 'numeric' ? 'numeric' : 'text'}
-              maxLength={frage.maxLaenge}
-              placeholder={frage.platzhalter}
-              value={textWert}
-              aria-invalid={meldung ? true : undefined}
-              aria-describedby={meldung ? fehlerId : undefined}
-              onChange={(e) => onAendern(frage, e.target.value)}
-              className="glass-input fokus-ring mt-3"
-            />
-            {meldung ? <Fehlermeldung text={meldung} id={fehlerId} /> : null}
-          </div>
-        );
+        if (frage.art === 'text') {
+          const textWert = String(leseWert(zustand, frage) ?? '');
+          return (
+            <div key={frage.id} className="max-w-sm">
+              <label htmlFor={`feld-${frage.id}`} className="font-bold text-slate-900" style={{ fontSize: 'var(--font-size-base)' }}>
+                {frage.frage}
+              </label>
+              {frage.erklaerung ? (
+                <p className="mt-1 text-slate-600" style={{ fontSize: 'var(--font-size-sm)' }}>
+                  {frage.erklaerung}
+                </p>
+              ) : null}
+              <input
+                id={`feld-${frage.id}`}
+                type="text"
+                inputMode={frage.eingabemodus === 'numeric' ? 'numeric' : 'text'}
+                maxLength={frage.maxLaenge}
+                placeholder={frage.platzhalter}
+                value={textWert}
+                aria-invalid={meldung ? true : undefined}
+                aria-describedby={meldung ? fehlerId : undefined}
+                onChange={(e) => onAendern(frage, e.target.value)}
+                className="glass-input fokus-ring mt-3"
+              />
+              {meldung ? <Fehlermeldung text={meldung} id={fehlerId} /> : null}
+            </div>
+          );
+        }
+
+        return null;
       })}
     </div>
   );

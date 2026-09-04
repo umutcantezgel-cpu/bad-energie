@@ -149,22 +149,6 @@ export default function SketchPad({ wert, onChange, hintergrund }: SketchPadProp
   const farbe = GEWERK_HEX[gewerk];
   const elemente = stack.gegenwart.elemente;
 
-  // Hintergrundfoto laden (annotierte Kopie entsteht beim Export).
-  useEffect(() => {
-    if (!hintergrund) {
-      hintergrundBild.current = null;
-      return;
-    }
-    const bild = new Image();
-    bild.onload = () => {
-      hintergrundBild.current = bild;
-      zeichne();
-    };
-    bild.src = hintergrund;
-    // zeichne ist stabil (useCallback ohne veraenderliche Abhaengigkeiten ausser Zustand)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hintergrund]);
-
   const malAlles = useCallback(
     (ctx: CanvasRenderingContext2D, liste: Element[], laufend: Punkt[] | null) => {
       ctx.fillStyle = '#FFFFFF';
@@ -213,6 +197,20 @@ export default function SketchPad({ wert, onChange, hintergrund }: SketchPadProp
     malAlles(ctx, elemente, aktuellerStrich.current);
     ctx.restore();
   }, [ansicht, basis, elemente, malAlles]);
+
+  // Hintergrundfoto laden (annotierte Kopie entsteht beim Export).
+  useEffect(() => {
+    if (!hintergrund) {
+      hintergrundBild.current = null;
+      return;
+    }
+    const bild = new Image();
+    bild.onload = () => {
+      hintergrundBild.current = bild;
+      zeichne();
+    };
+    bild.src = hintergrund;
+  }, [hintergrund, zeichne]);
 
   // Groesse der Leinwand an den Viewport binden (rotationsstabil).
   useEffect(() => {

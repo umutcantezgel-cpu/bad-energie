@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Search,
@@ -13,7 +13,8 @@ import {
   Clock,
   Send,
   ShieldCheck,
-  MapPin
+  MapPin,
+  CheckCircle2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { COMPANY_DATA } from '@/config/company';
@@ -22,6 +23,14 @@ export default function HelpSidebar({ isOpen, onClose }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [phone, setPhone] = useState('');
   const [currentView, setCurrentView] = useState('main'); // main, emergency, guides, checklists
+  const [callbackStatus, setCallbackStatus] = useState('ruhe'); // 'ruhe' | 'laeuft' | 'erfolg' | 'fehler'
+  const [callbackError, setCallbackError] = useState(null);
+  const gestartetUm = useRef(0);
+  const honig = useRef('');
+
+  useEffect(() => {
+    gestartetUm.current = Date.now();
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -127,10 +136,57 @@ export default function HelpSidebar({ isOpen, onClose }) {
     }
   };
 
-  const handleCallbackRequest = (e) => {
+  const handleCallbackRequest = async (e) => {
     e.preventDefault();
-    alert(`Vielen Dank! Wir rufen Sie unter ${phone} schnellstmöglich zurück.`);
-    setPhone('');
+    if (!phone.trim()) return;
+
+    setCallbackStatus('laeuft');
+    setCallbackError(null);
+
+    try {
+      const res = await fetch('/api/estimate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          modus: 'kunde',
+          quelle: 'rueckruf',
+          freitext: 'Rückrufwunsch über Meister-Support Schnellkontakt',
+          objekt: {
+            adresse: '',
+            plz: '35576',
+            eigentum: 'unklar',
+            wohneinheiten: 1,
+          },
+          dringlichkeit: 'sofort',
+          wunschtermine: [],
+          kontakt: {
+            anrede: '',
+            vorname: '',
+            nachname: 'Rückruf-Interessent',
+            email: 'rueckruf@bad-energie.de',
+            telefon: phone.trim(),
+            strasse: '',
+            plzOrt: '35576 Wetzlar',
+            kenntnisnahme: true,
+            eingangsbestaetigung: false,
+          },
+          honig: honig.current,
+          gestartetUm: gestartetUm.current,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setCallbackStatus('fehler');
+        setCallbackError(data.fehler || 'Übermittlung fehlgeschlagen.');
+        return;
+      }
+
+      setCallbackStatus('erfolg');
+    } catch {
+      setCallbackStatus('fehler');
+      setCallbackError('Verbindung fehlgeschlagen.');
+    }
   };
 
   if (!isOpen) return null;
@@ -213,24 +269,51 @@ export default function HelpSidebar({ isOpen, onClose }) {
               </div>
 
               {/* Callback Request */}
-              <form onSubmit={handleCallbackRequest} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                <span className="text-xs font-black text-slate-900">Rückruf anfordern</span>
-                <p className="text-[11px] text-slate-500">Wir rufen Sie werktags innerhalb von 2 Stunden zurück.</p>
-                <input
-                  type="tel"
-                  required
-                  placeholder="Ihre Telefonnummer"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold focus:ring-2 focus:ring-[#0C3A87]"
-                />
-                <button
-                  type="submit"
-                  className="w-full py-2.5 px-4 rounded-xl bg-[#0C3A87] hover:bg-[#0E1C76] text-white font-black text-xs shadow-xs transition-colors"
-                >
-                  Rückruf anfragen &rarr;
-                </button>
-              </form>
+              {callbackStatus === 'erfolg' ? (
+                <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
+                  <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <h4 className="font-black text-xs text-emerald-950">Rückruf angefordert!</h4>
+                  <p className="text-[11px] text-emerald-800 leading-relaxed">
+                    Wir rufen Sie werktags innerhalb von 2 Stunden unter <strong>{phone}</strong> an.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setCallbackStatus('ruhe');
+                      setPhone('');
+                    }}
+                    className="text-[10px] font-bold text-emerald-700 underline mt-1"
+                  >
+                    Weitere Nummer eingeben
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleCallbackRequest} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                  <span className="text-xs font-black text-slate-900">Rückruf anfordern</span>
+                  <p className="text-[11px] text-slate-500">Wir rufen Sie werktags innerhalb von 2 Stunden zurück.</p>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="Ihre Telefonnummer"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold focus:ring-2 focus:ring-[#0C3A87]"
+                  />
+                  {callbackStatus === 'fehler' && (
+                    <p className="text-[11px] text-red-600 font-medium">
+                      {callbackError || 'Fehler beim Absenden. Bitte rufen Sie uns direkt an.'}
+                    </p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={callbackStatus === 'laeuft'}
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#0C3A87] hover:bg-[#0E1C76] text-white font-black text-xs shadow-xs transition-colors disabled:opacity-60"
+                  >
+                    {callbackStatus === 'laeuft' ? 'Wird übermittelt...' : 'Rückruf anfragen →'}
+                  </button>
+                </form>
+              )}
             </div>
           ) : (
             /* Sub-View Details */

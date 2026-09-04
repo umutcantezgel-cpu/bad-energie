@@ -1,11 +1,21 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
-import { Calendar, Clock, CheckCircle2, Phone, Mail, MapPin, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, CheckCircle2, Phone, Mail, MapPin, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 
 export default function TerminPage() {
     const [submitted, setSubmitted] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [ksNummer, setKsNummer] = useState(null);
+    const gestartetUm = useRef(0);
+    const honig = useRef('');
+
+    React.useEffect(() => {
+        gestartetUm.current = Date.now();
+    }, []);
+
     const [formData, setFormData] = useState({
         topic: 'badsanierung',
         date: '',
@@ -19,13 +29,67 @@ export default function TerminPage() {
         privacyConsent: false
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.privacyConsent) {
-            alert('Bitte stimmen Sie der Datenschutzerklärung zu.');
+            setError('Bitte stimmen Sie der Datenschutzerklärung zu.');
             return;
         }
-        setSubmitted(true);
+
+        setError(null);
+        setLoading(true);
+
+        const teile = formData.name.trim().split(/\s+/);
+        const vorname = teile.length > 1 ? teile.slice(0, -1).join(' ') : '';
+        const nachname = teile.length > 1 ? teile[teile.length - 1] : (teile[0] || 'Kunde');
+        const plzMatch = formData.zipCity.match(/\b(\d{5})\b/);
+        const plz = plzMatch ? plzMatch[1] : '';
+
+        try {
+            const res = await fetch('/api/estimate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    modus: 'kunde',
+                    quelle: 'termin',
+                    freitext: `Termin-Thema: ${formData.topic}${formData.notes ? `\nNotizen: ${formData.notes}` : ''}`,
+                    objekt: {
+                        adresse: formData.street,
+                        plz: plz,
+                        eigentum: 'unklar',
+                        wohneinheiten: 1,
+                    },
+                    dringlichkeit: 'unklar',
+                    wunschtermine: [formData.date ? `${formData.date} (${formData.timeSlot})` : formData.timeSlot],
+                    kontakt: {
+                        anrede: '',
+                        vorname,
+                        nachname,
+                        email: formData.email,
+                        telefon: formData.phone,
+                        strasse: formData.street,
+                        plzOrt: formData.zipCity,
+                        kenntnisnahme: true,
+                        eingangsbestaetigung: true,
+                    },
+                    honig: honig.current,
+                    gestartetUm: gestartetUm.current,
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+                setError(data.fehler || 'Die Terminanfrage konnte leider nicht übermittelt werden. Bitte versuchen Sie es erneut oder rufen Sie uns an.');
+                return;
+            }
+
+            setKsNummer(data.ksNummer || null);
+            setSubmitted(true);
+        } catch {
+            setError('Die Verbindung zum Server ist unterbrochen. Bitte versuchen Sie es erneut oder rufen Sie uns direkt an.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -59,6 +123,11 @@ export default function TerminPage() {
                             <h2 className="text-2xl md:text-3xl font-black text-[#0C3A87] mb-3">
                                 Terminanfrage erfolgreich eingegangen!
                             </h2>
+                            {ksNummer && (
+                                <div className="inline-block px-3.5 py-1 mb-4 rounded-full bg-blue-50 border border-blue-200 text-[#0C3A87] text-xs font-mono font-bold">
+                                    Vorgangsnummer: {ksNummer}
+                                </div>
+                            )}
                             <p className="text-slate-600 mb-6 leading-relaxed text-xs sm:text-sm font-normal">
                                 Vielen Dank, {formData.name}. Wir prüfen Ihren Wunschtermin ({formData.date || 'nach Absprache'} &middot; {formData.timeSlot}) und bestätigen diesen innerhalb von 24 Stunden telefonisch oder per E-Mail.
                             </p>
@@ -200,11 +269,19 @@ export default function TerminPage() {
                                 </label>
                             </div>
 
+                            {error && (
+                                <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-[#E4040E] text-xs flex items-start gap-2">
+                                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                                    <span>{error}</span>
+                                </div>
+                            )}
+
                             <button
                                 type="submit"
-                                className="w-full py-4 px-6 rounded-full bg-gradient-to-r from-[#E4040E] to-[#B91C1C] text-white font-black text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all border border-white/20"
+                                disabled={loading}
+                                className="w-full py-4 px-6 rounded-full bg-gradient-to-r from-[#E4040E] to-[#B91C1C] text-white font-black text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all border border-white/20 disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                Termin jetzt unverbindlich buchen &rarr;
+                                {loading ? 'Terminanfrage wird übermittelt...' : 'Termin jetzt unverbindlich buchen →'}
                             </button>
                         </form>
                     </div>

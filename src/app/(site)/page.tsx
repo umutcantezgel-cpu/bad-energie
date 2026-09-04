@@ -25,9 +25,7 @@ import { SERVICES } from '@/config/services';
 import QualityPromise from '@/components/sections/QualityPromise';
 import MusterbadTeaser from '@/components/sections/MusterbadTeaser';
 import ReviewsSection from '@/components/sections/ReviewsSection';
-import BadanfrageFunnel from '@/components/funnels/BadanfrageFunnel';
-import HeizungKonfigurator from '@/components/funnels/HeizungKonfigurator';
-import BudgetKalkulator from '@/components/funnels/BudgetKalkulator';
+import TouchConfigurator from '@/components/calculator/TouchConfigurator';
 
 export const metadata = {
     title: 'Bad & Energie GmbH | Meisterbetrieb für Badsanierung & Heiztechnik Wetzlar',
@@ -390,24 +388,141 @@ export default function HomePage() {
             {/* 8-POINT QUALITY PROMISE */}
             <QualityPromise />
 
-            {/* INTERACTIVE BUDGET & HEATING CONFIGURATORS SECTION */}
+            {/* 3 JOURNEYS OVERVIEW - FROSTED GLASS CARDS */}
             <section className="py-24 relative">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-3xl mx-auto mb-16">
                         <span className="text-xs uppercase font-black tracking-wider text-[#0C3A87] bg-white/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-blue-200/70 mb-3 inline-block shadow-xs">
-                            Transparente Kosten &amp; Planung
+                            Kalkulation &amp; Beratung
                         </span>
                         <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-                            Interaktive Online-Rechner &amp; Konfiguratoren
+                            Wählen Sie Ihren Konfigurator
                         </h2>
                         <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                            Kalkulieren Sie in wenigen Klicks Richtwerte für Ihre Badsanierung oder berechnen Sie die Fördermittel für Ihre neue Wärmepumpe.
+                            Starten Sie Ihre unverbindliche Kostenschätzung für Ihr Traumbad, Ihre neue Heizung oder den Wärmepumpen-Eignungscheck direkt online.
                         </p>
                     </div>
 
-                    <div className="space-y-16">
-                        <BudgetKalkulator />
-                        <HeizungKonfigurator />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {/* Journey 1: Badmodernisierung */}
+                        <div className="glass-surface rounded-[2.5rem] p-8 flex flex-col justify-between hover:shadow-[0_25px_50px_rgba(12,58,135,0.12)] hover:-translate-y-1 transition-all duration-500 border border-white/80">
+                            <div>
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="w-14 h-14 rounded-2xl bg-blue-100 text-[#0C3A87] flex items-center justify-center font-bold shadow-xs">
+                                        <Droplets className="w-7 h-7" />
+                                    </div>
+                                    <span className="text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-blue-50 text-[#0C3A87] border border-blue-200/60">
+                                        Bad-Kalkulator
+                                    </span>
+                                </div>
+                                <h3 className="text-xl font-black text-slate-900 mb-2">
+                                    Badmodernisierung &amp; Sanierung
+                                </h3>
+                                <p className="text-xs text-slate-600 leading-relaxed mb-6 font-medium">
+                                    Konfigurieren Sie Ihr neues Bad nach Maß: Raumgröße (m²), Ausstattungsstufen von Basic bis Luxus sowie Sonderwünsche wie Walk-in Dusche, Dusch-WC und Vorwandinstallation.
+                                </p>
+                                <ul className="space-y-2 mb-6 text-xs text-slate-700 font-medium">
+                                    <li className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        <span>Orientierungspreise inkl. Montage &amp; MwSt.</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        <span>Ausstellungskonzepte (4,6 bis 15,9 m²)</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        <span>Staubarme Meisterausführung</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <Link
+                                href="/bad/badanfrage"
+                                className="w-full py-3.5 px-6 rounded-2xl bg-[#0C3A87] hover:bg-[#0E1C76] text-white font-black text-xs text-center block shadow-md hover:shadow-lg transition-all"
+                            >
+                                Bad jetzt konfigurieren &rarr;
+                            </Link>
+                        </div>
+
+                        {/* Journey 2: Heizungstausch */}
+                        <div className="glass-surface rounded-[2.5rem] p-8 flex flex-col justify-between hover:shadow-[0_25px_50px_rgba(228,4,14,0.12)] hover:-translate-y-1 transition-all duration-500 border border-white/80">
+                            <div>
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="w-14 h-14 rounded-2xl bg-red-100 text-[#E4040E] flex items-center justify-center font-bold shadow-xs">
+                                        <Flame className="w-7 h-7" />
+                                    </div>
+                                    <span className="text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-red-50 text-[#E4040E] border border-red-200/60">
+                                        Bis zu 70 % Förderung
+                                    </span>
+                                </div>
+                                <h3 className="text-xl font-black text-slate-900 mb-2">
+                                    Heizungstausch &amp; Wärmewende
+                                </h3>
+                                <p className="text-xs text-slate-600 leading-relaxed mb-6 font-medium">
+                                    Ermitteln Sie die zukunftssichere Heiztechnik für Ihr Gebäude: Hocheffiziente NIBE Wärmepumpen, moderne Gas-Brennwertgeräte oder Multisplit-Klimasysteme mit Heizfunktion.
+                                </p>
+                                <ul className="space-y-2 mb-6 text-xs text-slate-700 font-medium">
+                                    <li className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        <span>KfW 458 Förderrechner integriert</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        <span>Hydraulischer Abgleich nach Verfahren B</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        <span>5 Jahre NIBE Systemgarantie</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <Link
+                                href="/heizung/heizungskonfigurator"
+                                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#E4040E] to-[#B91C1C] hover:shadow-[0_12px_24px_rgba(228,4,14,0.35)] text-white font-black text-xs text-center block shadow-md transition-all"
+                            >
+                                Heizung konfigurieren &rarr;
+                            </Link>
+                        </div>
+
+                        {/* Journey 3: Wärmepumpen-Check */}
+                        <div className="glass-surface rounded-[2.5rem] p-8 flex flex-col justify-between hover:shadow-[0_25px_50px_rgba(12,58,135,0.12)] hover:-translate-y-1 transition-all duration-500 border border-white/80">
+                            <div>
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="w-14 h-14 rounded-2xl bg-cyan-100 text-[#0284C7] flex items-center justify-center font-bold shadow-xs">
+                                        <Zap className="w-7 h-7" />
+                                    </div>
+                                    <span className="text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-cyan-50 text-[#0284C7] border border-cyan-200/60">
+                                        Quick-Check
+                                    </span>
+                                </div>
+                                <h3 className="text-xl font-black text-slate-900 mb-2">
+                                    Wärmepumpen-Eignungscheck
+                                </h3>
+                                <p className="text-xs text-slate-600 leading-relaxed mb-6 font-medium">
+                                    In nur 5 Fragen prüfen, ob Ihr Haus für den wirtschaftlichen Betrieb einer Wärmepumpe bereit ist – inklusive Eignungseinschätzung und Vor-Ort-Meisterberatung.
+                                </p>
+                                <ul className="space-y-2 mb-6 text-xs text-slate-700 font-medium">
+                                    <li className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        <span>Eignungs-Ampel in 2 Minuten</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        <span>Heizkörper- &amp; Vorlauftemperatur-Prüfung</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                        <span>Direkter Meister-Ortstermin in Wetzlar</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <Link
+                                href="/heizung/waermepumpe/check"
+                                className="w-full py-3.5 px-6 rounded-2xl bg-white text-[#0C3A87] border border-blue-200 font-black text-xs text-center block shadow-xs hover:bg-blue-50 transition-all"
+                            >
+                                Eignung jetzt prüfen &rarr;
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -415,7 +530,7 @@ export default function HomePage() {
             {/* CUSTOMER REVIEWS & 5/5 SOCIAL PROOF */}
             <ReviewsSection />
 
-            {/* BADANFRAGE FORM & FINAL CTA */}
+            {/* INTERACTIVE MODERNIZATION PROJECT ENTRY */}
             <section className="py-24 relative" id="anfrage">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-3xl mx-auto mb-12">
@@ -426,11 +541,11 @@ export default function HomePage() {
                             Starten Sie Ihr Modernisierungsprojekt
                         </h2>
                         <p className="mt-2 text-sm text-slate-600">
-                            Füllen Sie unsere multi-step Anfrage aus oder buchen Sie direkt einen persönlichen Vor-Ort-Termin mit unserem Meister.
+                            Wählen Sie Ihr Vorhaben im interaktiven Konfigurator oder vereinbaren Sie direkt einen persönlichen Vor-Ort-Termin mit unserem Meister.
                         </p>
                     </div>
 
-                    <BadanfrageFunnel />
+                    <TouchConfigurator modus="kunde" journey="bad" quelle="web_bad" kompakt={true} />
                 </div>
             </section>
         </div>

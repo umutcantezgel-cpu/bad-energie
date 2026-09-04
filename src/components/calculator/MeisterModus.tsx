@@ -871,7 +871,7 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
           ) : null}
           {!anfrage.vorbehalte.length ? (
             <p className="mt-3 rounded-2xl bg-[#FFFBEB] p-3 text-sm text-[#92400E]">
-              Kein Vorbehalt gesetzt. Bitte den Block "Nicht enthalten und bauseits" pruefen.
+              Kein Vorbehalt gesetzt. Bitte den Block &bdquo;Nicht enthalten und bauseits&ldquo; pr&uuml;fen.
             </p>
           ) : null}
           {rueckmeldung ? (

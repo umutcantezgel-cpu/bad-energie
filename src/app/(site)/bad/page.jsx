@@ -15,8 +15,7 @@ import {
 } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import { MUSTERBAEDER, QUALITY_TIERS } from '@/config/musterbaeder';
-import BudgetKalkulator from '@/components/funnels/BudgetKalkulator';
-import BadanfrageFunnel from '@/components/funnels/BadanfrageFunnel';
+import TouchConfigurator from '@/components/calculator/TouchConfigurator';
 
 export const metadata = {
     title: 'Badsanierung & Badrenovierung Wetzlar | Bad & Energie GmbH',
@@ -130,13 +129,8 @@ export default function BadPage() {
             </div>
 
             {/* Interactive Calculator Component */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
-                <BudgetKalkulator />
-            </div>
-
-            {/* Badanfrage Funnel */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10" id="anfrage">
-                <BadanfrageFunnel />
+                <TouchConfigurator modus="kunde" journey="bad" quelle="web_bad" />
             </div>
         </div>
     );

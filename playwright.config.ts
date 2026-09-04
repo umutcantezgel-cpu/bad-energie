@@ -5,7 +5,7 @@ import { defineConfig, devices } from '@playwright/test';
  * und dem Datei-Mailversand, damit keine echten Mails hinausgehen.
  */
 const PORT = Number(process.env.E2E_PORT ?? 3100);
-const BASE_URL = `http://127.0.0.1:${PORT}`;
+const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: './e2e',
@@ -24,8 +24,8 @@ export default defineConfig({
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } } },
-    { name: 'tablet', use: { ...devices['iPad (gen 7) landscape'] } },
-    { name: 'handy', use: { ...devices['iPhone 14'] } },
+    { name: 'tablet', use: { ...devices['iPad (gen 7) landscape'], defaultBrowserType: 'chromium' } },
+    { name: 'handy', use: { ...devices['iPhone 14'], defaultBrowserType: 'chromium' } },
   ],
   webServer: {
     command: `npm run dev -- --port ${PORT}`,

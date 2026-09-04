@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { MUSTERBAEDER } from '@/config/musterbaeder';
 import { COMPANY_DATA } from '@/config/company';
-import BadanfrageFunnel from '@/components/funnels/BadanfrageFunnel';
+import TouchConfigurator from '@/components/calculator/TouchConfigurator';
 
 export async function generateStaticParams() {
     return MUSTERBAEDER.map((b) => ({
@@ -177,7 +177,7 @@ export default async function MusterbadDetailPage({ params }) {
 
             {/* Funnel */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
-                <BadanfrageFunnel />
+                <TouchConfigurator modus="kunde" journey="bad" quelle="web_bad" />
             </div>
         </div>
     );

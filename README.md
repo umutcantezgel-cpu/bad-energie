@@ -48,21 +48,36 @@ Dateien unter `./data/blob`.
 5. `SESSION_SECRET`, `CRON_SECRET` und `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` setzen. Die Cron-Jobs stehen in `vercel.json` und laufen gegen `/api/jobs/[job]`.
 6. Erste Anmeldung: Benutzer über `npm run benutzer` gegen die Produktionsdatenbank anlegen.
 
-Sicherung: Neon Point-in-Time-Recovery aktivieren. `SESSION_SECRET` und `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` gehören mit in die Sicherung.
+Sicherung: Neon Point-in-Time-Recovery (PITR) aktivieren. `SESSION_SECRET` und `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` gehören mit in die Sicherung.
 
-## Aufbau
+### Manuelle Cron-Ausführung & Tests
+```bash
+# Job manuell über Bearer-Token triggern
+curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://bad-energie.de/api/jobs/versand
+curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://bad-energie.de/api/jobs/wiedervorlage
+curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://bad-energie.de/api/jobs/eingang
+curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://bad-energie.de/api/jobs/speicherfrist
+curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://bad-energie.de/api/jobs/bereinigung
+```
 
-| Pfad | Inhalt |
-|---|---|
-| `src/app/(site)` | Öffentliche Website samt Konfigurator-Seiten |
-| `src/app/(intern)` | Meister-Modus mit eigenem Layout, `noindex`, PIN-Anmeldung |
-| `src/app/api` | Route Handler: `estimate`, `intern/*`, `jobs/[job]`, `webhooks/resend` |
-| `src/components/calculator` | TouchConfigurator, SketchPad, Kacheln, Live-Kalkulationsleiste |
-| `src/lib/types.ts` | Datenmodell und Zod-Schemata |
-| `src/lib/services` | Kalkulation, Dokumente, PDF, Mail, Auth, Speicher, Jobs |
-| `src/lib/dokumente` | Briefbogen- und Mailvorlagen, Piktogramme |
-| `src/db` | Drizzle-Schema, Client, Migrationen, Seeds |
-| `legacy/kostenschaetzung-altsystem` | Altes Ordner-System als Quelle für Vorlagen und Testfälle, nicht mehr im Betrieb |
+## Aufbau & Routen
+
+### Öffentliche Journeys (Kunden-Modus)
+- `/bad/badanfrage` / `/bad/budgetkalkulator`: Badmodernisierung (N = 6 Schritte)
+- `/heizung/heizungskonfigurator`: Heizungstausch mit BEG KfW 458 Förderrechner (N = 7 Schritte)
+- `/heizung/waermepumpe/check`: Wärmepumpen-Eignungscheck (N = 6 Schritte)
+- `/termin`: Online-Terminbuchung (direkte Übermittlung an `POST /api/estimate`)
+
+### Intern-Bereich (`/intern`)
+- `/intern`: PIN-Authentifizierung (Session-Cookie `sitzung` / `__Host-sitzung`)
+- `/intern/board`: Kanban-Übersicht aller Anfragen und Status
+- `/intern/entwuerfe`: Freigabeliste für Kostenschätzungs-Entwürfe (18:00 Puffer)
+- `/intern/konfigurator`: Meister-Modus mit Baustein-Kacheln, Zuschlägen, SketchPad, PDF-Vorschau
+- `/intern/dispatch`: Schnellverarbeitung von Freigaben und Kurzbefehlen
+- `/intern/matrix`: Verwaltung der Richtpreis-Matrix (Zeilen 1 bis 17)
+- `/intern/termine`: Verwaltung der freien Terminfenster und Reservierungen
+- `/intern/einstellungen`: Puffer-Uhrzeit (18:00), Speicherfrist (24 Monate), Briefbogendaten
+- `/intern/benutzer`: Benutzerverwaltung & PIN-Vergabe (nur Rolle `chef`)
 
 ## Fachliche Regeln
 

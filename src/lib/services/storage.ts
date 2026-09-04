@@ -208,3 +208,59 @@ export function ausDataUrl(dataUrl: string): { daten: Buffer; gemeldeterMime: st
   if (gemeldeterMime === 'image/svg+xml') throw new Error('SVG wird nicht angenommen.');
   return { daten: Buffer.from(treffer[2], 'base64'), gemeldeterMime };
 }
+
+// ---------------------------------------------------------------------------
+// Anhänge in Ablage und Datenbank
+// ---------------------------------------------------------------------------
+
+export type AnhangErgebnis = { id: string; art: 'foto' | 'skizze' | 'foto_annotiert'; dateiname: string; groesse: number };
+
+/** Legt ein Foto ab: Magic Bytes, Neukodierung, Vorschaubild, Datensatz. */
+export async function speichereFoto(
+  anfrageId: string,
+  roh: Buffer,
+  dateiname: string,
+  beschreibung = '',
+  art: 'foto' | 'foto_annotiert' = 'foto',
+): Promise<AnhangErgebnis> {
+  const { randomUUID: uuid } = await import('node:crypto');
+  const { getDb } = await import('@/db/client');
+  const { anhang } = await import('@/db/schema');
+  const bild = await bildAufbereiten(roh);
+  const pfad = anhangPfad(anfrageId, bild.endung);
+  const thumb = thumbPfad(anfrageId);
+  const storage = getStorage();
+  await storage.put(pfad, bild.daten, bild.mime);
+  await storage.put(thumb, bild.thumb, bild.thumbMime);
+  const id = uuid();
+  const db = await getDb();
+  const name = (dateiname || 'foto.jpg').replace(/[\r\n/\\]/g, '_').slice(0, 120);
+  await db.insert(anhang).values({
+    id, anfrageId, art, dateiname: name, mime: bild.mime, groesse: bild.daten.length,
+    blobPfad: pfad, thumbBlobPfad: thumb, breite: bild.breite, hoehe: bild.hoehe, beschreibung: beschreibung.slice(0, 200),
+  });
+  return { id, art, dateiname: name, groesse: bild.daten.length };
+}
+
+/** Legt eine Skizze (PNG aus dem SketchPad) ab. */
+export async function speichereSkizze(
+  anfrageId: string,
+  roh: Buffer,
+  name: string,
+  masse: { breite: number; hoehe: number },
+): Promise<AnhangErgebnis> {
+  const { randomUUID: uuid } = await import('node:crypto');
+  const { getDb } = await import('@/db/client');
+  const { anhang } = await import('@/db/schema');
+  skizzePruefen(roh);
+  const pfad = anhangPfad(anfrageId, 'png');
+  await getStorage().put(pfad, roh, 'image/png');
+  const id = uuid();
+  const db = await getDb();
+  const dateiname = `${(name || 'Skizze').replace(/[\r\n/\\]/g, '_').slice(0, 60)}.png`;
+  await db.insert(anhang).values({
+    id, anfrageId, art: 'skizze', dateiname, mime: 'image/png', groesse: roh.length,
+    blobPfad: pfad, breite: masse.breite, hoehe: masse.hoehe,
+  });
+  return { id, art: 'skizze', dateiname, groesse: roh.length };
+}

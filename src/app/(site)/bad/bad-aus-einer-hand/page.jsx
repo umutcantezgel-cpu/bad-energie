@@ -14,7 +14,7 @@ import {
     FileCheck
 } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
-import BadanfrageFunnel from '@/components/funnels/BadanfrageFunnel';
+import TouchConfigurator from '@/components/calculator/TouchConfigurator';
 import QualityPromise from '@/components/sections/QualityPromise';
 
 export const metadata = {
@@ -96,7 +96,7 @@ export default function BadAusEinerHandPage() {
             <QualityPromise />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
-                <BadanfrageFunnel />
+                <TouchConfigurator modus="kunde" journey="bad" quelle="web_bad" />
             </div>
         </div>
     );

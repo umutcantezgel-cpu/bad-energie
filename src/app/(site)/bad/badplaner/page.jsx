@@ -12,7 +12,7 @@ import {
     Layers 
 } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
-import BadanfrageFunnel from '@/components/funnels/BadanfrageFunnel';
+import TouchConfigurator from '@/components/calculator/TouchConfigurator';
 
 export const metadata = {
     title: '3D-Badplaner Guide | Bad & Energie GmbH Wetzlar',
@@ -91,7 +91,7 @@ export default function BadplanerPage() {
 
             {/* Funnel */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
-                <BadanfrageFunnel />
+                <TouchConfigurator modus="kunde" journey="bad" quelle="web_bad" kompakt={true} />
             </div>
         </div>
     );
