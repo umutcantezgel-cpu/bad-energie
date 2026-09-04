@@ -38,6 +38,8 @@ export type DokumentEingabe = {
   kunde: DokumentKunde;
   objektAdresse: string;
   vorhabenKurz: string;
+  /** Slug der verwendeten Vorlage, erscheint nur auf dem internen Freigabeblatt. */
+  vorlage?: string;
   gewerkHaupt: Gewerk | null;
   persoenlicherSatz: string;
   /** Nur aktive, nicht blockierte Positionen mit Spanne. */

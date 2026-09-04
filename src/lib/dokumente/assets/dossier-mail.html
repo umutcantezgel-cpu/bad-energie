@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dossier {{ks_nummer}} · {{nachname}}</title>
+<!--
+  ============================================================
+  Bad & Energie GmbH · internes Büro-Dossier zu einer Anfrage
+  Geht ausschließlich an das Firmenpostfach, nie an einen Kunden.
+  Enthält bewusst alles: Positionen mit Netto und Brutto, Positionsnotizen,
+  interne Faktoren, strukturierte Notizen, Annahmen, fehlende Angaben, Warnungen.
+
+  PLATZHALTER in doppelten geschweiften Klammern fuellt src/lib/services/templates.ts.
+  Der Block FOERDERUNG bleibt nur bei gefüllter Förderung, der Block WARNUNGEN
+  nur bei vorhandenen Warnungen, der Block ANHAENGE nur bei vorhandenen Anhängen.
+  ============================================================
+-->
+<style type="text/css">
+  body { margin:0; padding:0; background-color:#F4F4F2; }
+  table { border-collapse:collapse; }
+  .d-wrap { width:760px; max-width:760px; background-color:#FFFFFF; border:1px solid #DDE2EC; border-top:4px solid #1B3A8C; }
+  .d-pad { padding:0 34px; }
+  .d-text { font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:15px; line-height:23px; color:#1A1A1A; }
+  .d-muted { color:#4A4F5C; }
+  h1 { margin:0; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:23px; line-height:31px; color:#1B3A8C; }
+  h2 { margin:26px 0 8px 0; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:16px; line-height:23px; color:#1B3A8C; }
+  table.d-daten td { padding:2px 16px 2px 0; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:15px; line-height:23px; color:#1A1A1A; vertical-align:top; }
+  table.d-daten td.k { color:#4A4F5C; white-space:nowrap; width:170px; }
+  table.d-pos { width:100%; }
+  table.d-pos th { text-align:left; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:13px; line-height:19px; color:#4A4F5C; font-weight:normal; padding:0 8px 6px 0; border-bottom:1px solid #1B3A8C; }
+  table.d-pos th.z, table.d-pos td.z { text-align:right; white-space:nowrap; }
+  table.d-pos td { font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:14px; line-height:21px; color:#1A1A1A; padding:6px 8px 6px 0; border-bottom:1px solid #DDE2EC; vertical-align:top; }
+  table.d-pos td.titel { font-weight:bold; }
+  table.d-pos td.text { color:#4A4F5C; font-size:13px; line-height:19px; }
+  table.d-pos td.notiz { color:#8A4B00; font-size:13px; line-height:19px; background-color:#FFF8E8; }
+  table.d-pos tr.inaktiv td { color:#8E959E; }
+  table.d-pos tr.blockiert td { background-color:#FDEDEC; }
+  table.d-pos tr.summe td { font-weight:bold; border-bottom:none; padding-top:10px; }
+  ul { margin:0; padding:0 0 0 20px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:15px; line-height:23px; color:#1A1A1A; }
+  li { margin:0 0 4px 0; }
+  .d-warn { background-color:#FDEDEC; border-left:3px solid #B42318; padding:12px 16px; }
+  .d-intern { background-color:#F3F6FC; border-left:3px solid #1B3A8C; padding:12px 16px; }
+  .d-btn a { display:inline-block; padding:12px 22px; background-color:#1B3A8C; color:#FFFFFF; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:16px; font-weight:bold; text-decoration:none; border-radius:3px; }
+</style>
+</head>
+
+<body>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#F4F4F2;">
+<tr>
+<td align="center" style="padding:26px 12px;">
+
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="760" class="d-wrap">
+
+    <tr>
+      <td class="d-pad" style="padding-top:26px;">
+        <h1>Dossier {{ks_nummer}} · {{nachname}}</h1>
+        <p class="d-text d-muted" style="margin:6px 0 0 0;">{{vorhaben_kurz}} · Status {{status}} · Quelle {{quelle}} · Dringlichkeit {{dringlichkeit}}</p>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="d-pad">
+        <h2>Kunde und Objekt</h2>
+        <table class="d-daten" role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <tr><td class="k">Anrede im Dokument</td><td>{{anrede_zeile}}</td></tr>
+          <tr><td class="k">Name</td><td>{{anrede}} {{vorname}} {{nachname}}</td></tr>
+          <tr><td class="k">Anschrift</td><td>{{strasse}}, {{plz_ort}}</td></tr>
+          <tr><td class="k">E-Mail</td><td>{{email}}</td></tr>
+          <tr><td class="k">Telefon</td><td>{{telefon}}</td></tr>
+          <tr><td class="k">Objekt</td><td>{{objekt_adresse}}</td></tr>
+          <tr><td class="k">Entfernung</td><td>{{entfernung_km}}</td></tr>
+          <tr><td class="k">Triage</td><td>{{triage_vorschlag}}</td></tr>
+          <tr><td class="k">Bearbeiter</td><td>{{bearbeiter}}, {{bearbeiter_rolle}}</td></tr>
+          <tr><td class="k">Datum</td><td>{{datum}}</td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="d-pad">
+        <h2>Positionen</h2>
+        <table class="d-pos" role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <thead>
+            <tr>
+              <th>Leistung</th>
+              <th>Was dazugehört</th>
+              <th class="z">Menge</th>
+              <th class="z">netto von</th>
+              <th class="z">netto bis</th>
+              <th class="z">brutto von</th>
+              <th class="z">brutto bis</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{positionen_tabelle}}
+          </tbody>
+        </table>
+      </td>
+    </tr>
+
+    <!-- FOERDERUNG -->
+    <tr>
+      <td class="d-pad">
+        <h2>Förderung</h2>
+        <table class="d-daten" role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <tr><td class="k">Förderfähige Kosten</td><td>bis {{foerder_kosten}} €</td></tr>
+          <tr><td class="k">Fördersatz</td><td>{{foerder_satz}} %</td></tr>
+          <tr><td class="k">Zuschuss</td><td>{{foerder_zuschuss}} €</td></tr>
+          <tr><td class="k">Eigenanteil</td><td>{{eigenanteil_von}} bis {{eigenanteil_bis}} €</td></tr>
+        </table>
+      </td>
+    </tr>
+    <!-- /FOERDERUNG -->
+
+    <tr>
+      <td class="d-pad">
+        <h2>Interne Faktoren</h2>
+        <div class="d-intern">
+          <ul>{{faktoren_liste}}</ul>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="d-pad">
+        <h2>Notizen</h2>
+        <div class="d-intern">
+          <ul>{{notizen_liste}}</ul>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="d-pad">
+        <h2>Text für den Kunden</h2>
+        <table class="d-daten" role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <tr><td class="k">Persönlicher Satz</td><td>{{persoenlicher_satz}}</td></tr>
+          <tr><td class="k">Terminvorschlag</td><td>{{terminvorschlag}}</td></tr>
+          <tr><td class="k">Ausführung</td><td>{{ausfuehrung_satz}}</td></tr>
+          <tr><td class="k">Betreff</td><td>{{mail_betreff}}</td></tr>
+        </table>
+        <h2>Annahmen</h2>
+        <ul>{{annahmen_liste}}</ul>
+        <h2>Nicht enthalten und bauseits</h2>
+        <ul>{{vorbehalte_liste}}</ul>
+        <h2>Fehlende Angaben</h2>
+        <ul>{{fehlende_liste}}</ul>
+      </td>
+    </tr>
+
+    <!-- WARNUNGEN -->
+    <tr>
+      <td class="d-pad">
+        <h2>Warnungen</h2>
+        <div class="d-warn">
+          <ul>{{warnungen_liste}}</ul>
+        </div>
+      </td>
+    </tr>
+    <!-- /WARNUNGEN -->
+
+    <!-- ANHAENGE -->
+    <tr>
+      <td class="d-pad">
+        <h2>Anhänge</h2>
+        <ul>{{anhaenge_liste}}</ul>
+      </td>
+    </tr>
+    <!-- /ANHAENGE -->
+
+    <tr>
+      <td class="d-pad" style="padding-top:26px; padding-bottom:26px;">
+        <div class="d-btn"><a href="{{intern_url}}">Anfrage im Intern-Bereich öffnen</a></div>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="d-pad d-text d-muted" style="padding-top:16px; padding-bottom:26px; border-top:1px solid #DDE2EC; font-size:13px; line-height:19px;">
+        Internes Dossier zu {{ks_nummer}}. Diese Mail enthält interne Kalkulationsdaten und geht nie an Kunden.
+      </td>
+    </tr>
+
+  </table>
+
+</td>
+</tr>
+</table>
+</body>
+</html>

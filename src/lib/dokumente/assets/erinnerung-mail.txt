@@ -1,13 +1,17 @@
-Guten Tag {{anrede}} {{nachname}},
+Guten Tag {{anrede_zeile}},
 
 vor ein paar Tagen habe ich Ihnen die Kostenschätzung für {{vorhaben_kurz}} geschickt, Spanne {{summe_brutto_von}} bis {{summe_brutto_bis}} Euro. Falls die Mail untergegangen ist: sie hängt hier noch einmal an.
 
 Passen die Termine noch? Mein Vorschlag war {{terminvorschlag}}. Wenn Sie inzwischen anders entschieden haben, reicht mir ein Satz, dann schließe ich die Anfrage.
 
+<!-- TERMIN_LINK -->
+Termin bestätigen: {{bestaetigungs_url}}
+<!-- /TERMIN_LINK -->
+
 Mit freundlichen Grüßen
 
 {{bearbeiter}}
-{{bearbeiter_rolle}}, Bad & Energie GmbH
-Siegmund-Hiepe-Straße 20, 35578 Wetzlar, 06441 2039053
+{{bearbeiter_rolle}}, {{firma}}
+{{firma_strasse}}, {{firma_plz_ort}}, {{firma_telefon}}
 
 Kostenschätzung {{ks_nummer}}, unverbindlich.

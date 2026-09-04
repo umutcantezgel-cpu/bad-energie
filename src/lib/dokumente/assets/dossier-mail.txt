@@ -1,0 +1,63 @@
+Dossier {{ks_nummer}} · {{nachname}}
+{{vorhaben_kurz}} · Status {{status}} · Quelle {{quelle}} · Dringlichkeit {{dringlichkeit}}
+
+KUNDE UND OBJEKT
+Anrede im Dokument: {{anrede_zeile}}
+Name: {{anrede}} {{vorname}} {{nachname}}
+Anschrift: {{strasse}}, {{plz_ort}}
+E-Mail: {{email}}
+Telefon: {{telefon}}
+Objekt: {{objekt_adresse}}
+Entfernung: {{entfernung_km}}
+Triage: {{triage_vorschlag}}
+Bearbeiter: {{bearbeiter}}, {{bearbeiter_rolle}}
+Datum: {{datum}}
+
+POSITIONEN
+{{positionen_text}}
+
+Gesamt netto: {{summe_netto_von}} bis {{summe_netto_bis}} Euro
+Gesamt brutto: {{summe_brutto_von}} bis {{summe_brutto_bis}} Euro
+<!-- FOERDERUNG -->
+
+FOERDERUNG
+Foerderfaehige Kosten: bis {{foerder_kosten}} Euro
+Foerdersatz: {{foerder_satz}} Prozent
+Zuschuss: {{foerder_zuschuss}} Euro
+Eigenanteil: {{eigenanteil_von}} bis {{eigenanteil_bis}} Euro
+<!-- /FOERDERUNG -->
+
+INTERNE FAKTOREN
+{{faktoren_text}}
+
+NOTIZEN
+{{notizen_text}}
+
+TEXT FUER DEN KUNDEN
+Persoenlicher Satz: {{persoenlicher_satz}}
+Terminvorschlag: {{terminvorschlag}}
+Ausfuehrung: {{ausfuehrung_satz}}
+Betreff: {{mail_betreff}}
+
+ANNAHMEN
+{{annahmen_text}}
+
+NICHT ENTHALTEN UND BAUSEITS
+{{vorbehalte_text}}
+
+FEHLENDE ANGABEN
+{{fehlende_text}}
+<!-- WARNUNGEN -->
+
+WARNUNGEN
+{{warnungen_text}}
+<!-- /WARNUNGEN -->
+<!-- ANHAENGE -->
+
+ANHAENGE
+{{anhaenge_text}}
+<!-- /ANHAENGE -->
+
+Anfrage im Intern-Bereich: {{intern_url}}
+
+Internes Dossier zu {{ks_nummer}}. Diese Mail enthaelt interne Kalkulationsdaten und geht nie an Kunden.

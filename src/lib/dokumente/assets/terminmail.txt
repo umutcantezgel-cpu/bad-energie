@@ -1,13 +1,17 @@
 Betreff: Ihre Anfrage, Terminvorschlag
 
-Guten Tag {{anrede}} {{nachname}},
+Guten Tag {{anrede_zeile}},
 
 vielen Dank für Ihre Anfrage zu {{vorhaben_kurz}}. Für eine verlässliche Einschätzung muss ich das Haus einmal gesehen haben, das dauert etwa eine Stunde.
 
-Mein Vorschlag: {{terminvorschlag}}. Wenn Ihnen etwas anderes besser passt, antworten Sie einfach auf diese Mail oder rufen Sie an: 06441 2039053.
+Mein Vorschlag: {{terminvorschlag}}. Wenn Ihnen etwas anderes besser passt, antworten Sie einfach auf diese Mail oder rufen Sie an: {{firma_telefon}}.
+
+<!-- TERMIN_LINK -->
+Termin bestätigen: {{bestaetigungs_url}}
+<!-- /TERMIN_LINK -->
 
 Mit freundlichen Grüßen
 
 {{bearbeiter}}
-{{bearbeiter_rolle}}, Bad & Energie GmbH
-Siegmund-Hiepe-Straße 20, 35578 Wetzlar
+{{bearbeiter_rolle}}, {{firma}}
+{{firma_strasse}}, {{firma_plz_ort}}

@@ -6,10 +6,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="color-scheme" content="light dark" />
 <meta name="supported-color-schemes" content="light dark" />
-<title>Kurze Nachfrage zu Ihrer Kostenschätzung {{ks_nummer}}</title>
+<title>Eingang Ihrer Anfrage {{ks_nummer}}</title>
 <!--
   ============================================================
-  Bad & Energie GmbH · Erinnerung nach 5 Tagen ohne Antwort
+  Bad & Energie GmbH · Eingangsbestätigung, automatisch, ohne Freitext des Absenders
   XHTML 1.0 Transitional · 600 px · mittelachsig · Outlook, Gmail, Apple Mail, Mobil
 
   Gleiches Farb- und Typosystem wie die Nachfassmail:
@@ -18,7 +18,7 @@
     Fließtext 17/27 · Zwischenzeile 21/31 · Überschrift 27/36
 
   Platzhalter in doppelten geschweiften Klammern fuellt src/lib/services/templates.ts.
-  Der Block FOERDERUNG erscheint nur bei Wärmepumpen mit Förderung.
+  Diese Mail enthaelt nur die Nummer und einen festen Satz. Kein Freitext, keine Betraege.
   Kein Abmeldelink: Antwort auf eine konkrete Anfrage, keine Werbung.
   ============================================================
 -->
@@ -62,7 +62,7 @@
 <body class="be-page" style="margin:0; padding:0; background-color:#F4F4F2;">
 
 <div style="display:none; font-size:1px; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; mso-hide:all;">
-  Nur eine kurze Nachfrage, ob die Terminvorschläge noch passen.
+  Ihre Anfrage ist bei uns eingegangen.
   &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
 </div>
 
@@ -95,7 +95,7 @@
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" class="be-signet" style="border:1px solid #D0211A;">
           <tr>
             <td align="center" style="padding:8px 21px 9px 21px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:14px; line-height:21px; mso-line-height-rule:exactly; color:#D0211A; letter-spacing:0.14em; font-weight:bold; white-space:nowrap;">
-              KOSTENSCHÄTZUNG&nbsp;&nbsp;·&nbsp;&nbsp;{{ks_nummer}}
+              IHRE ANFRAGE&nbsp;&nbsp;·&nbsp;&nbsp;{{ks_nummer}}
             </td>
           </tr>
         </table>
@@ -105,7 +105,7 @@
     <!-- Überschrift -->
     <tr>
       <td class="be-pad be-head" align="center" style="padding:21px 55px 0 55px;">
-        <h1 class="be-h1" style="margin:0; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:27px; line-height:36px; mso-line-height-rule:exactly; font-weight:bold; color:#1B3A8C;">Kurze Nachfrage zu Ihrer Kostenschätzung</h1>
+        <h1 class="be-h1" style="margin:0; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:27px; line-height:36px; mso-line-height-rule:exactly; font-weight:bold; color:#1B3A8C;">Ihre Anfrage ist eingegangen</h1>
       </td>
     </tr>
 
@@ -113,62 +113,16 @@
     <tr>
       <td class="be-pad be-text" align="left" style="padding:34px 55px 0 55px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; line-height:27px; mso-line-height-rule:exactly; color:#1A1A1A;">
         <p style="margin:0 0 21px 0;">Guten Tag {{anrede_zeile}},</p>
-        <p style="margin:0 0 21px 0;">vor ein paar Tagen habe ich Ihnen die Kostenschätzung für {{vorhaben_kurz}} geschickt, Spanne {{summe_brutto_von}} bis {{summe_brutto_bis}} €. Falls die Mail untergegangen ist: sie hängt hier noch einmal an.</p>
-        <p style="margin:0;">Passen die Termine noch? Mein Vorschlag war <strong>{{terminvorschlag}}</strong>. Wenn Sie inzwischen anders entschieden haben, reicht mir ein Satz, dann schließe ich die Anfrage.</p>
+        <p style="margin:0;">Ihre Anfrage ist bei uns eingegangen und liegt unter der Nummer {{ks_nummer}}. Wir melden uns innerhalb von zwei Werktagen bei Ihnen.</p>
       </td>
     </tr>
 
-    <!-- Zwei Buttons: Termin per Mail bestätigen, anrufen -->
+    <!-- Rueckfragen -->
     <tr>
-      <td class="be-pad" align="center" style="padding:34px 55px 0 55px;">
-        <!--[if mso]>
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="233" valign="top">
-        <![endif]-->
-        <div class="be-col" style="display:inline-block; width:100%; max-width:233px; vertical-align:top; padding-right:21px; padding-bottom:13px; font-size:17px; line-height:27px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="be-btn">
-            <tr>
-              <td align="center" bgcolor="#1B3A8C" style="background-color:#1B3A8C; border-radius:3px;">
-                <!--[if mso]>
-                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{termin_href}}" style="height:55px; v-text-anchor:middle; width:233px;" arcsize="6%" strokecolor="#1B3A8C" fillcolor="#1B3A8C">
-                  <w:anchorlock/>
-                  <center style="color:#FFFFFF; font-family:Arial, sans-serif; font-size:17px; font-weight:bold;">Termin bestätigen</center>
-                </v:roundrect>
-                <![endif]-->
-                <!--[if !mso]><!-- -->
-                <a href="{{termin_href}}" style="display:block; padding:14px 12px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; line-height:27px; mso-line-height-rule:exactly; font-weight:bold; color:#FFFFFF; text-decoration:none; border-radius:3px;">Termin bestätigen</a>
-                <!--<![endif]-->
-              </td>
-            </tr>
-          </table>
-        </div><!--[if mso]></td><td width="21">&nbsp;</td><td width="233" valign="top"><![endif]--><div class="be-col" style="display:inline-block; width:100%; max-width:233px; vertical-align:top; font-size:17px; line-height:27px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="be-out">
-            <tr>
-              <td align="center" style="border:2px solid #1B3A8C; border-radius:3px;">
-                <!--[if mso]>
-                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{firma_telefon_link}}" style="height:55px; v-text-anchor:middle; width:233px;" arcsize="6%" strokecolor="#1B3A8C" fillcolor="#FFFFFF">
-                  <w:anchorlock/>
-                  <center style="color:#1B3A8C; font-family:Arial, sans-serif; font-size:17px; font-weight:bold;">{{firma_telefon}}</center>
-                </v:roundrect>
-                <![endif]-->
-                <!--[if !mso]><!-- -->
-                <a href="{{firma_telefon_link}}" style="display:block; padding:12px 12px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; line-height:27px; mso-line-height-rule:exactly; font-weight:bold; color:#1B3A8C; text-decoration:none;">{{firma_telefon}}</a>
-                <!--<![endif]-->
-              </td>
-            </tr>
-          </table>
-        </div>
-        <!--[if mso]></td></tr></table><![endif]-->
+      <td class="be-pad be-text" align="left" style="padding:21px 55px 0 55px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; line-height:27px; mso-line-height-rule:exactly; color:#1A1A1A;">
+        <p style="margin:0;">Wenn es eilt, erreichen Sie uns unter <a href="{{firma_telefon_link}}" style="color:#1B3A8C;">{{firma_telefon}}</a>.</p>
       </td>
     </tr>
-
-    <!-- MAILTO_ZEILE -->
-    <!-- Mailto als Textzeile unter dem Button (benannte Abweichung 5) -->
-    <tr>
-      <td class="be-pad be-muted" align="center" style="padding:13px 55px 0 55px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:14px; line-height:21px; mso-line-height-rule:exactly; color:#4A4F5C;">
-        Oder antworten Sie einfach per Mail an <a href="{{termin_mailto}}" style="color:#4A4F5C;">{{bearbeiter_mail}}</a>.
-      </td>
-    </tr>
-    <!-- /MAILTO_ZEILE -->
 
     <!-- Signatur -->
     <tr>
@@ -185,7 +139,7 @@
         {{firma}} · {{firma_strasse}} · {{firma_plz_ort}}<br />
         Geschäftsführer {{firma_geschaeftsfuehrer}} · {{firma_register}}<br />
         <a href="{{firma_web_url}}" style="color:#4A4F5C;">{{firma_web}}</a> · <a href="{{firma_email_link}}" style="color:#4A4F5C;">{{firma_email}}</a><br />
-        <span style="display:block; padding-top:13px;">Sie erhalten diese Mail, weil Sie uns zu Ihrem Vorhaben angefragt haben. Kostenschätzung {{ks_nummer}}, unverbindlich.</span>
+        <span style="display:block; padding-top:13px;">Sie erhalten diese Mail, weil Sie uns zu Ihrem Vorhaben angefragt haben. Kostenschätzung {{ks_nummer}}, unverbindlich. Diese Bestätigung wurde automatisch erzeugt.</span>
       </td>
     </tr>
 

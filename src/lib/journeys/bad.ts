@@ -1,0 +1,197 @@
+/**
+ * Journey Badmodernisierung, sechs Schritte.
+ * Kanonische Seite: /bad/badanfrage. Texte in Kundensprache, keine Fachbegriffe.
+ */
+import type { Journey } from './typen';
+
+export const badJourney: Journey = {
+  id: 'bad',
+  name: 'Badmodernisierung',
+  pfad: '/bad/badanfrage',
+  quelle: 'web_bad',
+  gewerk: 'wasser',
+  ueberschrift: 'Ihr neues Bad',
+  unterzeile: 'Sechs kurze Fragen. Danach wissen wir, worum es geht, und melden uns persönlich.',
+  zusage:
+    'Ihr Bad ist besonders. Ein Meister sieht sich Ihre Angaben an und meldet sich innerhalb von zwei Werktagen mit einer Kostenschätzung bei Ihnen.',
+  standardAntworten: {
+    journey: 'bad',
+    vorhaben: 'komplettbad',
+    qm: 7,
+    grundriss: 'quadratisch',
+    ausstattung: 'komfort',
+    wuensche: [],
+  },
+  schritte: [
+    {
+      id: 'vorhaben',
+      titel: 'Was soll passieren',
+      art: 'fragen',
+      fragen: [
+        {
+          id: 'vorhaben',
+          ziel: 'antworten',
+          feld: 'vorhaben',
+          art: 'einzelauswahl',
+          frage: 'Was soll in Ihrem Bad passieren?',
+          erklaerung: 'Wählen Sie, was am besten passt. Feinheiten klären wir später gemeinsam.',
+          fehler: 'Bitte wählen Sie aus, was passieren soll.',
+          spalten: 3,
+          optionen: [
+            { wert: 'komplettbad', titel: 'Alles neu', untertitel: 'Das ganze Bad wird erneuert', piktogramm: 'bad-komplett' },
+            { wert: 'teilmodernisierung', titel: 'Teile erneuern', untertitel: 'Nur einzelne Bereiche', piktogramm: 'bad-teil' },
+            { wert: 'dusche_statt_wanne', titel: 'Dusche statt Wanne', untertitel: 'Die Wanne weicht einer Dusche', piktogramm: 'dusche' },
+            { wert: 'barrierefrei', titel: 'Bad ohne Stufen', untertitel: 'Bequem und sicher im Alltag', piktogramm: 'barrierefrei' },
+            { wert: 'gaeste_wc', titel: 'Kleines Gästebad', untertitel: 'WC und Waschbecken', piktogramm: 'wc' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'raum',
+      titel: 'Ihr Raum',
+      art: 'fragen',
+      frage: 'Wie groß ist Ihr Bad?',
+      erklaerung: 'Eine Schätzung genügt. Ganz genau messen wir beim Termin vor Ort.',
+      fragen: [
+        {
+          id: 'qm',
+          ziel: 'antworten',
+          feld: 'qm',
+          art: 'zahl',
+          frage: 'Größe des Raumes',
+          erklaerung: 'Der Regler rastet auf den Größen unserer Ausstellungsbäder ein.',
+          min: 3,
+          max: 25,
+          schritt: 0.1,
+          einheit: 'Quadratmeter',
+          rasten: [4.6, 7, 8.2, 15.9],
+          nachkommastellen: 1,
+        },
+        {
+          id: 'grundriss',
+          ziel: 'antworten',
+          feld: 'grundriss',
+          art: 'einzelauswahl',
+          frage: 'Welcher Zuschnitt kommt Ihrem Raum am nächsten?',
+          fehler: 'Bitte wählen Sie einen Zuschnitt.',
+          spalten: 3,
+          optionen: [
+            { wert: 'schmal', titel: 'Lang und schmal', untertitel: 'Deutlich länger als breit', piktogramm: 'grundriss-schmal' },
+            { wert: 'quadratisch', titel: 'Fast quadratisch', untertitel: 'Länge und Breite ähnlich', piktogramm: 'grundriss-quadratisch' },
+            { wert: 'l_form', titel: 'Mit Nische oder Winkel', untertitel: 'Der Raum hat einen Versatz', piktogramm: 'grundriss-l' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'ausstattung',
+      titel: 'Ausstattung',
+      art: 'fragen',
+      frage: 'Wie soll Ihr Bad ausgestattet sein?',
+      erklaerung: 'Zu jeder Stufe zeigen wir ein Bad aus unserer Ausstellung mit dem Preis der Einrichtung.',
+      fragen: [
+        {
+          id: 'ausstattung',
+          ziel: 'antworten',
+          feld: 'ausstattung',
+          art: 'einzelauswahl',
+          frage: 'Ihre Wunschausstattung',
+          fehler: 'Bitte wählen Sie eine Ausstattung.',
+          spalten: 3,
+          optionen: [
+            { wert: 'basic', titel: 'Solide', untertitel: 'Marken, die lange halten', piktogramm: 'stufe-1' },
+            { wert: 'komfort', titel: 'Komfortabel', untertitel: 'Mehr Design und mehr Glas', piktogramm: 'stufe-2' },
+            { wert: 'luxus', titel: 'Außergewöhnlich', untertitel: 'Freistehende Wanne und Licht nach Maß', piktogramm: 'stufe-3' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'wuensche',
+      titel: 'Wünsche',
+      art: 'fragen',
+      frage: 'Was wäre Ihnen wichtig?',
+      erklaerung: 'Mehrfachauswahl. Alles ist möglich, nichts ist Pflicht.',
+      fragen: [
+        {
+          id: 'wuensche',
+          ziel: 'antworten',
+          feld: 'wuensche',
+          art: 'mehrfachauswahl',
+          frage: 'Ihre Wünsche',
+          optional: true,
+          spalten: 3,
+          optionen: [
+            { wert: 'walkin', titel: 'Dusche ohne Stufe', untertitel: 'Bodengleich und offen', piktogramm: 'walkin' },
+            { wert: 'wanne', titel: 'Badewanne', untertitel: 'Zum Entspannen', piktogramm: 'wanne' },
+            { wert: 'dusch_wc', titel: 'WC mit Duschfunktion', untertitel: 'Reinigung mit warmem Wasser', piktogramm: 'dusch-wc' },
+            { wert: 'doppelwaschtisch', titel: 'Zwei Waschbecken', untertitel: 'Morgens ohne Warten', piktogramm: 'doppelwaschtisch' },
+            { wert: 'fussbodenheizung', titel: 'Warmer Fußboden', untertitel: 'Wärme von unten', piktogramm: 'fussbodenheizung' },
+            { wert: 'design_heizkoerper', titel: 'Handtuchwärmer', untertitel: 'Heizkörper mit Ablage', piktogramm: 'heizkoerper' },
+            { wert: 'led_spiegel', titel: 'Spiegel mit Licht', untertitel: 'Gleichmäßig hell', piktogramm: 'spiegel' },
+            { wert: 'vorwand', titel: 'Rohre hinter einer neuen Wand verstecken', untertitel: 'Ergibt zugleich eine Ablage', piktogramm: 'wand' },
+            { wert: 'durchlauferhitzer', titel: 'Warmwasser direkt am Waschbecken', untertitel: 'Kurze Wege, schnell warm', piktogramm: 'warmwasser' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'haus_zeit',
+      titel: 'Haus und Zeit',
+      art: 'fragen',
+      frage: 'Noch zwei Angaben zum Haus',
+      erklaerung: 'Damit wissen wir, wer entscheidet und wann wir einplanen.',
+      fragen: [
+        {
+          id: 'eigentum',
+          ziel: 'objekt',
+          feld: 'eigentum',
+          art: 'einzelauswahl',
+          frage: 'Gehört Ihnen die Wohnung oder das Haus?',
+          fehler: 'Bitte wählen Sie eine Angabe.',
+          spalten: 3,
+          optionen: [
+            { wert: 'eigentum', titel: 'Ja, mir', untertitel: 'Ich entscheide selbst', piktogramm: 'eigentum' },
+            { wert: 'miete', titel: 'Nein, gemietet', untertitel: 'Die Eigentümerin oder der Eigentümer entscheidet mit', piktogramm: 'miete' },
+            { wert: 'unklar', titel: 'Noch offen', untertitel: 'Klären wir gemeinsam', piktogramm: 'fragezeichen' },
+          ],
+        },
+        {
+          id: 'plz',
+          ziel: 'objekt',
+          feld: 'plz',
+          art: 'text',
+          frage: 'Postleitzahl des Hauses',
+          erklaerung: 'Wir arbeiten rund um Wetzlar und im Lahn Dill Kreis.',
+          fehler: 'Bitte geben Sie eine fünfstellige Postleitzahl an.',
+          platzhalter: '35576',
+          maxLaenge: 5,
+          eingabemodus: 'numeric',
+        },
+        {
+          id: 'dringlichkeit',
+          ziel: 'meta',
+          feld: 'dringlichkeit',
+          art: 'einzelauswahl',
+          frage: 'Wann soll es losgehen?',
+          fehler: 'Bitte wählen Sie einen Zeitraum.',
+          optionen: [
+            { wert: 'sofort', titel: 'So schnell wie möglich', piktogramm: 'sofort' },
+            { wert: 'wochen_4', titel: 'In den nächsten Wochen', piktogramm: 'kalender' },
+            { wert: 'monate_3', titel: 'In den nächsten Monaten', piktogramm: 'uhr' },
+            { wert: 'unklar', titel: 'Noch offen', piktogramm: 'fragezeichen' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'kontakt',
+      titel: 'Ergebnis und Kontakt',
+      art: 'kontakt',
+      fragen: [],
+    },
+  ],
+};
+
+export default badJourney;

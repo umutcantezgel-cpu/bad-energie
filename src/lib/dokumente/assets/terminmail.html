@@ -6,10 +6,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="color-scheme" content="light dark" />
 <meta name="supported-color-schemes" content="light dark" />
-<title>Kurze Nachfrage zu Ihrer Kostenschätzung {{ks_nummer}}</title>
+<title>Ihre Anfrage, Terminvorschlag</title>
 <!--
   ============================================================
-  Bad & Energie GmbH · Erinnerung nach 5 Tagen ohne Antwort
+  Bad & Energie GmbH · Terminmail ohne Kostenschätzung (Regel 10)
   XHTML 1.0 Transitional · 600 px · mittelachsig · Outlook, Gmail, Apple Mail, Mobil
 
   Gleiches Farb- und Typosystem wie die Nachfassmail:
@@ -18,7 +18,7 @@
     Fließtext 17/27 · Zwischenzeile 21/31 · Überschrift 27/36
 
   Platzhalter in doppelten geschweiften Klammern fuellt src/lib/services/templates.ts.
-  Der Block FOERDERUNG erscheint nur bei Wärmepumpen mit Förderung.
+  Diese Mail nennt keine Beträge. Sie ist der Versandpfad ohne PDF.
   Kein Abmeldelink: Antwort auf eine konkrete Anfrage, keine Werbung.
   ============================================================
 -->
@@ -62,7 +62,7 @@
 <body class="be-page" style="margin:0; padding:0; background-color:#F4F4F2;">
 
 <div style="display:none; font-size:1px; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; mso-hide:all;">
-  Nur eine kurze Nachfrage, ob die Terminvorschläge noch passen.
+  Ein Vorschlag für den Ortstermin, damit wir Ihr Vorhaben verlaesslich einschaetzen koennen.
   &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
 </div>
 
@@ -95,7 +95,7 @@
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" class="be-signet" style="border:1px solid #D0211A;">
           <tr>
             <td align="center" style="padding:8px 21px 9px 21px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:14px; line-height:21px; mso-line-height-rule:exactly; color:#D0211A; letter-spacing:0.14em; font-weight:bold; white-space:nowrap;">
-              KOSTENSCHÄTZUNG&nbsp;&nbsp;·&nbsp;&nbsp;{{ks_nummer}}
+              IHRE ANFRAGE&nbsp;&nbsp;·&nbsp;&nbsp;{{ks_nummer}}
             </td>
           </tr>
         </table>
@@ -105,7 +105,7 @@
     <!-- Überschrift -->
     <tr>
       <td class="be-pad be-head" align="center" style="padding:21px 55px 0 55px;">
-        <h1 class="be-h1" style="margin:0; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:27px; line-height:36px; mso-line-height-rule:exactly; font-weight:bold; color:#1B3A8C;">Kurze Nachfrage zu Ihrer Kostenschätzung</h1>
+        <h1 class="be-h1" style="margin:0; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:27px; line-height:36px; mso-line-height-rule:exactly; font-weight:bold; color:#1B3A8C;">Ihre Anfrage zu {{vorhaben_kurz}}</h1>
       </td>
     </tr>
 
@@ -113,8 +113,16 @@
     <tr>
       <td class="be-pad be-text" align="left" style="padding:34px 55px 0 55px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; line-height:27px; mso-line-height-rule:exactly; color:#1A1A1A;">
         <p style="margin:0 0 21px 0;">Guten Tag {{anrede_zeile}},</p>
-        <p style="margin:0 0 21px 0;">vor ein paar Tagen habe ich Ihnen die Kostenschätzung für {{vorhaben_kurz}} geschickt, Spanne {{summe_brutto_von}} bis {{summe_brutto_bis}} €. Falls die Mail untergegangen ist: sie hängt hier noch einmal an.</p>
-        <p style="margin:0;">Passen die Termine noch? Mein Vorschlag war <strong>{{terminvorschlag}}</strong>. Wenn Sie inzwischen anders entschieden haben, reicht mir ein Satz, dann schließe ich die Anfrage.</p>
+        <p style="margin:0 0 21px 0;">vielen Dank für Ihre Anfrage zu {{vorhaben_kurz}}. Für eine verlässliche Einschätzung muss ich das Haus einmal gesehen haben, das dauert etwa eine Stunde.</p>
+        <p style="margin:0;">{{persoenlicher_satz}}</p>
+      </td>
+    </tr>
+
+    <!-- Naechster Schritt -->
+    <tr>
+      <td class="be-pad be-text" align="left" style="padding:21px 55px 0 55px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; line-height:27px; mso-line-height-rule:exactly; color:#1A1A1A;">
+        <p style="margin:0 0 21px 0;">Beim Termin schauen wir uns Technikraum, Aufstellort und Leitungswege an und nehmen die Maße auf. Danach erhalten Sie eine belastbare Einschätzung.</p>
+        <p style="margin:0;">Mein Vorschlag: <strong>{{terminvorschlag}}</strong>. Wenn Ihnen etwas anderes besser passt, antworten Sie einfach auf diese Mail.</p>
       </td>
     </tr>
 

@@ -17,7 +17,7 @@
     SEITE #F4F4F2 · INHALT #FFFFFF · FLÄCHE #F3F6FC · LINIE #DDE2EC
     Fließtext 17/27 · Zwischenzeile 21/31 · Überschrift 27/36
 
-  Platzhalter {{name}} füllt render.py aus dem Datenblatt.
+  Platzhalter in doppelten geschweiften Klammern fuellt src/lib/services/templates.ts.
   Der Block FOERDERUNG erscheint nur bei Wärmepumpen mit Förderung.
   Kein Abmeldelink: Antwort auf eine konkrete Anfrage, keine Werbung.
   ============================================================
@@ -112,7 +112,7 @@
     <!-- Anrede und persönlicher Text -->
     <tr>
       <td class="be-pad be-text" align="left" style="padding:34px 55px 0 55px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; line-height:27px; mso-line-height-rule:exactly; color:#1A1A1A;">
-        <p style="margin:0 0 21px 0;">Guten Tag {{anrede}} {{nachname}},</p>
+        <p style="margin:0 0 21px 0;">Guten Tag {{anrede_zeile}},</p>
         <p style="margin:0 0 21px 0;">{{persoenlicher_satz}}</p>
         <p style="margin:0;">Ich habe Ihr Vorhaben auf Basis Ihrer Angaben durchgerechnet. Die Kostenschätzung liegt dieser Mail als PDF bei. Das Wichtigste daraus:</p>
       </td>
@@ -162,13 +162,13 @@
             <tr>
               <td align="center" bgcolor="#1B3A8C" style="background-color:#1B3A8C; border-radius:3px;">
                 <!--[if mso]>
-                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="mailto:{{bearbeiter_mail}}?subject=Termin%20{{ks_nummer}}" style="height:55px; v-text-anchor:middle; width:233px;" arcsize="6%" strokecolor="#1B3A8C" fillcolor="#1B3A8C">
+                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{termin_href}}" style="height:55px; v-text-anchor:middle; width:233px;" arcsize="6%" strokecolor="#1B3A8C" fillcolor="#1B3A8C">
                   <w:anchorlock/>
                   <center style="color:#FFFFFF; font-family:Arial, sans-serif; font-size:17px; font-weight:bold;">Termin bestätigen</center>
                 </v:roundrect>
                 <![endif]-->
                 <!--[if !mso]><!-- -->
-                <a href="mailto:{{bearbeiter_mail}}?subject=Termin%20{{ks_nummer}}" style="display:block; padding:14px 12px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; line-height:27px; mso-line-height-rule:exactly; font-weight:bold; color:#FFFFFF; text-decoration:none; border-radius:3px;">Termin bestätigen</a>
+                <a href="{{termin_href}}" style="display:block; padding:14px 12px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; line-height:27px; mso-line-height-rule:exactly; font-weight:bold; color:#FFFFFF; text-decoration:none; border-radius:3px;">Termin bestätigen</a>
                 <!--<![endif]-->
               </td>
             </tr>
@@ -178,13 +178,13 @@
             <tr>
               <td align="center" style="border:2px solid #1B3A8C; border-radius:3px;">
                 <!--[if mso]>
-                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="tel:+4964412039053" style="height:55px; v-text-anchor:middle; width:233px;" arcsize="6%" strokecolor="#1B3A8C" fillcolor="#FFFFFF">
+                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{firma_telefon_link}}" style="height:55px; v-text-anchor:middle; width:233px;" arcsize="6%" strokecolor="#1B3A8C" fillcolor="#FFFFFF">
                   <w:anchorlock/>
-                  <center style="color:#1B3A8C; font-family:Arial, sans-serif; font-size:17px; font-weight:bold;">06441 2039053</center>
+                  <center style="color:#1B3A8C; font-family:Arial, sans-serif; font-size:17px; font-weight:bold;">{{firma_telefon}}</center>
                 </v:roundrect>
                 <![endif]-->
                 <!--[if !mso]><!-- -->
-                <a href="tel:+4964412039053" style="display:block; padding:12px 12px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; line-height:27px; mso-line-height-rule:exactly; font-weight:bold; color:#1B3A8C; text-decoration:none;">06441 2039053</a>
+                <a href="{{firma_telefon_link}}" style="display:block; padding:12px 12px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; line-height:27px; mso-line-height-rule:exactly; font-weight:bold; color:#1B3A8C; text-decoration:none;">{{firma_telefon}}</a>
                 <!--<![endif]-->
               </td>
             </tr>
@@ -194,21 +194,30 @@
       </td>
     </tr>
 
+    <!-- MAILTO_ZEILE -->
+    <!-- Mailto als Textzeile unter dem Button (benannte Abweichung 5) -->
+    <tr>
+      <td class="be-pad be-muted" align="center" style="padding:13px 55px 0 55px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:14px; line-height:21px; mso-line-height-rule:exactly; color:#4A4F5C;">
+        Oder antworten Sie einfach per Mail an <a href="{{termin_mailto}}" style="color:#4A4F5C;">{{bearbeiter_mail}}</a>.
+      </td>
+    </tr>
+    <!-- /MAILTO_ZEILE -->
+
     <!-- Signatur -->
     <tr>
       <td class="be-pad be-text" align="left" style="padding:34px 55px 34px 55px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; line-height:27px; mso-line-height-rule:exactly; color:#1A1A1A;">
         <p style="margin:0 0 21px 0;">Mit freundlichen Grüßen</p>
         <p style="margin:0;"><strong>{{bearbeiter}}</strong><br />
-        <span class="be-muted" style="color:#4A4F5C;">{{bearbeiter_rolle}}, Bad &amp; Energie GmbH</span></p>
+        <span class="be-muted" style="color:#4A4F5C;">{{bearbeiter_rolle}}, {{firma}}</span></p>
       </td>
     </tr>
 
     <!-- Fuß -->
     <tr>
       <td class="be-pad be-muted be-rule" align="center" style="padding:21px 55px 34px 55px; border-top:1px solid #DDE2EC; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:14px; line-height:21px; color:#4A4F5C;">
-        Bad &amp; Energie GmbH · Siegmund-Hiepe-Straße 20 · 35578 Wetzlar<br />
-        Geschäftsführer Sabri Demir · Amtsgericht Wetzlar HRB 2449<br />
-        <a href="https://bad-energie.de" style="color:#4A4F5C;">bad-energie.de</a> · <a href="mailto:info@bad-energie.de" style="color:#4A4F5C;">info@bad-energie.de</a><br />
+        {{firma}} · {{firma_strasse}} · {{firma_plz_ort}}<br />
+        Geschäftsführer {{firma_geschaeftsfuehrer}} · {{firma_register}}<br />
+        <a href="{{firma_web_url}}" style="color:#4A4F5C;">{{firma_web}}</a> · <a href="{{firma_email_link}}" style="color:#4A4F5C;">{{firma_email}}</a><br />
         <span style="display:block; padding-top:13px;">Sie erhalten diese Mail, weil Sie uns zu Ihrem Vorhaben angefragt haben. Kostenschätzung {{ks_nummer}}, unverbindlich.</span>
       </td>
     </tr>

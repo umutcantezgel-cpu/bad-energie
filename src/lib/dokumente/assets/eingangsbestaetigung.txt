@@ -1,0 +1,16 @@
+Guten Tag {{anrede_zeile}},
+
+Ihre Anfrage ist bei uns eingegangen und liegt unter der Nummer {{ks_nummer}}. Wir melden uns innerhalb von zwei Werktagen bei Ihnen.
+
+Wenn es eilt, erreichen Sie uns unter {{firma_telefon}}.
+
+Mit freundlichen Grüßen
+
+{{bearbeiter}}
+{{bearbeiter_rolle}}, {{firma}}
+
+{{firma}}, {{firma_strasse}}, {{firma_plz_ort}}
+Geschäftsführer {{firma_geschaeftsfuehrer}}, {{firma_register}}
+{{firma_web}}, {{firma_email}}
+
+Sie erhalten diese Mail, weil Sie uns zu Ihrem Vorhaben angefragt haben. Kostenschätzung {{ks_nummer}}, unverbindlich. Diese Bestätigung wurde automatisch erzeugt.
