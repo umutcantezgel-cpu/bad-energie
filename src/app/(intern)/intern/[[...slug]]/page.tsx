@@ -18,8 +18,7 @@ import {
   ladeVorbehalte,
   ladeVorlagen,
 } from '@/lib/services/kalkulationsdaten';
-import { ladeInternAnfrage } from '@/lib/services/estimates';
-import { ladeAnfrage, ladeEntwuerfe } from '../actions';
+import { ladeInternAnfrage, ladeEntwuerfe as ladeEntwuerfeService } from '@/lib/services/estimates';
 import type { BoardKarte } from '../board/page-types';
 import type { BenutzerEintrag } from '../benutzer/page-types';
 import type { TerminfensterEintrag } from '../termine/page-types';
@@ -109,7 +108,7 @@ export default async function InternCatchAllPage({
   }
 
   if (bereich === 'entwuerfe') {
-    const karten = await ladeEntwuerfe();
+    const karten = await ladeEntwuerfeService(session);
     return (
       <>
         <h1 className="text-2xl font-semibold text-slate-900">Entwuerfe und Freigaben</h1>
@@ -236,7 +235,7 @@ export default async function InternCatchAllPage({
       return <MeisterModus />;
     }
     const anfrageId = slug[1];
-    const initial = await ladeAnfrage(anfrageId);
+    const initial = await ladeInternAnfrage(anfrageId);
     if (!initial) notFound();
     return <MeisterModus anfrageId={anfrageId} initial={initial} />;
   }

@@ -7,7 +7,11 @@ import {
   legeAusKundenAnfrage,
   speichereInternAnfrage,
 } from '@/lib/services/estimates';
-import { stelleAuftragBereit } from '@/lib/services/versand';
+import {
+  sendeBueroHinweis,
+  sendeEingangsbestaetigung,
+  stelleAuftragBereit,
+} from '@/lib/services/versand';
 import { ausDataUrl, speichereFoto, speichereSkizze } from '@/lib/services/storage';
 import { pruefeLimit } from '@/lib/services/ratelimit';
 
@@ -60,12 +64,20 @@ export async function POST(request: NextRequest) {
     try {
       const anlage = await legeAusKundenAnfrage(payload);
 
-      // Falls der Kunde eine Eingangsbestätigung gewünscht hat, Auftrag anlegen
+      // Falls der Kunde eine Eingangsbestätigung gewünscht hat, Auftrag anlegen und sofort absenden
       if (payload.kontakt.eingangsbestaetigung) {
         await stelleAuftragBereit(anlage.anfrageId, 'eingangsbestaetigung', {
           empfaenger: payload.kontakt.email,
         });
+        sendeEingangsbestaetigung(anlage.anfrageId, payload.kontakt.email).catch((err) => {
+          console.error('[Mail] Eingangsbestätigung fehlgeschlagen:', err);
+        });
       }
+
+      // Büro über neuen Web-Lead benachrichtigen
+      sendeBueroHinweis(anlage.anfrageId).catch((err) => {
+        console.error('[Mail] Büro-Hinweis fehlgeschlagen:', err);
+      });
 
       return NextResponse.json({
         ok: true,

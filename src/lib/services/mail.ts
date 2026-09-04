@@ -117,7 +117,13 @@ export function resendMailer(apiKey: string): Mailer {
         },
         m.idempotencyKey ? { idempotencyKey: m.idempotencyKey } : undefined,
       );
-      if (antwort.error) throw new Error(`Resend: ${antwort.error.message}`);
+      if (antwort.error) {
+        const istDomainFehler = antwort.error.message.toLowerCase().includes('domain') || antwort.error.message.toLowerCase().includes('verify');
+        const hinweis = istDomainFehler
+          ? ' (Hinweis: Die Domain bad-energie.de muss im Resend-Dashboard per DNS verifiziert werden, oder MAIL_FROM temporär auf onboarding@resend.dev setzen)'
+          : '';
+        throw new Error(`Resend: ${antwort.error.message}${hinweis}`);
+      }
       if (!antwort.data?.id) throw new Error('Resend hat keine Nachrichten-ID geliefert.');
       return { id: antwort.data.id };
     },

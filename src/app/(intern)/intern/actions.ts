@@ -1,9 +1,3 @@
-'use server';
-
-/**
- * Server Actions des Intern-Bereichs.
- * Jede Aktion außer `anmelden` ruft verifySession() auf.
- */
 import type {
   AnmeldeErgebnis,
   EntwurfKarte,
@@ -14,84 +8,84 @@ import type {
   Kalkulationsdaten,
   TerminfensterOption,
 } from '@/lib/types';
-import {
-  abmelden as authAbmelden,
-  anmelden as authAnmelden,
-  verifySession,
-} from '@/lib/services/auth';
-import {
-  ladeKalkulationsdaten as ladeKalkulationsdatenService,
-} from '@/lib/services/kalkulationsdaten';
-import {
-  freigeben as freigebenService,
-  ladeEntwuerfe as ladeEntwuerfeService,
-  ladeInternAnfrage,
-  ladeTerminfenster as ladeTerminfensterService,
-  speichereInternAnfrage,
-  stornieren as stornierenService,
-} from '@/lib/services/estimates';
 
-/** PIN-Login (Formular: email, pin). Setzt das Sitzungscookie. */
+/** PIN-Login (Formular: email, pin). Setzt das Sitzungscookie über die API. */
 export async function anmelden(
   _prev: AnmeldeErgebnis | undefined,
   formData: FormData,
 ): Promise<AnmeldeErgebnis> {
   const email = String(formData.get('email') ?? '');
   const pin = String(formData.get('pin') ?? '');
-  return authAnmelden({ email, pin });
+  try {
+    const res = await fetch('/api/intern/anmelden', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, pin }),
+    });
+    return await res.json();
+  } catch (err) {
+    return { ok: false, fehler: (err as Error).message || 'Netzwerkfehler.' };
+  }
 }
 
 export async function abmelden(): Promise<void> {
-  await authAbmelden();
+  await fetch('/api/intern/abmelden', { method: 'POST' });
 }
 
 /** Matrix, Vorlagen mit Bausteinen, Förderregeln, Vorbehalte für die Live-Kalkulation. */
 export async function ladeKalkulationsdaten(): Promise<Kalkulationsdaten> {
-  await verifySession();
-  return ladeKalkulationsdatenService();
+  const res = await fetch('/api/intern/kalkulationsdaten');
+  if (!res.ok) throw new Error('Fehler beim Laden der Kalkulationsdaten.');
+  return await res.json();
 }
 
 /** Freie und reservierte Terminfenster (für den Terminvorschlag). */
 export async function ladeTerminfenster(): Promise<TerminfensterOption[]> {
-  await verifySession();
-  return ladeTerminfensterService();
+  const res = await fetch('/api/intern/terminfenster');
+  if (!res.ok) throw new Error('Fehler beim Laden der Terminfenster.');
+  return await res.json();
 }
 
 /** Entwurf anlegen oder aktualisieren (Autosave); Aktion ist immer 'entwurf'. */
 export async function speichereEntwurf(input: InternAnfrage): Promise<EstimateResponse> {
-  const session = await verifySession();
-  const anlage = await speichereInternAnfrage(input, session);
-  return {
-    ok: true,
-    modus: 'intern',
-    anfrageId: anlage.anfrageId,
-    ksNummer: anlage.ksNummer,
-    status: anlage.status,
-    aktion: 'entwurf',
-    hinweise: anlage.hinweise,
-    rueckmeldung: anlage.rueckmeldung,
-  };
+  const res = await fetch('/api/intern/entwurf', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error('Fehler beim Speichern des Entwurfs.');
+  return await res.json();
 }
 
 /** Anfrage für den Meister-Modus laden. */
 export async function ladeAnfrage(anfrageId: string): Promise<InternAnfrageDTO | null> {
-  await verifySession();
-  return ladeInternAnfrage(anfrageId);
+  const res = await fetch(`/api/intern/anfragen/${encodeURIComponent(anfrageId)}`);
+  if (!res.ok) return null;
+  return await res.json();
 }
 
 /** Entwürfe und freigegebene, noch nicht versendete Aufträge. */
 export async function ladeEntwuerfe(): Promise<EntwurfKarte[]> {
-  const session = await verifySession();
-  return ladeEntwuerfeService(session);
+  const res = await fetch('/api/intern/entwuerfe');
+  if (!res.ok) throw new Error('Fehler beim Laden der Entwürfe.');
+  return await res.json();
 }
 
 /** Freigabe: sofort=false → fällig zur Versandzeit (18:00) oder sofort, wenn schon danach; sofort=true → synchroner Versand. */
 export async function freigeben(anfrageId: string, sofort: boolean): Promise<FreigabeErgebnis> {
-  const session = await verifySession();
-  return freigebenService(anfrageId, session, { sofort });
+  const res = await fetch('/api/intern/freigeben', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ anfrageId, sofort }),
+  });
+  return await res.json();
 }
 
 export async function stornieren(anfrageId: string): Promise<FreigabeErgebnis> {
-  const session = await verifySession();
-  return stornierenService(anfrageId, session);
+  const res = await fetch('/api/intern/stornieren', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ anfrageId }),
+  });
+  return await res.json();
 }

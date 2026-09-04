@@ -9,7 +9,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import Link from 'next/link';
 import '../globals.css';
-import { abmelden } from './intern/actions';
+import AbmeldenButton from './AbmeldenButton';
 import KundenansichtSchalter from '@/components/calculator/KundenansichtSchalter';
 import BaustellenModusSchalter from '@/components/calculator/BaustellenModusSchalter';
 import { SyncBadge } from '@/components/calculator/LiveCalcBar';
@@ -103,14 +103,7 @@ export default function InternLayout({ children }: Readonly<{ children: React.Re
               <SyncBadge />
               <KundenansichtSchalter />
               <BaustellenModusSchalter />
-              <form action={abmelden}>
-                <button
-                  type="submit"
-                  className="fokus-ring inline-flex min-h-[44px] items-center rounded-full bg-white/80 px-4 text-sm font-semibold text-slate-700"
-                >
-                  Abmelden
-                </button>
-              </form>
+              <AbmeldenButton />
             </div>
           </div>
         </header>

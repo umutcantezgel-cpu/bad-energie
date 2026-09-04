@@ -37,7 +37,10 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   outputFileTracingIncludes: {
-    "/*": ["src/lib/dokumente/assets/**/*"],
+    "/api/intern/[...slug]": ["src/lib/dokumente/assets/**/*"],
+    "/api/jobs/[job]": ["src/lib/dokumente/assets/**/*"],
+    "/api/estimate": ["src/lib/dokumente/assets/**/*"],
+    "/intern/[[...slug]]": ["src/lib/dokumente/assets/**/*"],
   },
   experimental: {
     optimizePackageImports: [
@@ -45,9 +48,6 @@ const nextConfig: NextConfig = {
       "@phosphor-icons/react/dist/ssr",
       "framer-motion",
     ],
-    serverActions: {
-      bodySizeLimit: "4mb",
-    },
   },
   async redirects() {
     return [
