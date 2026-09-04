@@ -1,0 +1,83 @@
+{
+  "_hinweis": "Ein Datenblatt je Lead. Pflichtfelder: anrede, nachname, strasse, plz_ort, email, objekt_adresse, vorhaben_kurz, vorlage, rows, summe. Alles andere darf leer bleiben. Beträge als Zahlen ohne Punkt, das Skript formatiert.",
+  "ks_nummer": "KS-2026-0032",
+  "datum": "03.09.2026",
+  "bearbeiter": "Sabri Demir",
+  "bearbeiter_rolle": "Geschäftsführer",
+  "bearbeiter_mail": "info@bad-energie.de",
+  "anrede": "Herr",
+  "vorname": "Max",
+  "nachname": "Mustermann",
+  "strasse": "Beispielweg 4",
+  "plz_ort": "35576 Wetzlar",
+  "email": "kundin@example.de",
+  "telefon": "",
+  "objekt_adresse": "Beispielweg 4, 35576 Wetzlar",
+  "vorhaben_kurz": "Luft/Wasser Wärmepumpe statt Gasheizung",
+  "vorlage": "waermepumpe_gas",
+  "persoenlicher_satz": "Vielen Dank für Ihre Anfrage und die Angaben zum Haus, mit Baujahr 2005 und 155 m² lässt sich das gut einschätzen.",
+  "rows": [
+    {
+      "titel": "Wärmepumpe und Speicher",
+      "text": "Buderus Luft/Wasser Wärmepumpe 10 kW mit Inneneinheit, Regelung und 200 Liter Trinkwasserspeicher, Montagesockel, Verbindungsleitungen",
+      "von": 19800,
+      "bis": 23400,
+      "gewerk": "waermepumpe"
+    },
+    {
+      "titel": "Demontage Gasheizung",
+      "text": "Ausbau und Entsorgung der Gastherme, Rückbau der Gasleitung, Abmeldung beim Energieversorger",
+      "von": 900,
+      "bis": 1500,
+      "gewerk": "heizung"
+    },
+    {
+      "titel": "Rohrleitungen und Armaturen",
+      "text": "Anbindung an das vorhandene Heizkörpernetz, Armaturen, Dämmung, Befüllung nach VDI 2035",
+      "von": 2600,
+      "bis": 3600,
+      "gewerk": "heizung"
+    },
+    {
+      "titel": "Elektro und Anmeldung",
+      "text": "Absicherung, Anmeldung beim Netzbetreiber nach §14a, Zuleitung zur Wärmepumpe",
+      "von": 1200,
+      "bis": 2400,
+      "gewerk": "elektro"
+    },
+    {
+      "titel": "Heizlast, Abgleich, Förderservice",
+      "text": "Raumweise Heizlastberechnung, hydraulischer Abgleich, Fachunternehmererklärung, Inbetriebnahme, Fernüberwachung",
+      "von": 1900,
+      "bis": 2400,
+      "gewerk": "waermepumpe"
+    }
+  ],
+  "summe_netto_von": null,
+  "summe_netto_bis": null,
+  "foerderung": {
+    "kosten": 30000,
+    "satz": 55,
+    "zuschuss": 16500,
+    "eigenanteil_von": 15000,
+    "eigenanteil_bis": 23000
+  },
+  "_foerderung_beispiel_waermepumpe": {
+    "kosten": 30000,
+    "satz": 55,
+    "zuschuss": 16500,
+    "eigenanteil_von": 14200,
+    "eigenanteil_bis": 18900
+  },
+  "annahmen": [
+    "Der vorhandene Kaminofen wird nach dem Umbau nur noch ergänzend genutzt. Bleibt er Hauptzusatzheizung, prüfen wir die Gerätegröße neu.",
+    "Die vorhandenen Heizkörper bleiben und reichen bei 55/45 °C Vorlauf aus.",
+    "Der Zählerschrank muss nicht erneuert werden.",
+    "Fördersatz 55 % setzt voraus, dass Sie das Haus selbst bewohnen und der Antrag vor Auftrag gestellt wird."
+  ],
+  "terminvorschlag": "Mittwoch, 10. September, ab 9 Uhr, oder Freitag, 12. September, ab 8 Uhr",
+  "ausfuehrung_satz": "Nach Förderzusage und Auftrag stimmen wir den Termin ab. Die Montage dauert in der Regel drei bis vier Arbeitstage, die Heizung ist maximal einen Tag außer Betrieb.",
+  "mail_betreff": "Ihre Kostenschätzung für die Wärmepumpe",
+  "mail_preheader": "Erste Zahlen inklusive Förderung und zwei Terminvorschläge für den Ortstermin.",
+  "gewerk_haupt": "waermepumpe"
+}
