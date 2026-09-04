@@ -50,3 +50,6 @@ dist/
 
 # Laufzeitdaten
 /data/
+
+# Beispielkonfiguration darf ins Repo
+!.env.example

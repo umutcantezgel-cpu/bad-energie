@@ -1,3 +1,11 @@
 {
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "regions": ["fra1"],
+  "crons": [
+    { "path": "/api/jobs/versand", "schedule": "* * * * *" },
+    { "path": "/api/jobs/wiedervorlage", "schedule": "0 6 * * *" },
+    { "path": "/api/jobs/eingang", "schedule": "30 5,11 * * *" },
+    { "path": "/api/jobs/speicherfrist", "schedule": "0 2 * * *" },
+    { "path": "/api/jobs/bereinigung", "schedule": "0 3 * * 0" }
+  ]
 }

@@ -1,34 +1,32 @@
 /**
- * Secure Logger Service
- * 
- * Handles logging gracefully in production vs development.
- * Ensures no sensitive data (like passwords/tokens) is accidentally logged.
+ * Logger-Dienst.
+ * Produktion: nur warn/error. Entwicklung: zusätzlich info.
+ * secureError redigiert bekannte Geheimnisfelder, bevor etwas ins Log geht.
  */
 
-const isDev = import.meta.env.DEV;
+const isDev = process.env.NODE_ENV !== 'production';
+const REDACT = ['password', 'passwort', 'pin', 'token', 'secret', 'auth', 'cookie'];
+
+function redact(data) {
+    if (!data || typeof data !== 'object') return data;
+    const safe = { ...data };
+    for (const key of Object.keys(safe)) {
+        if (REDACT.some((r) => key.toLowerCase().includes(r))) safe[key] = '[REDACTED]';
+    }
+    return safe;
+}
 
 export const logger = {
     info: (message, ...args) => {
-        if (isDev) {
-            console.log(`[INFO] ${message}`, ...args);
-        }
+        if (isDev) console.log(`[INFO] ${message}`, ...args);
     },
-
     warn: (message, ...args) => {
         console.warn(`[WARN] ${message}`, ...args);
     },
-
     error: (message, error) => {
-        // In production, this would send to Sentry/LogRocket
         console.error(`[ERROR] ${message}`, error);
     },
-
-    // Safe logger that strips sensitive keys
     secureError: (message, data) => {
-        const safeData = { ...data };
-        ['password', 'token', 'secret', 'auth'].forEach(key => {
-            if (safeData[key]) safeData[key] = '[REDACTED]';
-        });
-        console.error(`[SECURE_ERROR] ${message}`, safeData);
-    }
+        console.error(`[SECURE_ERROR] ${message}`, redact(data));
+    },
 };
