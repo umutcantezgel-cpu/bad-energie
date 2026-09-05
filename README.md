@@ -9,8 +9,8 @@ geschützter Meister-Modus unter `/intern`, serverseitige Kostenschätzung als D
 nvm use            # Node 20.9 oder neuer (Next 16)
 npm ci
 cp .env.example .env.local
-npm run db:migrate # legt die lokale PGlite-Datenbank unter ./data an
-npm run db:seed    # Richtpreis-Matrix (leer), Vorlagen, Einstellungen, Terminfenster
+npm run db:migrate         # legt die lokale PGlite-Datenbank unter ./data an
+npm run db:seed -- --demo  # Vorlagen, Einstellungen, Terminfenster und der Demo-Preissatz (ohne --demo bleibt die Matrix leer)
 npm run benutzer -- --email chef@bad-energie.de --name "Sabri Demir" --rolle chef --funktion "Geschäftsführer"
 npm run dev
 ```
@@ -37,7 +37,10 @@ Alle Variablen stehen mit Erläuterung in `.env.example`. In Produktion verweige
 oder bei aktivem Resend-Versand `RESEND_API_KEY` fehlen. Geheimnisse mit `openssl rand -base64 32` erzeugen.
 
 Lokal genügen die Vorgaben: Datenbank als PGlite-Datei unter `./data/pglite`, Mails als `.eml` unter `./data/outbox`,
-Dateien unter `./data/blob`.
+Dateien unter `./data/blob`. PGlite verträgt nur einen Prozess: Migration und Seed laufen nur, wenn `npm run dev` nicht läuft.
+
+`MAIL_TEST_TO` ist die Auffangadresse: Solange sie gesetzt ist, gehen alle Mails dorthin, der echte Empfänger steht
+im Betreff. Für die Vorführung wird sie auf die Adresse gesetzt, die die Mails sehen soll; im Livebetrieb entfällt sie.
 
 ## Betrieb auf Vercel
 
@@ -87,8 +90,10 @@ blockiert das System den Versand und benennt die fehlende Zeile. Beträge werden
 Der Versand läuft über einen Puffer bis 18:00 Uhr oder sofort von der Baustelle. Nach fünf Tagen ohne Antwort entsteht
 eine Erinnerung, die erneut freigegeben werden muss.
 
-Nach dem Seed ist die Matrix leer, also blockiert. Das ist beabsichtigt: Der Betrieb trägt die Beträge unter
-`/intern/matrix` ein, erst danach zeigt der öffentliche Konfigurator Spannen.
+Nach dem Seed ohne `--demo` ist die Matrix leer, also blockiert. Das ist beabsichtigt: Der Betrieb trägt die Beträge unter
+`/intern/matrix` ein, erst danach zeigt der öffentliche Konfigurator Spannen. Die Heizlast-Schnellschätzung, der
+Gerätevorschlag aus der Bosch-Baureihe, der Speichervorschlag nach Personen und der Betriebskostenvergleich folgen dem
+Erfassungsbogen des Chefs (`src/lib/services/heizlast.ts`, Prüfwerte in `heizlast.test.ts`).
 
 ## Sicherheit
 
