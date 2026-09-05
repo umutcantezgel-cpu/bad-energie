@@ -60,12 +60,20 @@ describe('Fehlende Angaben, serverseitig', () => {
     expect(fehlt).toContain('Bestehende Heizung');
   });
 
-  it('meldet eine Gerätewahl ohne Verbrauch und eine Heizlast über der Baureihe', () => {
+  it('meldet eine Gerätewahl ohne Verbrauch, aber keine Baureihenaussage aus dem reinen Flächenweg', () => {
     const ohneVerbrauch = gebaeudeMit({ wohnflaeche: 150, baujahrKlasse: 'vor_1977', bestand: { energieart: 'gas' } });
     const fehlt = fehlendeAngaben(vorgang(ohneVerbrauch), LEERES_ERGEBNIS);
     expect(fehlt.some((f) => f.includes('Jahresverbrauch fehlt'))).toBe(true);
-    // 18,9 kW aus der Fläche liegen über der Bosch-Baureihe bis 12 kW.
+    // 18,9 kW aus der Fläche sind nicht belastbar; daraus folgt keine Aussage über die Baureihe.
+    expect(fehlt.some((f) => f.includes('Baureihe'))).toBe(false);
+  });
+
+  it('meldet eine Heizlast über der Baureihe nur bei belastbarem Verbrauch', () => {
+    // 40.000 kWh × 0,75 / 1.800 h = 16,7 kW, über der Bosch-Baureihe bis 12 kW.
+    const gross = gebaeudeMit({ wohnflaeche: 150, baujahrKlasse: 'vor_1977', bestand: { energieart: 'gas', verbrauchJahr: 40000, kesseltyp: 'standard' } });
+    const fehlt = fehlendeAngaben(vorgang(gross), LEERES_ERGEBNIS);
     expect(fehlt).toContain('Die errechnete Heizlast liegt über der Baureihe, die Auslegung klären wir vor Ort.');
+    expect(fehlt.some((f) => f.includes('Jahresverbrauch fehlt'))).toBe(false);
   });
 
   it('schweigt, wenn Verbrauch und Zugang stimmen', () => {

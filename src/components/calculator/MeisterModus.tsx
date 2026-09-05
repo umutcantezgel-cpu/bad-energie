@@ -453,18 +453,22 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
       const alt = positionZu(b.id);
       if (!alt || alt.quelle !== 'vorlage') continue;
       const gewaehlteVariante = b.groessenVarianten?.find((v) => v.matrixNr === alt.varianteMatrixNr) ?? null;
+      // Nur die Marke wechselt: Liter und kW bleiben, wie sie im bestehenden Text stehen (die
+      // Client-Speicherwahl kennt vom Server geladene Positionen nicht und darf sie nicht überschreiben).
+      const literImText = alt.text.match(/(\d{3,4}) Liter/)?.[1];
+      const kwImText = alt.text.match(/(\d+(?:,\d+)?) kW/)?.[1];
       const neu = positionAusBaustein(b, daten.matrix, {
         id: alt.id,
         varianteMatrixNr: alt.varianteMatrixNr,
         menge: alt.menge,
-        liter: speicherWahl[b.id] ?? gewaehlteVariante?.speicherLiterDefault,
-        kW: kwFuerVariante(gewaehlteVariante, anfrage.gebaeude.geraet.kw),
+        liter: speicherWahl[b.id] ?? (literImText ? Number(literImText) : undefined) ?? anfrage.gebaeude.geraet.speicherLiter ?? gewaehlteVariante?.speicherLiterDefault,
+        kW: kwImText ?? kwFuerVariante(gewaehlteVariante, anfrage.gebaeude.geraet.kw),
         aktiv: alt.aktiv,
         hersteller,
       });
       if (neu.text !== alt.text) dispatch({ typ: 'positionAendern', id: alt.id, teil: { text: neu.text } });
     }
-  }, [anfrage.gebaeude.geraet.hersteller, anfrage.gebaeude.geraet.kw, daten, wpBausteine, positionZu, speicherWahl]);
+  }, [anfrage.gebaeude.geraet.hersteller, anfrage.gebaeude.geraet.kw, anfrage.gebaeude.geraet.speicherLiter, daten, wpBausteine, positionZu, speicherWahl]);
 
   /** Matrixnummer des Geraetevorschlags; die Kachel markiert diese Variante. */
   const vorschlagMatrixNr = useMemo(() => {

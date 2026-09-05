@@ -119,7 +119,7 @@ export function fehlendeAngaben(a: InternAnfrage): string[] {
   if (istWaermepumpenVorlage(a.vorlageIds)) {
     const h = heizlastSchaetzen(a.gebaeude);
     if (h && !h.belastbar) fehlt.push('Jahresverbrauch fehlt, die Heizlast aus der Wohnfläche allein trägt die Gerätewahl nicht');
-    if (h && geraetAusBaureihe(h.kwEmpfohlen, a.gebaeude.geraet.hersteller).ueberBaureihe) {
+    if (h && h.belastbar && geraetAusBaureihe(h.kwEmpfohlen, a.gebaeude.geraet.hersteller).ueberBaureihe) {
       fehlt.push('Die errechnete Heizlast liegt über der Baureihe, die Auslegung klären wir vor Ort.');
     }
   }

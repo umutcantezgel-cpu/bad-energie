@@ -45,12 +45,19 @@ export default function DispatchClient() {
     if (!schaetzung) return null;
     const hersteller = befehl.gebaeude.geraet.hersteller;
     const geraet = geraetAusBaureihe(schaetzung.kwEmpfohlen, hersteller);
+    // Dieselbe Regel wie auf dem Server: eine Größe nur aus belastbarer Heizlast und innerhalb der Baureihe.
+    const groesseBelastbar = schaetzung.belastbar && !geraet.ueberBaureihe;
     return {
       kwVon: schaetzung.kwVon,
       kwBis: schaetzung.kwBis,
       geraetKw: geraet.kw,
       hersteller: HERSTELLER_LABEL[hersteller],
       liter: speicherVorschlag(befehl.gebaeude.personen).liter,
+      geraetText: groesseBelastbar
+        ? `${HERSTELLER_LABEL[hersteller]} ${geraet.kw} kW`
+        : geraet.ueberBaureihe
+          ? 'Heizlast über der Baureihe, Auslegung vor Ort (Position bleibt ohne Größe)'
+          : 'Größe erst nach Jahresverbrauch oder Termin vor Ort (Position bleibt ohne Größe)',
     };
   }, [befehl]);
 
@@ -198,7 +205,7 @@ export default function DispatchClient() {
                 <p className="text-sm font-bold uppercase tracking-wide text-slate-500">Daraus abgeleitet</p>
                 <Zeile beschriftung="Vorlage" wert={befehl.vorlageIds.join(', ')} />
                 <Zeile beschriftung="Heizlast" wert={vorschau ? `${vorschau.kwVon} bis ${vorschau.kwBis} kW` : ''} />
-                <Zeile beschriftung="Gerät" wert={vorschau ? `${vorschau.hersteller} ${vorschau.geraetKw} kW` : ''} />
+                <Zeile beschriftung="Gerät" wert={vorschau ? vorschau.geraetText : ''} />
                 <Zeile beschriftung="Speicher" wert={vorschau ? `${vorschau.liter} Liter` : ''} />
                 <Zeile beschriftung="Förderung" wert={befehl.foerderung.altOelOderGas ? 'Alte Gas- oder Ölheizung, Bonus möglich' : 'kein Bonus für alte Heizung'} />
               </div>

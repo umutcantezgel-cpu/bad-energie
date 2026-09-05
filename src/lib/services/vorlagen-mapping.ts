@@ -236,7 +236,8 @@ function mappeHeizung(a: HeizungsAntworten, daten: Kalkulationsdaten, wohneinhei
   if (varianteNr === null) {
     annahmen.push('Für die Größe der Wärmepumpe brauchen wir Ihren Jahresverbrauch; die genaue Auslegung folgt beim Termin vor Ort.');
     // Fachbegriffe bleiben aus Kundentexten heraus; der Wortlaut mit dem Fachbegriff steht im internen Dossier.
-    if (vorschlag?.ueberBaureihe) annahmen.push('Die berechnete Größe liegt über der größten Baureihe, die Auslegung klären wir vor Ort.');
+    // Nur bei belastbarer Heizlast; der reine Flächenweg überschätzt und darf keine Baureihenaussage tragen.
+    if (heizlast?.belastbar && vorschlag?.ueberBaureihe) annahmen.push('Die berechnete Größe liegt über der größten Baureihe, die Auslegung klären wir vor Ort.');
   } else {
     annahmen.push(heizlast?.methode === 'flaeche'
       ? 'Die Größe der Wärmepumpe haben wir aus Wohnfläche und Baujahr abgeleitet, die genaue Auslegung folgt beim Termin vor Ort.'

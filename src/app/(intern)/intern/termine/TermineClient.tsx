@@ -5,6 +5,16 @@ import Link from 'next/link';
 import type { TerminfensterEintrag } from './page-types';
 import { erstelleTerminfenster, loescheTerminfenster } from './actions';
 
+/** Zeitraum eines Fensters; geseedete Fenster tragen nur die Beschriftung und keine Uhrzeit. */
+function zeitraumText(beginn: string | null | undefined, ende: string | null | undefined): string {
+  const von = beginn ? new Date(beginn) : null;
+  const bis = ende ? new Date(ende) : null;
+  if (!von || Number.isNaN(von.getTime())) return 'Zeit nach Beschriftung';
+  const datum = von.toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+  if (!bis || Number.isNaN(bis.getTime())) return datum;
+  return `${datum} – ${bis.toLocaleTimeString('de-DE', { timeStyle: 'short' })}`;
+}
+
 export default function TermineClient({
   initialEintraege,
 }: {
@@ -91,7 +101,7 @@ export default function TermineClient({
                   <tr key={f.id} className="hover:bg-slate-50/70">
                     <td className="py-3 px-4 font-bold text-slate-900">{f.beschriftung}</td>
                     <td className="py-3 px-4 text-xs text-slate-600">
-                      {new Date(f.beginn).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })} – {new Date(f.ende).toLocaleTimeString('de-DE', { timeStyle: 'short' })}
+                      {zeitraumText(f.beginn, f.ende)}
                     </td>
                     <td className="py-3 px-4 text-xs">
                       {f.reserviertFuerKsNummer ? (

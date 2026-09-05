@@ -152,7 +152,7 @@ export function fehlendeAngaben(daten: VorgangDaten, ergebnis: KalkulationsErgeb
       if (heizlast && !heizlast.belastbar) {
         fehlt.push('Jahresverbrauch fehlt, die Heizlast aus der Wohnfläche allein trägt die Gerätewahl nicht');
       }
-      if (heizlast && geraetAusBaureihe(heizlast.kwEmpfohlen, gebaeude.geraet.hersteller).ueberBaureihe) {
+      if (heizlast && heizlast.belastbar && geraetAusBaureihe(heizlast.kwEmpfohlen, gebaeude.geraet.hersteller).ueberBaureihe) {
         fehlt.push('Die errechnete Heizlast liegt über der Baureihe, die Auslegung klären wir vor Ort.');
       }
     }

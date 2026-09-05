@@ -890,9 +890,12 @@ export async function POST(
 
         const daten = await ladeVorgang(res.anfrageId);
         const fehlt = daten ? fehlendeAngaben(daten, res.ergebnis) : [];
-        const spanneBrutto = res.ergebnis.bruttoBis > 0
-          ? `${euro(res.ergebnis.bruttoVon)} bis ${euro(res.ergebnis.bruttoBis)} € brutto`
-          : 'noch ohne Spanne';
+        // Eine blockierte Basisposition (etwa Wärmepumpe ohne Größe) darf keine Teilsumme als Spanne ausgeben.
+        const spanneBrutto = res.status === 'blockiert'
+          ? 'blockiert, Spanne folgt nach Größenwahl'
+          : res.ergebnis.bruttoBis > 0
+            ? `${euro(res.ergebnis.bruttoVon)} bis ${euro(res.ergebnis.bruttoBis)} € brutto`
+            : 'noch ohne Spanne';
         const fehltText = fehlt.length > 0 ? ` Fehlt: ${fehlt.join(', ')}.` : '';
 
         return NextResponse.json({
@@ -934,7 +937,8 @@ export async function POST(
         if (schaetzung && !schaetzung.belastbar) {
           portalAnnahmen.push('Für die Größe der Wärmepumpe brauchen wir Ihren Jahresverbrauch; die genaue Auslegung folgt beim Termin vor Ort.');
         }
-        if (schaetzung && geraetAusBaureihe(schaetzung.kwEmpfohlen, hersteller).ueberBaureihe) {
+        // Der Baureihen-Hinweis gilt nur für eine belastbare Heizlast; der reine Flächenweg überschätzt.
+        if (schaetzung && schaetzung.belastbar && geraetAusBaureihe(schaetzung.kwEmpfohlen, hersteller).ueberBaureihe) {
           portalAnnahmen.push('Die berechnete Größe liegt über der größten Baureihe, die Auslegung klären wir vor Ort.');
         }
 
@@ -978,9 +982,12 @@ export async function POST(
         const triageErgebnis = await triageFuerAnfrage(res.anfrageId, { eigentum: befehl.objekt.eigentum });
         const daten = await ladeVorgang(res.anfrageId);
         const fehlt = daten ? fehlendeAngaben(daten, res.ergebnis) : [];
-        const spanneBrutto = res.ergebnis.bruttoBis > 0
-          ? `${euro(res.ergebnis.bruttoVon)} bis ${euro(res.ergebnis.bruttoBis)} € brutto`
-          : 'noch ohne Spanne';
+        // Eine blockierte Basisposition (etwa Wärmepumpe ohne Größe) darf keine Teilsumme als Spanne ausgeben.
+        const spanneBrutto = res.status === 'blockiert'
+          ? 'blockiert, Spanne folgt nach Größenwahl'
+          : res.ergebnis.bruttoBis > 0
+            ? `${euro(res.ergebnis.bruttoVon)} bis ${euro(res.ergebnis.bruttoBis)} € brutto`
+            : 'noch ohne Spanne';
         const fehltAlle = [...befehl.hinweise, ...fehlt];
         const fehltText = fehltAlle.length > 0 ? ` Fehlt: ${fehltAlle.slice(0, 4).join('; ')}.` : '';
         const triageText = triageErgebnis ? TRIAGE_KURZ[triageErgebnis.vorschlag] : 'offen';
