@@ -48,7 +48,10 @@ export function validateEnv(): void {
   if (!env.CRON_SECRET) fehlend.push('CRON_SECRET (mindestens 32 Zeichen)');
   if (!env.BLOB_READ_WRITE_TOKEN) fehlend.push('BLOB_READ_WRITE_TOKEN');
   if (env.MAIL_TRANSPORT === 'resend' && !env.RESEND_API_KEY) fehlend.push('RESEND_API_KEY');
-  if (env.MAIL_TRANSPORT === 'resend' && !env.RESEND_WEBHOOK_SECRET) fehlend.push('RESEND_WEBHOOK_SECRET (Webhook sonst ungeschützt)');
+  // Ohne Webhook-Secret bleibt der Webhook geschlossen (401) und Zustellmeldungen fehlen; der Start ist trotzdem erlaubt.
+  if (env.MAIL_TRANSPORT === 'resend' && !env.RESEND_WEBHOOK_SECRET) {
+    console.warn('[env] RESEND_WEBHOOK_SECRET fehlt: Zustellmeldungen von Resend werden nicht verarbeitet.');
+  }
   if (env.MAIL_TRANSPORT !== 'resend') fehlend.push('MAIL_TRANSPORT=resend (der Dateiadapter hat auf Vercel keine Platte)');
   if (fehlend.length) throw new Error(`Produktionsstart verweigert. Fehlend oder falsch: ${fehlend.join(', ')}`);
 }

@@ -63,8 +63,7 @@ Dateien unter `./data/blob`. PGlite verträgt nur einen Prozess: Migration und S
 ## Betrieb auf Vercel
 
 Projekt `bad-energie` in der Region **fra1**, Produktionsadresse `https://bad-energie-nu.vercel.app`.
-Für die Vorführung läuft das Projekt auf **Hobby**; für den Dauerbetrieb ist **Pro** vorgesehen
-(kommerzielle Nutzung, engere Cron-Takte, längere Funktionslaufzeit).
+Das Projekt läuft auf **Vercel Pro** (kommerzielle Nutzung, Cron im Minutentakt, Funktionslaufzeit bis 300 s).
 
 ### Einrichtung im Vercel-Dashboard (Reihenfolge im Dashboard)
 
@@ -101,12 +100,13 @@ Altsystem und lokales Material). Nach jedem Build prüft `npx tsx scripts/bundle
 
 ### Zeitsteuerung
 
-Auf Hobby sind genau zwei Läufe am Tag erlaubt, die Zeiten stehen in UTC und die Ausführung ist auf ±59 Minuten genau.
+Die Zeiten stehen in UTC. Auf Pro laufen die Jobs minutengenau; der Versand prüft alle fünf Minuten, ob freigegebene Aufträge fällig sind.
 Beide stehen in `vercel.json` und laufen gegen `/api/jobs/[job]`:
 
 | Job | Zeitplan | Bedeutung |
 |---|---|---|
-| `versand` | `5 17 * * *` (17:00 UTC) | 18:00 Berliner Zeit im Winter, 19:00 im Sommer; sendet die freigegebenen Aufträge nach dem Puffer |
+| `versand` | `*/5 * * * *` | alle fünf Minuten; sendet freigegebene Aufträge, sobald ihr 18:00-Puffer (Berliner Zeit) abgelaufen ist, und holt Fehlversuche nach Backoff nach |
+| `eingang` | `30 5,11 * * *` | bewertet Web-Anfragen im Eingang neu (Matrix inzwischen gefüllt, Triage, Positionen vorbelegt) |
 | `wiedervorlage` | `0 4 * * *` (04:00 UTC) | Erinnerungen nach Regel 9; führt Speicherfrist und Bereinigung mit aus |
 
 Der Job `eingang` hat keinen Zeitplan. Er läuft von Hand: entweder mit dem Bearer-Token oder als angemeldeter
