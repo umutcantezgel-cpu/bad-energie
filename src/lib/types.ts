@@ -36,6 +36,28 @@ export type Rolle = (typeof ROLLEN)[number];
 
 export type Modus = 'kunde' | 'intern';
 
+// Gebäude und Heizung (Datenerfassungsbogen des Chefs)
+export const ENERGIEARTEN = ['gas', 'oel', 'fluessiggas', 'strom', 'nachtspeicher', 'holz_weich', 'holz_hart', 'hackschnitzel', 'pellets', 'sonstiges'] as const;
+export type Energieart = (typeof ENERGIEARTEN)[number];
+export const KESSELTYPEN = ['standard', 'niedertemperatur', 'brennwert', 'holz', 'nachtspeicher', 'blockspeicher', 'unbekannt'] as const;
+export type Kesseltyp = (typeof KESSELTYPEN)[number];
+export const VERBRAUCH_EINHEITEN = ['kwh', 'liter', 'm3', 'kg'] as const;
+export type VerbrauchEinheit = (typeof VERBRAUCH_EINHEITEN)[number];
+export const BAUJAHR_KLASSEN = ['vor_1977', 'vor_1982', 'vor_1995', 'vor_2002', 'nach_2002', 'kfw70', 'kfw55', 'passivhaus'] as const;
+export type BaujahrKlasse = (typeof BAUJAHR_KLASSEN)[number];
+export const LAGEN = ['berg', 'freistehend', 'siedlung', 'reiheneck', 'reihenhaus'] as const;
+export type Lage = (typeof LAGEN)[number];
+export const FENSTER = ['einfach', 'zweifach', 'dreifach', 'unbekannt'] as const;
+export type Fenster = (typeof FENSTER)[number];
+export const VERTEILUNGEN = ['heizkoerper', 'fussboden', 'gemischt'] as const;
+export type Verteilung = (typeof VERTEILUNGEN)[number];
+export const HERSTELLER = ['bosch', 'buderus'] as const;
+export type Hersteller = (typeof HERSTELLER)[number];
+export const HEIZUNGS_STANDORTE = ['keller', 'erdgeschoss', 'dachgeschoss', 'anbau', 'aussen', 'unbekannt'] as const;
+export type HeizungsStandort = (typeof HEIZUNGS_STANDORTE)[number];
+export const SANIERUNGEN = ['dach', 'fenster', 'fassade', 'kellerdecke'] as const;
+export type Sanierung = (typeof SANIERUNGEN)[number];
+
 /** Beträge sind ganze Euro (netto in der Matrix, brutto in Dokumenten). */
 export type Spanne = { von: number; bis: number };
 
@@ -124,6 +146,24 @@ export type Kalkulationsdaten = {
   vorlagen: Vorlage[];
   foerderRegeln: FoerderRegeln;
   vorbehalte: Vorbehalt[];
+  /** Energiepreise und Jahresarbeitszahl für den Betriebskostenvergleich. */
+  betriebskosten: BetriebskostenEinstellungen;
+};
+
+/** Preise für den Betriebskostenvergleich (Einstellungen, pflegt der Chef). */
+export type BetriebskostenEinstellungen = {
+  gasCtKwh: number;
+  oelCtLiter: number;
+  stromCtKwh: number;
+  wpStromCtKwh: number;
+  jazStandard: number;
+  pvEigenanteilProzent: number;
+  pelletsCtKg: number;
+  holzEurM3: number;
+};
+
+export const BETRIEBSKOSTEN_STANDARD: BetriebskostenEinstellungen = {
+  gasCtKwh: 11, oelCtLiter: 95, stromCtKwh: 29, wpStromCtKwh: 24, jazStandard: 3.5, pvEigenanteilProzent: 40, pelletsCtKg: 35, holzEurM3: 90,
 };
 
 // ---------------------------------------------------------------------------
@@ -223,8 +263,17 @@ export type OeffentlicheErgebnisDTO = {
   bruttoVonGerundet?: number;
   bruttoBisGerundet?: number;
   foerderzuschuss?: number;
+  foerderSatz?: number;
+  /** Förderbausteine in der Sprache des Chefs („Grundförderung 30 %“). */
+  foerderBausteine?: string[];
   eigenanteilVon?: number;
   eigenanteilBis?: number;
+  /** Betriebskostenvergleich, gerundet; unabhängig von der Matrix. */
+  heizkostenHeuteJahr?: number;
+  heizkostenWpJahr?: number;
+  heizkostenWpMonat?: number;
+  ersparnisJahr?: number;
+  energieartLabel?: string;
   nichtEnthalten: string[];
 };
 
@@ -264,6 +313,64 @@ export const objektSchema = z.object({
 });
 
 export const dringlichkeitSchema = z.enum(DRINGLICHKEITEN);
+
+// Gebäude und Heizung (Meister-Modus, Portal-Leads, Vorbelegung aus dem Web)
+export const gebaeudeBestandSchema = z.object({
+  energieart: z.enum(ENERGIEARTEN).nullable().default(null),
+  kesseltyp: z.enum(KESSELTYPEN).nullable().default(null),
+  verbrauchJahr: z.number().min(0).max(1_000_000).nullable().default(null),
+  verbrauchEinheit: z.enum(VERBRAUCH_EINHEITEN).nullable().default(null),
+  heizungsalterJahre: z.number().int().min(0).max(80).nullable().default(null),
+  heizkoerper: z.number().int().min(0).max(60).nullable().default(null),
+  verteilung: z.enum(VERTEILUNGEN).nullable().default(null),
+  vorlaufC: z.number().min(20).max(95).nullable().default(null),
+  ruecklaufC: z.number().min(15).max(90).nullable().default(null),
+  zirkulation: z.boolean().nullable().default(null),
+  standort: z.enum(HEIZUNGS_STANDORTE).default('unbekannt'),
+  solarthermie: z.boolean().default(false),
+});
+export const gebaeudePlatzSchema = z.object({
+  tuerbreiteCm: z.number().int().min(40).max(250).nullable().default(null),
+  heizraum: z.string().trim().max(200).default(''),
+  aussenEinheitOrt: z.string().trim().max(200).default(''),
+  abstaendeOk: z.boolean().nullable().default(null),
+});
+export const gebaeudeGeraetSchema = z.object({
+  hersteller: z.enum(HERSTELLER).default('bosch'),
+  kw: z.number().min(1).max(60).nullable().default(null),
+  speicherLiter: z.number().int().min(50).max(1000).nullable().default(null),
+  pvGewuenscht: z.boolean().default(false),
+  pvKwp: z.number().min(0).max(100).nullable().default(null),
+});
+export const gebaeudeSchema = z.object({
+  wohnflaeche: z.number().min(10).max(2000).nullable().default(null),
+  baujahr: z.number().int().min(1800).max(2100).nullable().default(null),
+  baujahrKlasse: z.enum(BAUJAHR_KLASSEN).nullable().default(null),
+  lage: z.enum(LAGEN).nullable().default(null),
+  aussenwandDaemmungCm: z.number().int().min(0).max(40).nullable().default(null),
+  dachDaemmungCm: z.number().int().min(0).max(50).nullable().default(null),
+  fenster: z.enum(FENSTER).nullable().default(null),
+  sanierungen: z.array(z.enum(SANIERUNGEN)).default([]),
+  personen: z.number().int().min(1).max(20).nullable().default(null),
+  duschen: z.number().int().min(0).max(10).default(0),
+  wannen: z.number().int().min(0).max(10).default(0),
+  wohneinheiten: z.number().int().min(1).max(12).default(1),
+  bestand: gebaeudeBestandSchema.prefault({}),
+  platz: gebaeudePlatzSchema.prefault({}),
+  geraet: gebaeudeGeraetSchema.prefault({}),
+});
+export type GebaeudeDaten = z.infer<typeof gebaeudeSchema>;
+
+export const betriebskostenSchema = z.object({
+  gasCtKwh: z.number().min(0).max(100),
+  oelCtLiter: z.number().min(0).max(500),
+  stromCtKwh: z.number().min(0).max(100),
+  wpStromCtKwh: z.number().min(0).max(100),
+  jazStandard: z.number().min(1).max(6),
+  pvEigenanteilProzent: z.number().min(0).max(100),
+  pelletsCtKg: z.number().min(0).max(200),
+  holzEurM3: z.number().min(0).max(500),
+});
 
 export const badAntwortenSchema = z.object({
   journey: z.literal('bad'),
@@ -366,6 +473,7 @@ export const internAnfrageSchema = z.object({
   vorlageIds: z.array(z.string()).default([]),
   kontakt: kontaktSchema.omit({ kenntnisnahme: true, eingangsbestaetigung: true }).extend({ kenntnisnahme: z.boolean().default(true) }),
   objekt: objektSchema.prefault({}),
+  gebaeude: gebaeudeSchema.prefault({}),
   dringlichkeit: dringlichkeitSchema.default('unklar'),
   vorhabenKurz: z.string().trim().max(200).default(''),
   gewerkHaupt: z.enum(GEWERKE).optional(),
@@ -409,7 +517,7 @@ export type EstimateRequest = z.infer<typeof estimateRequestSchema>;
 export type EstimateResponse =
   | { ok: true; modus: 'kunde'; ksNummer: string; ergebnis: OeffentlicheErgebnisDTO }
   | { ok: true; modus: 'intern'; anfrageId: string; ksNummer: string; status: AnfrageStatus; aktion: 'entwurf' | 'sofort' | 'terminmail'; versand?: { kunde: VersandStatus; dossier: VersandStatus }; hinweise: Hinweis[]; rueckmeldung: string }
-  | { ok: false; fehler: string; hinweise?: Hinweis[] };
+  | { ok: false; fehler: string; hinweise?: Hinweis[]; anfrageId?: string; ksNummer?: string; status?: AnfrageStatus };
 
 // ---------------------------------------------------------------------------
 // Intern-Bereich: Sitzung, Aktionen, DTOs
@@ -449,6 +557,7 @@ export type InternAnfrageDTO = {
   vorlageIds: string[];
   kontakt: { anrede: string; vorname: string; nachname: string; email: string; telefon: string; strasse: string; plzOrt: string };
   objekt: { adresse: string; plz: string; eigentum: 'eigentum' | 'miete' | 'unklar'; wohneinheiten: number; entfernungKm: number | null };
+  gebaeude: GebaeudeDaten;
   dringlichkeit: Dringlichkeit;
   vorhabenKurz: string;
   gewerkHaupt: Gewerk | null;
@@ -474,4 +583,4 @@ export type TerminfensterOption = { id: string; beschriftung: string; frei: bool
 
 export type FreigabeErgebnis =
   | { ok: true; anfrageId: string; versand?: { kunde: VersandStatus; dossier: VersandStatus }; rueckmeldung: string }
-  | { ok: false; fehler: string; hinweise?: Hinweis[] };
+  | { ok: false; fehler: string; hinweise?: Hinweis[]; grund?: 'berechtigung' | 'blockiert' | 'status' | 'nicht_gefunden' };

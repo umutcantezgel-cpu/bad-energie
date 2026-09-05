@@ -12,6 +12,7 @@ import type {
   SessionInfo, TerminfensterOption, VersandArt, VersandStatus,
 } from '../types';
 import { berechne, euro, oeffentlicheSpanne } from './calculation';
+import { gebaeudeAusJourney } from './heizlast';
 import { darfFreigeben } from './auth';
 import { ladeEinstellungen, ladeKalkulationsdaten, ladeFoerderRegeln, ladeMatrix } from './kalkulationsdaten';
 import { mappeJourney } from './vorlagen-mapping';
@@ -193,6 +194,7 @@ export async function legeAusKundenAnfrage(eingabe: KundenAnfrage, jetzt: Date =
         freitext: eingabe.freitext,
         wunschtermine: eingabe.wunschtermine,
       },
+      gebaeude: gebaeudeAusJourney((eingabe.antworten ?? null) as Record<string, unknown> | null, eingabe.objekt.wohneinheiten),
       triageVorschlag: vorschlag.text,
       wohneinheiten: eingabe.objekt.wohneinheiten,
       foerderung: foerderungSpeicherwert(mapping.foerderung, ergebnis),
@@ -232,8 +234,9 @@ export async function speichereInternAnfrage(eingabe: InternAnfrage, session: Se
   const db = await getDb();
   const [matrix, regeln] = await Promise.all([ladeMatrix(), ladeFoerderRegeln()]);
   const positionen: Position[] = eingabe.positionen.map((p) => ({ ...p, intern: p.intern ?? {} }));
+  // Das Objekt ist die eine Quelle für Wohneinheiten (Förderstaffel nach Regel 7).
   const foerderung: FoerderungEingabe | null = eingabe.foerderung.aktiv
-    ? { ...eingabe.foerderung, satzManuell: eingabe.foerderung.satzManuell ?? null }
+    ? { ...eingabe.foerderung, wohneinheiten: eingabe.objekt.wohneinheiten, satzManuell: eingabe.foerderung.satzManuell ?? null }
     : null;
   const ergebnis = berechne({ positionen, matrix, faktoren: eingabe.kalkulation, foerderung, foerderRegeln: regeln });
   const neuerStatus = statusAus(ergebnis);
@@ -257,6 +260,7 @@ export async function speichereInternAnfrage(eingabe: InternAnfrage, session: Se
     interneNotizen: eingabe.notizen.intern,
     kalkulation: eingabe.kalkulation,
     foerderung: foerderungSpeicherwert(foerderung, ergebnis),
+    gebaeude: { ...eingabe.gebaeude, wohneinheiten: eingabe.objekt.wohneinheiten },
     summeNettoVon: ergebnis.nettoVon || null,
     summeNettoBis: ergebnis.nettoBis || null,
     wohneinheiten: eingabe.objekt.wohneinheiten,
@@ -458,6 +462,8 @@ export async function ladeInternAnfrage(anfrageId: string): Promise<InternAnfrag
       adresse: a.objektAdresse, plz: a.objektPlz,
       eigentum: 'unklar', wohneinheiten: a.wohneinheiten, entfernungKm: a.entfernungKm,
     },
+    // Alte Web-Leads ohne Gebäudedaten werden aus den Konfigurator-Antworten vorbelegt.
+    gebaeude: a.gebaeude ?? gebaeudeAusJourney(((a.konfiguratorAntworten as { antworten?: unknown } | null)?.antworten ?? null) as Record<string, unknown> | null, a.wohneinheiten),
     dringlichkeit: a.dringlichkeit,
     vorhabenKurz: a.vorhabenKurz,
     gewerkHaupt: (a.gewerkHaupt as Gewerk | null) ?? null,

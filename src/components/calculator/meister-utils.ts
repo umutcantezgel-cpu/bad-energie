@@ -15,6 +15,7 @@ import type {
   Position,
   SkizzeExport,
 } from '@/lib/types';
+import { leeresGebaeude } from '@/lib/services/heizlast';
 
 // ---------------------------------------------------------------------------
 // Farben und Bezeichner
@@ -116,6 +117,7 @@ export function leereAnfrage(): InternAnfrage {
     vorlageIds: [],
     kontakt: { anrede: '', vorname: '', nachname: '', email: '', telefon: '', strasse: '', plzOrt: '', kenntnisnahme: true },
     objekt: { adresse: '', plz: '', eigentum: 'unklar', wohneinheiten: 1 },
+    gebaeude: leeresGebaeude(),
     dringlichkeit: 'unklar',
     vorhabenKurz: '',
     positionen: [],
@@ -206,8 +208,17 @@ export function meisterReduzierer(zustand: InternAnfrage, aktion: MeisterAktion)
       return { ...zustand, ...aktion.teil };
     case 'kontakt':
       return { ...zustand, kontakt: { ...zustand.kontakt, ...aktion.teil } };
-    case 'objekt':
-      return { ...zustand, objekt: { ...zustand.objekt, ...aktion.teil } };
+    case 'objekt': {
+      const objekt = { ...zustand.objekt, ...aktion.teil };
+      if (aktion.teil.wohneinheiten === undefined) return { ...zustand, objekt };
+      // Das Objekt ist die eine Quelle für Wohneinheiten; Förderung und Gebäude folgen (Regel 7).
+      return {
+        ...zustand,
+        objekt,
+        foerderung: { ...zustand.foerderung, wohneinheiten: objekt.wohneinheiten },
+        gebaeude: { ...zustand.gebaeude, wohneinheiten: objekt.wohneinheiten },
+      };
+    }
     case 'kalkulation':
       return { ...zustand, kalkulation: { ...zustand.kalkulation, ...aktion.teil } };
     case 'foerderung':

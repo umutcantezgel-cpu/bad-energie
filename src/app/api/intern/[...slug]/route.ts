@@ -77,6 +77,7 @@ import {
   type InternAnfrage,
   type Rolle,
 } from '@/lib/types';
+import { leeresGebaeude } from '@/lib/services/heizlast';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -680,6 +681,7 @@ export async function POST(
             eigentum: 'unklar',
             wohneinheiten: 1,
           },
+          gebaeude: leeresGebaeude(),
           dringlichkeit: 'unklar',
           vorhabenKurz: befehl.vorhabenKurz,
           positionen,

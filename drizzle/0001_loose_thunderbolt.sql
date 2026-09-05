@@ -1,0 +1,1 @@
+ALTER TABLE "anfrage" ADD COLUMN "gebaeude" jsonb;

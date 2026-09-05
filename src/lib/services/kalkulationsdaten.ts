@@ -2,7 +2,7 @@ import 'server-only';
 import { asc, eq } from 'drizzle-orm';
 import { getDb } from '@/db/client';
 import { einstellung, foerderRegel, richtpreis, vorbehalt, vorlage, vorlageZeile } from '@/db/schema';
-import type { Baustein, Einheit, FoerderRegeln, Gewerk, Kalkulationsdaten, Richtpreis, Vorbehalt, Vorlage } from '../types';
+import { BETRIEBSKOSTEN_STANDARD, betriebskostenSchema, type Baustein, type BetriebskostenEinstellungen, type Einheit, type FoerderRegeln, type Gewerk, type Kalkulationsdaten, type Richtpreis, type Vorbehalt, type Vorlage } from '../types';
 import type { Briefbogen } from '../dokumente/datenblatt';
 import { matrixSpanne } from './calculation';
 
@@ -86,12 +86,13 @@ export async function ladeVorlagen(matrix: Richtpreis[]): Promise<Vorlage[]> {
 /** Matrix, Vorlagen mit Bausteinen, Förderregeln und Vorbehalte für die Live-Kalkulation. */
 export async function ladeKalkulationsdaten(): Promise<Kalkulationsdaten> {
   const matrix = await ladeMatrix();
-  const [vorlagen, foerderRegeln, vorbehalte] = await Promise.all([
+  const [vorlagen, foerderRegeln, vorbehalte, einst] = await Promise.all([
     ladeVorlagen(matrix),
     ladeFoerderRegeln(),
     ladeVorbehalte(),
+    ladeEinstellungen(),
   ]);
-  return { matrix, vorlagen, foerderRegeln, vorbehalte };
+  return { matrix, vorlagen, foerderRegeln, vorbehalte, betriebskosten: einst.betriebskosten };
 }
 
 // ---------------------------------------------------------------------------
@@ -111,6 +112,9 @@ export type Einstellungen = {
   bueroEmail: string;
   absender: Absender;
   briefbogen: Briefbogen;
+  betriebskosten: BetriebskostenEinstellungen;
+  /** true, solange die Demo-Preise des Vorführsystems in der Matrix stehen. */
+  demoPreise: boolean;
 };
 
 export const EINSTELLUNG_STANDARD: Einstellungen = {
@@ -135,6 +139,8 @@ export const EINSTELLUNG_STANDARD: Einstellungen = {
     register: 'Amtsgericht Wetzlar HRB 2449',
     ustId: 'DE215933612',
   },
+  betriebskosten: BETRIEBSKOSTEN_STANDARD,
+  demoPreise: false,
 };
 
 function zahl(wert: unknown, standard: number): number {
@@ -153,6 +159,7 @@ export async function ladeEinstellungen(): Promise<Einstellungen> {
   const werte = new Map<string, unknown>(zeilen.map((z) => [z.key, z.wert]));
   const briefbogenRoh = werte.get('briefbogen');
   const absenderRoh = werte.get('absender');
+  const betriebskostenRoh = betriebskostenSchema.safeParse({ ...BETRIEBSKOSTEN_STANDARD, ...(typeof werte.get('betriebskosten') === 'object' && werte.get('betriebskosten') ? (werte.get('betriebskosten') as object) : {}) });
   return {
     versandzeit: text(werte.get('versandzeit'), EINSTELLUNG_STANDARD.versandzeit),
     wiedervorlageTage: zahl(werte.get('wiedervorlage_tage'), EINSTELLUNG_STANDARD.wiedervorlageTage),
@@ -168,5 +175,7 @@ export async function ladeEinstellungen(): Promise<Einstellungen> {
     briefbogen: briefbogenRoh && typeof briefbogenRoh === 'object'
       ? { ...EINSTELLUNG_STANDARD.briefbogen, ...(briefbogenRoh as Partial<Briefbogen>) }
       : EINSTELLUNG_STANDARD.briefbogen,
+    betriebskosten: betriebskostenRoh.success ? betriebskostenRoh.data : BETRIEBSKOSTEN_STANDARD,
+    demoPreise: werte.get('demo_preise') === true,
   };
 }

@@ -30,6 +30,7 @@ import {
   zuLeinwand,
   type Element,
 } from './meister-utils';
+import { leeresGebaeude } from '@/lib/services/heizlast';
 
 function position(teil: Partial<Position> = {}): Position {
   return {
@@ -142,6 +143,7 @@ describe('ausDTO', () => {
       vorlageIds: ['v1'],
       kontakt: { anrede: 'Frau', vorname: 'Anna', nachname: 'Diflo', email: 'a@b.de', telefon: '0641', strasse: 'Weg 1', plzOrt: '35578 Wetzlar' },
       objekt: { adresse: 'Weg 1', plz: '35578', eigentum: 'eigentum', wohneinheiten: 2, entfernungKm: 3 },
+      gebaeude: leeresGebaeude(),
       dringlichkeit: 'sofort',
       vorhabenKurz: 'Bad',
       gewerkHaupt: 'bad',

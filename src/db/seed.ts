@@ -47,6 +47,31 @@ const VORLAGEN: { slug: string; datei: string; name: string; gewerkHaupt: Gewerk
   { slug: 'bad_einfach', datei: 'vorlage_bad_einfach.json', name: 'Badrenovierung einfach', gewerkHaupt: 'bad', position: 4 },
 ];
 
+/**
+ * Demo-Preissatz für die Vorführung (netto). R = aus den Referenzmappen KS-2026-0031/0032 des Altsystems,
+ * D = plausible Demo-Annahme. Wird nur mit `--demo` eingespielt und im System als Demo gekennzeichnet.
+ */
+export const DEMO_MATRIX: Record<number, { von: number; bis: number; quelle: 'R' | 'D' }> = {
+  1: { von: 17800, bis: 21400, quelle: 'D' },
+  2: { von: 19800, bis: 23400, quelle: 'R' },
+  3: { von: 22800, bis: 27400, quelle: 'D' },
+  4: { von: 900, bis: 1500, quelle: 'R' },
+  5: { von: 1200, bis: 1800, quelle: 'D' },
+  6: { von: 2600, bis: 3600, quelle: 'R' },
+  7: { von: 1200, bis: 2400, quelle: 'R' },
+  8: { von: 1900, bis: 2400, quelle: 'R' },
+  9: { von: 650, bis: 950, quelle: 'D' },
+  10: { von: 1800, bis: 2800, quelle: 'D' },
+  11: { von: 7900, bis: 9800, quelle: 'D' },
+  12: { von: 11800, bis: 14600, quelle: 'R' },
+  13: { von: 1400, bis: 2600, quelle: 'R' },
+  14: { von: 4500, bis: 6500, quelle: 'D' },
+  15: { von: 6900, bis: 9200, quelle: 'R' },
+  16: { von: 1300, bis: 1900, quelle: 'R' },
+  17: { von: 180, bis: 260, quelle: 'D' },
+};
+export const DEMO_STANDARDSATZ = 55;
+
 const WP_VARIANTEN: GroessenVariante[] = [
   { matrixNr: 1, label: '5 bis 7 kW', heizlastKwVon: 0, heizlastKwBis: 7, kwLabel: '5 bis 7', speicherLiterOptionen: [200, 300], speicherLiterDefault: 200 },
   { matrixNr: 2, label: '10 kW', heizlastKwVon: 8, heizlastKwBis: 11, kwLabel: '10', speicherLiterOptionen: [200, 300], speicherLiterDefault: 300 },
@@ -91,7 +116,23 @@ const PLZ: [string, string, number][] = [
   ['61169', 'Friedberg', 45],
 ];
 
-export async function seeden(): Promise<void> {
+export type SeedOptionen = { demoPreise?: boolean };
+
+/** Spielt den Demo-Preissatz ein oder entfernt ihn wieder; setzt die Einstellung `demo_preise`. */
+export async function demoPreiseSetzen(an: boolean): Promise<void> {
+  const db = await getDb();
+  for (const [nrText, wert] of Object.entries(DEMO_MATRIX)) {
+    const nr = Number(nrText);
+    await db.update(richtpreis)
+      .set(an ? { von: wert.von, bis: wert.bis, hinweis: sql`concat(coalesce(nullif(regexp_replace(${richtpreis.hinweis}, ' \\| Demo \\([RD]\\)$', ''), ''), ''), ' | Demo (', ${wert.quelle}::text, ')')`, geaendertAm: new Date() }
+             : { von: null, bis: null, hinweis: sql`regexp_replace(coalesce(${richtpreis.hinweis}, ''), ' \\| Demo \\([RD]\\)$', '')`, geaendertAm: new Date() })
+      .where(sql`${richtpreis.nr} = ${nr}`);
+  }
+  await db.update(foerderRegel).set({ standardsatz: an ? DEMO_STANDARDSATZ : null }).where(sql`${foerderRegel.id} = 1`);
+  await db.insert(einstellung).values({ key: 'demo_preise', wert: an }).onConflictDoUpdate({ target: einstellung.key, set: { wert: an, geaendertAm: new Date() } });
+}
+
+export async function seeden(optionen: SeedOptionen = {}): Promise<void> {
   const db = await getDb();
 
   for (const m of MATRIX) {
@@ -191,6 +232,7 @@ export async function seeden(): Promise<void> {
       register: 'Amtsgericht Wetzlar HRB 2449',
       ustId: 'DE215933612',
     },
+    betriebskosten: { gasCtKwh: 11, oelCtLiter: 95, stromCtKwh: 29, wpStromCtKwh: 24, jazStandard: 3.5, pvEigenanteilProzent: 40, pelletsCtKg: 35, holzEurM3: 90 },
   };
   for (const [key, wert] of Object.entries(einstellungen)) {
     await db.insert(einstellung).values({ key, wert }).onConflictDoNothing();
@@ -208,4 +250,6 @@ export async function seeden(): Promise<void> {
   for (const [plzPraefix, ort, entfernungKm] of PLZ) {
     await db.insert(plzRadius).values({ plzPraefix, ort, entfernungKm }).onConflictDoNothing();
   }
+
+  if (optionen.demoPreise) await demoPreiseSetzen(true);
 }

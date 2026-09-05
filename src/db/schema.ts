@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import type { GebaeudeDaten } from '../lib/types';
 import {
   boolean,
   integer,
@@ -230,6 +231,8 @@ export const anfrage = pgTable('anfrage', {
   mailBetreff: text('mail_betreff').notNull().default(''),
   mailPreheader: text('mail_preheader').notNull().default(''),
   konfiguratorAntworten: jsonb('konfigurator_antworten').$type<Record<string, unknown>>().notNull().default({}),
+  /** Gebäude und bestehende Heizung nach dem Erfassungsbogen (Meister-Modus, Portal-Leads, Vorbelegung aus dem Web). */
+  gebaeude: jsonb('gebaeude').$type<GebaeudeDaten | null>(),
   triageVorschlag: text('triage_vorschlag').notNull().default(''),
   grundVerworfen: text('grund_verworfen'),
   etage: integer('etage'),
