@@ -83,11 +83,14 @@ const Header = ({ isScrolled, isMobileMenuOpen, setIsMobileMenuOpen, setIsHelpSi
                         
                         {/* Brand Logo with Glass Pill Accent */}
                         <Link href="/" className="flex items-center gap-3 group">
-                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0C3A87] via-[#0E1C76] to-[#08164D] p-0.5 shadow-md group-hover:scale-105 transition-transform">
-                                <div className="w-full h-full rounded-[14px] bg-gradient-to-br from-[#0C3A87] to-[#0A1556] flex items-center justify-center border border-white/20">
-                                    <span className="font-black text-base tracking-wider text-white">B&amp;E</span>
-                                </div>
-                            </div>
+                            {/* Offizielles Signet (Haus mit Flamme, Tropfen, Sonne und Luft) */}
+                            <img
+                                src="/images/logo-signet.jpg"
+                                alt=""
+                                width={44}
+                                height={44}
+                                className="w-11 h-11 rounded-xl bg-white object-contain shadow-sm group-hover:scale-105 transition-transform"
+                            />
                             <div className="flex flex-col">
                                 <span className="text-lg font-black tracking-tight text-[#0C3A87] leading-none group-hover:text-[#0E1C76] transition-colors">
                                     Bad &amp; Energie <span className="text-[#E4040E]">GmbH</span>
