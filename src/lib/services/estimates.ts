@@ -411,6 +411,12 @@ export async function freigeben(anfrageId: string, session: SessionInfo, optione
     };
   }
 
+  // Eine Web-Anfrage (eingang) oder ein zuvor blockierter Vorgang wird mit bestandener Prüfung geplant (Fachregel 1).
+  const statusVorher = daten.anfrage.status as AnfrageStatus;
+  if (statusVorher === 'eingang' || statusVorher === 'blockiert') {
+    await setzeVorgangsStatus(anfrageId, statusVorher, 'geplant', {}, { benutzerId: session.benutzerId, typ: 'anfrage:geplant' });
+  }
+
   const auftrag = await stelleAuftragBereit(anfrageId, art, { empfaenger: daten.kunde?.email ?? '' });
   const faelligAm = optionen.sofort ? jetzt : naechsteVersandzeit(jetzt, einst.versandzeit);
   const freigegeben = await setzeVersandStatus(auftrag.id, ['entwurf', 'fehlgeschlagen'], 'freigegeben', {

@@ -74,7 +74,12 @@ export async function setzeVorgangsStatus(
   ereignisDaten: { benutzerId?: string | null; typ?: string; payload?: Record<string, unknown> } = {},
 ): Promise<boolean> {
   const db = await getDb();
-  const erwarteteListe = Array.isArray(erwartet) ? erwartet : [erwartet];
+  const alleErwarteten = Array.isArray(erwartet) ? erwartet : [erwartet];
+  // Nur die Ausgangszustände zählen, aus denen der Übergang erlaubt ist; steht keiner zur Wahl, ist es ein Fehler.
+  const erwarteteListe = alleErwarteten.filter((von) => von === neu || istVorgangsUebergangErlaubt(von, neu));
+  if (erwarteteListe.length === 0) {
+    throw new Error(`Übergang ${alleErwarteten.join('/')} → ${neu} ist nicht erlaubt.`);
+  }
   for (const von of erwarteteListe) {
     if (von !== neu && !istVorgangsUebergangErlaubt(von, neu)) {
       throw new Error(`Übergang ${von} → ${neu} ist nicht erlaubt.`);
