@@ -561,8 +561,13 @@ export async function POST(
   // Entwurf speichern
   if (slug.length === 1 && slug[0] === 'entwurf') {
     try {
-      const input = (await request.json()) as InternAnfrage;
+      const input = (await request.json()) as InternAnfrage & { auftragAnlegen?: boolean };
       const anlage = await speichereInternAnfrage(input, session);
+      // Nur das bewusste „Als Entwurf speichern“ stellt den Erstkontakt-Auftrag bereit (Status entwurf),
+      // damit der Vorgang in der Freigabeliste erscheint. Der Autosave legt keinen Auftrag an.
+      if (input.auftragAnlegen === true) {
+        await stelleAuftragBereit(anlage.anfrageId, 'erstkontakt', { empfaenger: input.kontakt?.email ?? '' });
+      }
       return NextResponse.json({
         ok: true,
         modus: 'intern',

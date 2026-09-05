@@ -474,10 +474,10 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
     setSendet(true);
     setRueckmeldung('');
     try {
-      const antwort = await speichereEntwurf({ ...anfrage, aktion: 'entwurf' });
+      const antwort = await speichereEntwurf({ ...anfrage, aktion: 'entwurf' }, { auftragAnlegen: true });
       setRueckmeldung(
         antwort.ok && antwort.modus === 'intern'
-          ? `Entwurf gespeichert: ${antwort.ksNummer}. ${antwort.rueckmeldung}`
+          ? `Entwurf gespeichert: ${antwort.ksNummer}. ${antwort.rueckmeldung} Der Vorgang wartet unter Entwürfe auf die Freigabe.`
           : antwort.ok
             ? 'Entwurf gespeichert.'
             : antwort.fehler,

@@ -46,12 +46,19 @@ export async function ladeTerminfenster(): Promise<TerminfensterOption[]> {
   return await res.json();
 }
 
-/** Entwurf anlegen oder aktualisieren (Autosave); Aktion ist immer 'entwurf'. */
-export async function speichereEntwurf(input: InternAnfrage): Promise<EstimateResponse> {
+/**
+ * Entwurf anlegen oder aktualisieren. Der Autosave ruft ohne Option auf; das bewusste
+ * „Als Entwurf speichern“ setzt `auftragAnlegen`, damit der Vorgang mit einem
+ * Erstkontakt-Auftrag im Status entwurf in der Freigabeliste erscheint.
+ */
+export async function speichereEntwurf(
+  input: InternAnfrage,
+  optionen: { auftragAnlegen?: boolean } = {},
+): Promise<EstimateResponse> {
   const res = await fetch('/api/intern/entwurf', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, auftragAnlegen: optionen.auftragAnlegen === true }),
   });
   if (!res.ok) throw new Error('Fehler beim Speichern des Entwurfs.');
   return await res.json();
