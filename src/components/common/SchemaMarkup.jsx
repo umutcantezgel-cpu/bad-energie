@@ -49,7 +49,7 @@ const SchemaMarkup = () => {
         "@type": "Organization",
         "name": siteConfig.legalName || siteConfig.name,
         "url": origin,
-        "logo": `${origin}/logo.png`,
+        "logo": `${origin}/images/logo.png`,
         "contactPoint": {
             "@type": "ContactPoint",
             "telephone": siteConfig.contact.phone,

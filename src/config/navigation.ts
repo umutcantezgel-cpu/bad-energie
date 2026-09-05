@@ -25,6 +25,7 @@ export interface NavigationHighlight {
 export interface NavigationLink {
     name: string;
     path: string;
+    overviewLabel?: string;
     badge?: string;
     description?: string;
     submenu?: NavigationCategory[];
@@ -35,6 +36,7 @@ export const navigationLinks: NavigationLink[] = [
     {
         name: 'Bad & Wellness',
         path: '/bad',
+        overviewLabel: 'Alle Leistungen in Bad & Wellness ansehen',
         badge: 'Beliebt',
         description: 'Vom 3D-Traumbad bis zum barrierefreien Komfortbad aus Meisterhand',
         submenu: [
@@ -58,7 +60,7 @@ export const navigationLinks: NavigationLink[] = [
         ],
         highlight: {
             title: 'Musterbäder & Kollektionen',
-            description: 'Entdecken Sie Basic, Premium & Luxus in 4 realen Raumgrößen mit transparenten Richtpreisen.',
+            description: 'Entdecken Sie Basic, Premium & Luxus in 4 realen Raumgrößen mit individueller Planung auf Anfrage.',
             path: '/bad/musterbaeder',
             ctaText: 'Musterbäder ansehen',
             badge: 'Ausstellung'
@@ -67,6 +69,7 @@ export const navigationLinks: NavigationLink[] = [
     {
         name: 'Heizung & Energie',
         path: '/heizung',
+        overviewLabel: 'Alle Leistungen in Heizung & Energie ansehen',
         badge: 'bis 70% Förderung',
         description: 'Zukunftssichere Wärmepumpen, Hybrid & moderne Brennwerttechnik',
         submenu: [
@@ -100,6 +103,7 @@ export const navigationLinks: NavigationLink[] = [
     {
         name: 'Haustechnik & Klima',
         path: '/haustechnik',
+        overviewLabel: 'Alle Leistungen in Haustechnik & Klima ansehen',
         description: 'Wohnraumlüftung, Klimatechnik, Trinkwasserhygiene & Photovoltaik',
         submenu: [
             {
@@ -125,6 +129,7 @@ export const navigationLinks: NavigationLink[] = [
     {
         name: 'Gewerbe',
         path: '/gewerbe',
+        overviewLabel: 'Alle Leistungen für Gewerbe & Großanlagen ansehen',
         description: 'Objekt- und Anlagenbau für Unternehmen, Bauträger & Kommunen',
         submenu: [
             {
@@ -141,6 +146,7 @@ export const navigationLinks: NavigationLink[] = [
     {
         name: 'Über uns',
         path: '/unternehmen',
+        overviewLabel: 'Mehr über unser Unternehmen & Team erfahren',
         description: 'Meisterbetrieb seit 2001, Handwerkstradition seit 1926 & Ausstellungen',
         submenu: [
             {

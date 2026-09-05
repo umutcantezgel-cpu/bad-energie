@@ -75,23 +75,22 @@ export default function MobileMenu({ isOpen, onClose, onOpenHelp }: MobileMenuPr
                 
                 {/* 1. Header-Bereich im Drawer */}
                 <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
-                    <div className="flex items-center gap-2.5">
+                    <Link
+                        href="/"
+                        onClick={onClose}
+                        className="flex items-center shrink-0 focus-visible:outline-2 focus-visible:outline-[#0C3A87] rounded-lg"
+                        aria-label="Bad & Energie GmbH – Zur Startseite"
+                    >
                         <Image
-                            src="/images/logo-signet.jpg"
-                            alt="Logo"
-                            width={32}
-                            height={32}
-                            className="w-8 h-8 rounded-lg bg-white object-contain border border-slate-200 shadow-xs"
+                            src="/images/logo.png"
+                            alt="Bad & Energie GmbH"
+                            width={160}
+                            height={38}
+                            priority
+                            className="h-8 w-auto object-contain"
+                            sizes="160px"
                         />
-                        <div className="flex flex-col">
-                            <span className="text-sm font-black text-[#0C3A87] leading-tight">
-                                Bad &amp; Energie <span className="text-[#E4040E]">GmbH</span>
-                            </span>
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                Meisterbetrieb Wetzlar
-                            </span>
-                        </div>
-                    </div>
+                    </Link>
 
                     <button
                         type="button"
@@ -162,6 +161,15 @@ export default function MobileMenu({ isOpen, onClose, onOpenHelp }: MobileMenuPr
 
                                             {isExpanded && link.submenu && (
                                                 <div className="pl-3 pr-2 py-2 space-y-3 bg-slate-50 rounded-xl my-1 border border-slate-100">
+                                                    {/* Direkter Link zur Säulen-Übersicht */}
+                                                    <Link
+                                                        href={link.path}
+                                                        onClick={onClose}
+                                                        className="block p-2.5 rounded-lg bg-white border border-blue-200/80 text-xs font-black text-[#0C3A87] hover:bg-blue-50/60 shadow-xs flex items-center justify-between"
+                                                    >
+                                                        <span>{link.overviewLabel || `Übersicht ${link.name}`}</span>
+                                                        <ArrowRight className="w-3.5 h-3.5" />
+                                                    </Link>
                                                     {link.submenu.map((cat, idx) => (
                                                         <div key={idx} className="space-y-1">
                                                             <p className="text-[10px] font-black text-[#0C3A87] uppercase tracking-wider px-2 pt-1">

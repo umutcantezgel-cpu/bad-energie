@@ -44,7 +44,23 @@ test.describe('Header & Navigation Desktop', () => {
     await expect(terminBtn).toHaveAttribute('href', '/termin');
   });
 
-  test('Mega-Flyout öffnet sich und schließt per Escape', async ({ page }) => {
+  test('Logo ist als sauberes Bild ohne redundanten Textblock integriert', async ({ page }) => {
+    await page.goto('/');
+
+    const logoLink = page.locator('header nav, header').locator('a[aria-label*="Startseite"]').first();
+    await expect(logoLink).toBeVisible();
+    await expect(logoLink).toHaveAttribute('href', '/');
+
+    const logoImg = logoLink.locator('img');
+    await expect(logoImg).toBeVisible();
+    await expect(logoImg).toHaveAttribute('src', /images\/logo\.png/);
+    await expect(logoImg).toHaveAttribute('alt', /Bad & Energie GmbH/);
+
+    // Verifizieren, dass kein redundanter Textknoten im Logo-Link liegt
+    await expect(logoLink).not.toContainText('Meisterbetrieb Wetzlar');
+  });
+
+  test('Mega-Flyout öffnet sich und bietet direkten Säulen-Übersichtslink', async ({ page }) => {
     await page.goto('/');
 
     const badButton = page.getByRole('navigation', { name: 'Hauptnavigation' }).getByRole('button', { name: /Bad & Wellness/i });
@@ -56,6 +72,11 @@ test.describe('Header & Navigation Desktop', () => {
     await expect(flyout).toContainText('Planung & Kalkulation');
     await expect(flyout).toContainText('Online-Budgetkalkulator Bad');
     await expect(flyout).toContainText('Musterbäder & Kollektionen');
+
+    // Direkter Übersichts-Link im Footer des Flyouts
+    const overviewLink = flyout.getByRole('menuitem', { name: /Alle Leistungen in Bad & Wellness ansehen/i });
+    await expect(overviewLink).toBeVisible();
+    await expect(overviewLink).toHaveAttribute('href', '/bad');
 
     // Schließen mit Escape
     await page.keyboard.press('Escape');
@@ -78,9 +99,14 @@ test.describe('Header & Navigation Mobile', () => {
     await expect(menuBtn).toBeVisible();
     await menuBtn.click();
 
-    // Drawer ist sichtbar
+    // Drawer ist sichtbar mit offiziellem Logo
     const drawer = page.getByRole('dialog', { name: 'Mobile Navigation' });
     await expect(drawer).toBeVisible();
+
+    const drawerLogo = drawer.locator('img');
+    await expect(drawerLogo).toBeVisible();
+    await expect(drawerLogo).toHaveAttribute('src', /images\/logo\.png/);
+
     await expect(drawer).toContainText('24/7 Notdienst');
     await expect(drawer).toContainText('Anrufen');
     await expect(drawer).toContainText('Bad & Wellness');
@@ -88,8 +114,9 @@ test.describe('Header & Navigation Mobile', () => {
     await expect(drawer).toContainText('Hilfe-Center & Notfall-Ratgeber');
     await expect(drawer.getByRole('link', { name: 'Termin online vereinbaren' })).toBeVisible();
 
-    // Untermenü aufklappen
+    // Untermenü aufklappen & direkten Übersichts-Link prüfen
     await drawer.getByRole('button', { name: /Bad & Wellness/i }).click();
+    await expect(drawer.getByRole('link', { name: /Alle Leistungen in Bad & Wellness ansehen|Übersicht Bad & Wellness/i })).toBeVisible();
     await expect(drawer).toContainText('Online-Budgetkalkulator Bad');
 
     // Schließen mit X

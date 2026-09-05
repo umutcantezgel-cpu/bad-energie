@@ -145,27 +145,22 @@ export default function Header({
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between gap-4">
                         
-                        {/* Logo & Markenauftritt */}
+                        {/* Logo & Markenauftritt (Reines Original-Logo mit integrierter Schrift) */}
                         <Link 
                             href="/" 
-                            className="flex items-center gap-3 group shrink-0 focus-visible:outline-2 focus-visible:outline-[#0C3A87] rounded-xl"
+                            className="flex items-center shrink-0 focus-visible:outline-2 focus-visible:outline-[#0C3A87] rounded-xl py-0.5"
+                            aria-label="Bad & Energie GmbH – Meisterbetrieb Wetzlar & Lahn-Dill – Zur Startseite"
                         >
                             <Image
-                                src="/images/logo-signet.jpg"
-                                alt="Bad & Energie GmbH Logo"
-                                width={44}
-                                height={44}
+                                src="/images/logo.png"
+                                alt="Bad & Energie GmbH – Meisterbetrieb für Bad, Heizung & Haustechnik in Wetzlar und Lahn-Dill"
+                                width={192}
+                                height={45}
                                 priority
-                                className="w-11 h-11 rounded-xl bg-white object-contain shadow-xs border border-slate-100 group-hover:scale-105 transition-transform duration-200"
+                                fetchPriority="high"
+                                className="h-9 sm:h-10 md:h-11 w-auto object-contain transition-transform duration-200 hover:opacity-95"
+                                sizes="(max-width: 640px) 150px, (max-width: 1024px) 175px, 192px"
                             />
-                            <div className="flex flex-col">
-                                <span className="text-base sm:text-lg font-black tracking-tight text-[#0C3A87] leading-none group-hover:text-[#0E1C76] transition-colors">
-                                    Bad &amp; Energie <span className="text-[#E4040E]">GmbH</span>
-                                </span>
-                                <span className="text-[10px] font-bold text-slate-500 tracking-wider uppercase mt-1">
-                                    Meisterbetrieb Wetzlar &middot; Lahn-Dill
-                                </span>
-                            </div>
                         </Link>
 
                         {/* Desktop Navigation: 5 Konsolidierte Kernsäulen (100% Einzeilig auf Desktop) */}
@@ -303,19 +298,31 @@ export default function Header({
                                                         )}
                                                     </div>
 
-                                                    {/* Mega-Menu Footer-Streifen */}
-                                                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
-                                                        <span className="font-medium flex items-center gap-1.5 text-slate-700">
-                                                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                                            <span>Kostenlose Vor-Ort-Beratung &middot; Wetzlar &amp; Lahn-Dill</span>
-                                                        </span>
-                                                        <Link 
-                                                            href="/termin" 
+                                                    {/* Mega-Menu Footer-Streifen mit direktem Übersichts-Link & Vor-Ort-Zusage */}
+                                                    <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+                                                        <Link
+                                                            href={link.path}
+                                                            role="menuitem"
                                                             onClick={() => setActiveDropdown(null)}
-                                                            className="text-[#0C3A87] font-bold hover:underline inline-flex items-center gap-1"
+                                                            className="font-extrabold text-[#0C3A87] hover:text-[#0E1C76] flex items-center gap-1.5 hover:underline py-1"
                                                         >
-                                                            <span>Wunschtermin anfragen &rarr;</span>
+                                                            <span>{link.overviewLabel || `Alle Angebote in ${link.name} ansehen`}</span>
+                                                            <ArrowRight className="w-3.5 h-3.5" />
                                                         </Link>
+
+                                                        <div className="flex items-center gap-4 text-slate-600">
+                                                            <span className="font-medium hidden sm:flex items-center gap-1.5 text-slate-700">
+                                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                                                <span>Vor-Ort-Beratung &middot; Wetzlar &amp; Lahn-Dill</span>
+                                                            </span>
+                                                            <Link 
+                                                                href="/termin" 
+                                                                onClick={() => setActiveDropdown(null)}
+                                                                className="text-[#0C3A87] font-extrabold hover:underline inline-flex items-center gap-1"
+                                                            >
+                                                                <span>Termin anfragen &rarr;</span>
+                                                            </Link>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
