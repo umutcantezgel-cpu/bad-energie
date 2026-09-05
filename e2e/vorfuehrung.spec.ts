@@ -27,7 +27,19 @@ function laufKennung(projekt: string): string {
  */
 async function waehle(page: Page, gruppe: string, option: string): Promise<void> {
   const feld = page.getByRole('radiogroup', { name: gruppe, exact: true });
-  await feld.getByRole('radio', { name: option }).click();
+  const kachel = feld.getByRole('radio', { name: option });
+  // Der feste Seitenkopf und die klebende Fußleiste überdecken Kacheln am Rand des Fensters;
+  // die Kachel wird deshalb in die Mitte gescrollt, bevor geklickt wird.
+  await kachel.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await kachel.click();
+}
+
+/** Eindeutige KS-Nummern der Karten eines Locators (sortiert). */
+async function ksNummernIn(karten: import('@playwright/test').Locator): Promise<string[]> {
+  const texte = await karten.allTextContents();
+  const nummern = new Set<string>();
+  for (const t of texte) for (const m of t.matchAll(/KS-\d{4}-\d{4}/g)) nummern.add(m[0]);
+  return [...nummern].sort();
 }
 
 /** Liest die erste Zahl in deutscher Schreibweise („31.000“) aus einem Text. */
@@ -115,7 +127,9 @@ test.describe.serial('Vorführ-Ablauf Heizung', () => {
     await page.getByLabel('Anrede').selectOption('Frau');
     await page.getByLabel('Vorname').fill('Anna');
     await page.getByLabel('Nachname').fill(vorgang.nachname);
-    await page.getByLabel('E-Mail-Adresse').fill('kundin@example.org');
+    // Kunden werden über die E-Mail zusammengeführt; jedes Geräteprofil braucht deshalb eine eigene
+    // Adresse, sonst trägt ein gemeinsamer Kundendatensatz am Ende den Namen des letzten Laufs.
+    await page.getByLabel('E-Mail-Adresse').fill(`${vorgang.nachname.toLowerCase()}@example.org`);
     await page.getByLabel('Telefonnummer').fill('06441 1234567');
     await page.getByLabel('Ich habe die Datenschutzerklärung zur Kenntnis genommen.').check();
     await page.getByRole('button', { name: 'Kostenschätzung anfordern' }).click();
@@ -181,7 +195,9 @@ test.describe.serial('Vorführ-Ablauf Heizung', () => {
       .locator('div.glass-card')
       .filter({ hasText: vorgang.nachname })
       .filter({ visible: true });
-    await expect(kartenZumLauf).toHaveCount(1);
+    // Gezählt werden Vorgänge (KS-Nummern), nicht Kartenelemente: je nach Breite kann dieselbe
+    // Anfrage in Liste und Spalte gleichzeitig sichtbar sein.
+    await expect.poll(async () => await ksNummernIn(kartenZumLauf)).toEqual([vorgang.ksNummer]);
     const karte = kartenZumLauf.first();
     await expect(karte).toContainText(vorgang.ksNummer);
 
@@ -266,7 +282,7 @@ test.describe.serial('Vorführ-Ablauf Heizung', () => {
     expect(kundenmail, `Kundenmail mit PDF-Anhang fehlt. Dateien: ${mails.map((m) => m.name).join(', ')}`).toBeTruthy();
     expect(dossier, 'Dossier-Mail mit datenblatt.json fehlt.').toBeTruthy();
     expect(kundenmail?.name).not.toBe(dossier?.name);
-    expect(kundenmail?.inhalt).toContain('To: kundin@example.org');
+    expect(kundenmail?.inhalt).toContain(`To: ${vorgang.nachname.toLowerCase()}@example.org`);
     expect(dossier?.inhalt).toMatch(/X-Anhaenge:.*\.csv/);
     // Der Kundentext im Dossier nennt Marke und Leistung (Korrekturrunde, Punkt 6).
     expect(dossier?.inhalt).toContain('Bosch Luft/Wasser Wärmepumpe 10 kW');
@@ -274,9 +290,9 @@ test.describe.serial('Vorführ-Ablauf Heizung', () => {
     // Der Autosave schreibt die Vorgangskennung zurück: aus der Meister-Erfassung entsteht
     // kein zweiter Vorgang, das Board zeigt weiterhin genau eine Karte (Korrekturrunde, Punkt 5).
     await page.goto('/intern/board');
-    await expect(
-      page.locator('div.glass-card').filter({ hasText: vorgang.nachname }).filter({ visible: true }),
-    ).toHaveCount(1);
+    await expect
+      .poll(async () => await ksNummernIn(page.locator('div.glass-card').filter({ hasText: vorgang.nachname }).filter({ visible: true })))
+      .toEqual([vorgang.ksNummer]);
   });
 });
 
@@ -375,6 +391,8 @@ test.describe('Intern-Bereich', () => {
     await umgebungVorbereiten(page);
     await alsChefAnmelden(page);
 
+    // Der Transportweg zählt nur für die Wärmepumpe; ohne Wärmepumpen-Vorlage gibt es keine Warnung.
+    await page.getByRole('switch', { name: 'Wärmepumpe statt Gasheizung' }).click();
     await page.getByRole('button', { name: 'Gebäude und Heizung' }).click();
     await page.getByLabel('Türbreite zum Heizraum').fill('73');
     await expect(page.getByText('Unter 80 cm. Transportweg vor Ort klären.')).toBeVisible();

@@ -109,6 +109,7 @@ function KundenModus({
   const [kontakt, setKontakt] = useState<KontaktFelder>(LEERER_KONTAKT);
   const [wunschtermine, setWunschtermine] = useState<[string, string]>(['', '']);
   const [absenden, setAbsenden] = useState<Absendezustand>({ art: 'ruhe' });
+  const sendetRef = useRef(false);
   const [pinOffen, setPinOffen] = useState(false);
 
   const honig = useRef('');
@@ -214,6 +215,8 @@ function KundenModus({
   }, [journey, journeyId]);
 
   const senden = useCallback(async () => {
+    // Wiedereintrittssperre: Ein doppeltes Antippen (Touch und Klick) darf nur eine Anfrage anlegen.
+    if (sendetRef.current) return;
     const offen = pruefeAlle(journey, zustand);
     if (offen) {
       setSchritt(offen.schrittIndex);
@@ -235,6 +238,7 @@ function KundenModus({
       return;
     }
 
+    sendetRef.current = true;
     setAbsenden({ art: 'laeuft' });
     try {
       const antwort = await fetch('/api/estimate', {
@@ -278,6 +282,8 @@ function KundenModus({
         text: 'Die Verbindung ist abgebrochen. Ihre Angaben sind erhalten geblieben.',
         telefon: true,
       });
+    } finally {
+      sendetRef.current = false;
     }
   }, [journey, journeyId, kontakt, quelle, wunschtermine, zustand]);
 

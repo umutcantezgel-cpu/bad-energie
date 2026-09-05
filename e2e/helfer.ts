@@ -24,6 +24,12 @@ const SCHLUESSEL_KUNDENANSICHT = 'be-kundenansicht';
  */
 export async function umgebungVorbereiten(page: Page, optionen: { kundenansicht?: boolean } = {}): Promise<void> {
   const kundenansicht = optionen.kundenansicht === true ? '1' : '0';
+  // Sanftes Scrollen der Seite macht Kacheln für Playwright „nicht stabil“; im Test wird sofort gescrollt.
+  await page.addInitScript(() => {
+    const stil = document.createElement('style');
+    stil.textContent = 'html { scroll-behavior: auto !important; }';
+    document.addEventListener('DOMContentLoaded', () => document.head.appendChild(stil));
+  });
   await page.addInitScript(
     ([schluessel, fassung, ansichtSchluessel, ansichtWert]) => {
       try {
