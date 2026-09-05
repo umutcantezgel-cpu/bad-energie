@@ -328,13 +328,14 @@ export function oeffentlicheSpanne(ergebnis: KalkulationsErgebnis, extras: Oeffe
       nichtEnthalten,
     };
   if (dto.pfad === 'spanne' && ergebnis.foerderung) {
-    // Der Kunde rechnet die drei gezeigten Zahlen nach: Eigenanteil = gerundetes Brutto minus gezeigtem Zuschuss.
+    // Eine Quelle für Web und Kundendokument: der Eigenanteil kommt aus dem Förderergebnis (Brutto minus
+    // Zuschuss, gerundet nach Einstellung), damit Ergebnisseite und PDF dieselben Zahlen zeigen.
     const zuschuss = Math.floor(ergebnis.foerderung.zuschuss / 100) * 100;
     dto.foerderzuschuss = zuschuss;
     dto.foerderSatz = ergebnis.foerderung.satz;
     if (extras.foerderRegeln) dto.foerderBausteine = foerderBausteine(ergebnis.foerderung, extras.foerderRegeln);
-    dto.eigenanteilVon = Math.max(0, (dto.bruttoVonGerundet ?? 0) - zuschuss);
-    dto.eigenanteilBis = Math.max(0, (dto.bruttoBisGerundet ?? 0) - zuschuss);
+    dto.eigenanteilVon = Math.max(0, ergebnis.foerderung.eigenanteilVon);
+    dto.eigenanteilBis = Math.max(0, ergebnis.foerderung.eigenanteilBis);
   }
   const b = extras.betriebskosten;
   if (b && b.heuteJahr !== null && b.ersparnisJahr !== null && b.ersparnisJahr > 0) {

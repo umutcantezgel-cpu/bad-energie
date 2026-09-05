@@ -304,11 +304,12 @@ export async function speichereInternAnfrage(eingabe: InternAnfrage, session: Se
     // Bei gesperrten Preisen werden die gespeicherten Werte unverändert zurückgeschrieben.
     kalkulation: preiseGesperrt && bestand ? (bestand.kalkulation ?? {}) : eingabe.kalkulation,
     foerderung: preiseGesperrt && bestand ? bestand.foerderung : foerderungSpeicherwert(foerderung, ergebnis),
-    gebaeude: { ...eingabe.gebaeude, wohneinheiten: eingabe.objekt.wohneinheiten },
+    // Die Wohneinheiten sind die Quelle der Förderstaffel und gehören deshalb mit unter die Preissperre.
+    gebaeude: { ...eingabe.gebaeude, wohneinheiten: preiseGesperrt && bestand ? bestand.wohneinheiten : eingabe.objekt.wohneinheiten },
     eigentum: eingabe.objekt.eigentum,
     summeNettoVon: ergebnis.nettoVon || null,
     summeNettoBis: ergebnis.nettoBis || null,
-    wohneinheiten: eingabe.objekt.wohneinheiten,
+    wohneinheiten: preiseGesperrt && bestand ? bestand.wohneinheiten : eingabe.objekt.wohneinheiten,
     geaendertAm: jetzt,
   };
 
@@ -345,8 +346,11 @@ export async function speichereInternAnfrage(eingabe: InternAnfrage, session: Se
     ksNummer = anlage.ksNummer;
   }
 
-  await ersetzeVorlagen(anfrageId, eingabe.vorlageIds);
-  if (!preiseGesperrt) await ersetzePositionen(anfrageId, positionen);
+  // Vorlagen bestimmen die Positionen und stehen mit ihnen auf derselben Seite der Preissperre.
+  if (!preiseGesperrt) {
+    await ersetzeVorlagen(anfrageId, eingabe.vorlageIds);
+    await ersetzePositionen(anfrageId, positionen);
+  }
   await setzeReservierungen(anfrageId, eingabe.terminfensterIds);
   await schreibeEreignis({
     anfrageId, typ: 'anfrage:gespeichert', benutzerId: session.benutzerId,

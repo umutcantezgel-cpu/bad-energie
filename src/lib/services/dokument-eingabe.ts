@@ -145,7 +145,8 @@ export function fehlendeAngaben(daten: VorgangDaten, ergebnis: KalkulationsErgeb
   const wp = istWaermepumpenVorlage(daten.vorlageIds);
   if (gebaeude) {
     const tuer = gebaeude.platz.tuerbreiteCm;
-    if (tuer !== null && tuer < 80) fehlt.push('Türbreite unter 80 cm, Transportweg klären');
+    // Der Transportweg zählt für die Wärmepumpe (Inneneinheit, Speicher); ein Bad braucht ihn nicht.
+    if (wp && tuer !== null && tuer < 80) fehlt.push('Türbreite unter 80 cm, Transportweg klären');
     if (wp && !gebaeude.bestand.energieart) fehlt.push('Bestehende Heizung');
     if (wp) {
       const heizlast = heizlastSchaetzen(gebaeude);
@@ -210,8 +211,9 @@ export const CSV_SPALTEN = [
  * sonst als Formel aus. Der führende Apostroph macht daraus wieder Text.
  */
 export function csvFeld(wert: string): string {
-  let roh = (wert ?? '').replace(/\r?\n/g, ' ').trim();
-  if (/^[=+\-@\t\r]/.test(roh)) roh = `'${roh}`;
+  // Alle Steuerzeichen (auch ein nacktes CR in der Feldmitte) werden zu Leerzeichen, bevor die Formelregel greift.
+  let roh = (wert ?? '').replace(/[\r\n\t\u0085\u2028\u2029]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  if (/^[=+\-@]/.test(roh)) roh = `'${roh}`;
   return /[";]/.test(roh) ? `"${roh.replace(/"/g, '""')}"` : roh;
 }
 

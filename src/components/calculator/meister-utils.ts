@@ -113,7 +113,7 @@ export function fehlendeAngaben(a: InternAnfrage): string[] {
   if (!a.persoenlicherSatz.trim()) fehlt.push('Persoenlicher Satz');
   // Zugang und Bestand nach der Arbeitsweise des Chefs (Beleg 3 und 10).
   const tuer = a.gebaeude.platz.tuerbreiteCm;
-  if (tuer !== null && tuer < 80) fehlt.push('Türbreite unter 80 cm, Transportweg klären');
+  if (istWaermepumpenVorlage(a.vorlageIds) && tuer !== null && tuer < 80) fehlt.push('Türbreite unter 80 cm, Transportweg klären');
   if (istWaermepumpenVorlage(a.vorlageIds) && !a.gebaeude.bestand.energieart) fehlt.push('Bestehende Heizung');
   // Dieselben Punkte wie im Büro-Dossier (dokument-eingabe.ts), damit der Meister vor Ort dasselbe sieht.
   if (istWaermepumpenVorlage(a.vorlageIds)) {
@@ -123,7 +123,7 @@ export function fehlendeAngaben(a: InternAnfrage): string[] {
       fehlt.push('Die errechnete Heizlast liegt über der Baureihe, die Auslegung klären wir vor Ort.');
     }
   }
-  return fehlt;
+  return [...new Set(fehlt)];
 }
 
 /** Kennungen der Abschnitte des Meister-Modus (Reihenfolge des gefuehrten Modus). */

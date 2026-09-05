@@ -34,7 +34,7 @@ describe('Formatierung und Rundung', () => {
     expect(bruttoAusNetto(150)).toBe(179);
     expect(rundeAuf(14916, 1000)).toBe(15000);
     expect(rundeAuf(23127, 1000)).toBe(23000);
-    expect(rundeAuf(14500, 1000)).toBe(15000);
+    expect(rundeAuf(15000, 1000)).toBe(15000);
   });
 });
 
@@ -178,7 +178,7 @@ describe('Förderbausteine und Betriebskosten in der öffentlichen Spanne', () =
     expect(oeffentlicheSpanne(e, { foerderRegeln: REGELN }).foerderBausteine).toEqual(['Vom Fachbetrieb angesetzter Fördersatz 55 %']);
   });
 
-  it('der gezeigte Eigenanteil ist das gezeigte Brutto minus dem gezeigten Zuschuss', () => {
+  it('der gezeigte Eigenanteil ist derselbe wie im Kundendokument (Brutto minus Zuschuss, nach Einstellung gerundet)', () => {
     const e = berechne({
       positionen: positionenAus(ks32.rows), foerderRegeln: REGELN,
       foerderung: { aktiv: true, wohneinheiten: 1, selbstBewohnt: true, altOelOderGas: true, einkommenUnterGrenze: false, natuerlichesKaeltemittel: true },
@@ -187,10 +187,11 @@ describe('Förderbausteine und Betriebskosten in der öffentlichen Spanne', () =
     expect(dto.bruttoVonGerundet).toBe(31000);
     expect(dto.bruttoBisGerundet).toBe(40000);
     expect(dto.foerderzuschuss).toBe(16500);
-    expect(dto.eigenanteilVon).toBe(14500);
-    expect(dto.eigenanteilBis).toBe(23500);
-    expect((dto.bruttoVonGerundet ?? 0) - (dto.foerderzuschuss ?? 0)).toBe(dto.eigenanteilVon);
-    expect((dto.bruttoBisGerundet ?? 0) - (dto.foerderzuschuss ?? 0)).toBe(dto.eigenanteilBis);
+    expect(dto.eigenanteilVon).toBe(15000);
+    expect(dto.eigenanteilBis).toBe(23000);
+    // Ergebnisseite und PDF nennen dieselben Zahlen; das PDF rechnet 31.416 − 16.500 = 14.916 → 15.000.
+    expect(dto.eigenanteilVon).toBe(e.foerderung?.eigenanteilVon);
+    expect(dto.eigenanteilBis).toBe(e.foerderung?.eigenanteilBis);
   });
 
   it('ein Zuschuss über dem Betrag lässt keinen negativen Eigenanteil entstehen', () => {

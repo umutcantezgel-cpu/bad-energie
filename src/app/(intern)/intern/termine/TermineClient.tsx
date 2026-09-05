@@ -107,12 +107,16 @@ export default function TermineClient({
                       {f.reserviertFuerKsNummer ? (
                         <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 font-bold text-amber-800">
                           Reserviert für{' '}
-                          <Link
-                            href={`/intern/anfragen/${f.reserviertFuerAnfrageId}`}
-                            className="underline"
-                          >
-                            {f.reserviertFuerKsNummer}
-                          </Link>
+                          {f.reserviertFuerAnfrageId ? (
+                            <Link
+                              href={`/intern/anfragen/${f.reserviertFuerAnfrageId}`}
+                              className="underline"
+                            >
+                              {f.reserviertFuerKsNummer}
+                            </Link>
+                          ) : (
+                            <span>einen anderen Vorgang</span>
+                          )}
                         </span>
                       ) : (
                         <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 font-bold text-emerald-700">

@@ -36,28 +36,11 @@ function vorlageVon(daten: Kalkulationsdaten, id: string): Vorlage | null {
   return daten.vorlagen.find((v) => v.id === id) ?? null;
 }
 
-function bausteinMitMatrix(v: Vorlage, nr: number): Baustein | null {
-  return v.bausteine.find((b) => b.matrixNr === nr) ?? null;
-}
 
 function bausteinMitVarianten(v: Vorlage): Baustein | null {
   return v.bausteine.find((b) => (b.groessenVarianten?.length ?? 0) > 0) ?? null;
 }
 
-/**
- * Variante nach Wohnfläche; null, wenn keine Variante eine passende Spanne pflegt.
- * Nicht mehr als Rückfall für die Wärmepumpe: ohne belastbare Heizlast wird bewusst keine Größe gesetzt.
- */
-export function variantenNrNachWohnflaeche(b: Baustein | null, wohnflaeche: number): number | null {
-  if (!b?.groessenVarianten?.length) return null;
-  for (const v of b.groessenVarianten) {
-    const von = v.wohnflaecheM2Von;
-    const bis = v.wohnflaecheM2Bis;
-    if (von === undefined && bis === undefined) continue;
-    if (wohnflaeche >= (von ?? 0) && wohnflaeche <= (bis ?? Number.POSITIVE_INFINITY)) return v.matrixNr;
-  }
-  return null;
-}
 
 /** Klima: 2 bis 3 Räume → Matrix 11, 4 bis 5 Räume → Matrix 12. */
 export function variantenNrNachRaeumen(b: Baustein | null, raeume: number): number | null {
@@ -234,10 +217,15 @@ function mappeHeizung(a: HeizungsAntworten, daten: Kalkulationsdaten, wohneinhei
   });
   const annahmen: string[] = [];
   if (varianteNr === null) {
-    annahmen.push('Für die Größe der Wärmepumpe brauchen wir Ihren Jahresverbrauch; die genaue Auslegung folgt beim Termin vor Ort.');
     // Fachbegriffe bleiben aus Kundentexten heraus; der Wortlaut mit dem Fachbegriff steht im internen Dossier.
-    // Nur bei belastbarer Heizlast; der reine Flächenweg überschätzt und darf keine Baureihenaussage tragen.
-    if (heizlast?.belastbar && vorschlag?.ueberBaureihe) annahmen.push('Die berechnete Größe liegt über der größten Baureihe, die Auslegung klären wir vor Ort.');
+    if (!heizlast?.belastbar) {
+      annahmen.push('Für die Größe der Wärmepumpe brauchen wir Ihren Jahresverbrauch; die genaue Auslegung folgt beim Termin vor Ort.');
+    } else if (vorschlag?.ueberBaureihe) {
+      // Nur bei belastbarer Heizlast; der reine Flächenweg überschätzt und darf keine Baureihenaussage tragen.
+      annahmen.push('Die berechnete Größe liegt über der größten Baureihe, die Auslegung klären wir vor Ort.');
+    } else {
+      annahmen.push('Die Größe der Wärmepumpe klären wir beim Termin vor Ort.');
+    }
   } else {
     annahmen.push(heizlast?.methode === 'flaeche'
       ? 'Die Größe der Wärmepumpe haben wir aus Wohnfläche und Baujahr abgeleitet, die genaue Auslegung folgt beim Termin vor Ort.'

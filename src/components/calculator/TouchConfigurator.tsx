@@ -160,14 +160,26 @@ function KundenModus({
 
   const aendere = useCallback((frage: Frage, wert: unknown) => {
     setAusgeklappt(true);
-    setZustand((alt) => schreibeWert(alt, frage, wert));
+    setZustand((alt) => {
+      let neu = schreibeWert(alt, frage, wert);
+      // Ein Brennstoffwechsel ändert die Einheit des Verbrauchs (kWh, Liter, Raummeter); der alte Wert darf nicht mitwandern.
+      if (frage.id === 'heutig' && leseWert(alt, frage) !== wert) {
+        for (const schritt of JOURNEYS[journeyId].schritte) {
+          if (schritt.art !== 'fragen') continue;
+          for (const f of schritt.fragen) {
+            if (f.id.startsWith('verbrauchJahr')) neu = schreibeWert(neu, f, null);
+          }
+        }
+      }
+      return neu;
+    });
     setFehler((alt) => {
       if (!alt[frage.id]) return alt;
       const neu = { ...alt };
       delete neu[frage.id];
       return neu;
     });
-  }, []);
+  }, [journeyId]);
 
   const gehe = useCallback(
     (richtung: 1 | -1) => {
@@ -564,8 +576,11 @@ function baueChips(journeyId: JourneyId, zustand: JourneyZustand): AntwortChip[]
           .filter(Boolean)
           .join(', ');
       } else if (frage.art === 'zahl') {
+        // Eine Null ist keine Angabe (etwa „0 Heizkörper“ bei Fußbodenheizung).
+        if (Number(wert) === 0) continue;
         anzeige = `${zahl(Number(wert), frage.nachkommastellen ?? 0)} ${Number(wert) === 1 && frage.einheitEinzahl ? frage.einheitEinzahl : frage.einheit}`;
       } else if (frage.art === 'anzahl') {
+        if (Number(wert) === 0) continue;
         anzeige = `${Number(wert)} ${Number(wert) === 1 && frage.einheitEinzahl ? frage.einheitEinzahl : frage.einheit}`;
       } else {
         anzeige = String(wert);

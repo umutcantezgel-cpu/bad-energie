@@ -507,7 +507,8 @@ export const internAnfrageSchema = z.object({
     altOelOderGas: z.boolean().default(true),
     einkommenUnterGrenze: z.boolean().default(false),
     natuerlichesKaeltemittel: z.boolean().default(true),
-    satzManuell: z.number().int().min(0).max(70).nullable().optional(),
+    // 0 Prozent gibt es nicht als Satz: Ohne Förderung wird die Förderung abgewählt.
+    satzManuell: z.number().int().min(1).max(70).nullable().optional(),
   }).prefault({}),
   persoenlicherSatz: z.string().trim().max(400).default(''),
   annahmen: z.array(z.string().trim().max(300)).default([]),

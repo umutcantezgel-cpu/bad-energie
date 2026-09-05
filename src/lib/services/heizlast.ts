@@ -131,6 +131,8 @@ export function kesseltypVermutet(b: GebaeudeDaten['bestand']): Kesseltyp {
  * er wuerde die Heizlast und die Betriebskosten um Groessenordnungen verfaelschen.
  */
 export const VERBRAUCH_MAX_KWH = 200_000;
+/** Darunter trägt ein Jahresverbrauch keine Gerätewahl (etwa 20 Raummeter als 20 Liter gelesen). */
+export const VERBRAUCH_MIN_KWH = 1_500;
 
 /** Roher Jahresverbrauch in kWh Endenergie, ohne Plausibilitaetsgrenze. */
 function verbrauchKwhRoh(b: GebaeudeDaten['bestand']): number | null {
@@ -146,13 +148,15 @@ function verbrauchKwhRoh(b: GebaeudeDaten['bestand']): number | null {
 /** false, wenn eine Verbrauchsangabe vorliegt, die ueber der Obergrenze fuer Wohnhaeuser liegt. */
 export function verbrauchPlausibel(b: GebaeudeDaten['bestand']): boolean {
   const roh = verbrauchKwhRoh(b);
-  return roh === null || roh <= VERBRAUCH_MAX_KWH;
+  // Ein Wert, der trotz Energieart nicht umrechenbar ist, passt nicht zur Einheit.
+  if (roh === null) return !(b.energieart && (b.verbrauchJahr ?? 0) > 0);
+  return roh >= VERBRAUCH_MIN_KWH && roh <= VERBRAUCH_MAX_KWH;
 }
 
 /** Jahresverbrauch in kWh Endenergie; null ohne Verbrauch, ohne Energieart oder ueber der Grenze. */
 export function verbrauchKwh(b: GebaeudeDaten['bestand']): number | null {
   const roh = verbrauchKwhRoh(b);
-  return roh !== null && roh <= VERBRAUCH_MAX_KWH ? roh : null;
+  return roh !== null && roh >= VERBRAUCH_MIN_KWH && roh <= VERBRAUCH_MAX_KWH ? roh : null;
 }
 
 /** Weg (a): Verbrauch × Jahresnutzungsgrad / Volllaststunden. */
@@ -206,7 +210,7 @@ export function heizlastSchaetzen(g: GebaeudeDaten): HeizlastErgebnis | null {
   if (kwVerbrauch === null && kwFlaeche === null) return null;
   const hinweise: string[] = [];
   if (!verbrauchPlausibel(g.bestand)) {
-    hinweise.push('Die Verbrauchsangabe passt nicht zur gewählten Einheit und bleibt außer Betracht. Bitte Wert und Einheit prüfen.');
+    hinweise.push('Die Verbrauchsangabe passt nicht zur gewählten Einheit oder liegt außerhalb von 1.500 bis 200.000 Kilowattstunden und bleibt außer Betracht. Bitte Wert und Einheit prüfen.');
   }
   // Der Verbrauch traegt die Groessenwahl; ohne ihn braucht die Flaeche wenigstens eine Daemmungsangabe.
   const belastbar = kwVerbrauch !== null || daemmungAngegeben(g);
@@ -249,8 +253,10 @@ export type GeraeteVorschlag = {
 export function geraeteVorschlag(kw: number, varianten: GroessenVariante[] | null | undefined, hersteller: Hersteller = 'bosch'): GeraeteVorschlag | null {
   if (!varianten?.length || !(kw > 0)) return null;
   const sortiert = [...varianten].sort((a, b) => (a.heizlastKwVon ?? 0) - (b.heizlastKwVon ?? 0));
-  const variante = sortiert.find((v) => kw <= (v.heizlastKwBis ?? Number.POSITIVE_INFINITY)) ?? sortiert[sortiert.length - 1];
+  // Erst die Gerätestufe aus der Baureihe, dann die Variante, deren Fenster diese Stufe trägt: Text (12 kW)
+  // und Matrixzeile (12 kW und mehr) dürfen nicht auseinanderlaufen, wenn die Heizlast am oberen Rand liegt.
   const geraet = geraetAusBaureihe(kw, hersteller);
+  const variante = sortiert.find((v) => geraet.kw <= (v.heizlastKwBis ?? Number.POSITIVE_INFINITY)) ?? sortiert[sortiert.length - 1];
   return {
     matrixNr: variante.matrixNr,
     label: variante.label,

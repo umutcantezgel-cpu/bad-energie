@@ -53,7 +53,6 @@ import {
   ladeFoerderRegeln,
   ladeKalkulationsdaten as ladeKalkulationsdatenService,
   ladeMatrix,
-  type Einstellungen,
 } from '@/lib/services/kalkulationsdaten';
 import { pinGueltig, pinHashen } from '@/lib/services/pin';
 import { clientIp, ipHash, pruefeLimit } from '@/lib/services/ratelimit';
@@ -804,6 +803,9 @@ export async function POST(
         const anfragen = await db.select().from(anfrageTabelle).where(eq(anfrageTabelle.ksNummer, befehl.ksNummer)).limit(1);
         const a = anfragen[0];
         if (!a) return NextResponse.json({ ok: false, rueckmeldung: '', fehler: `Vorgang ${befehl.ksNummer} wurde nicht gefunden.` });
+        // Auch über die KS-Nummer gilt die Zuständigkeit (Bauleiter nur eigene und unzugewiesene Vorgänge).
+        const zugriff = await anfrageFuerSession(a.id, session);
+        if (!zugriff.ok) return zugriff.antwort;
 
         const res = await freigebenService(a.id, session, { art: 'erstkontakt', sofort });
         if (!res.ok) return NextResponse.json({ ok: false, rueckmeldung: '', fehler: res.fehler });
@@ -819,9 +821,13 @@ export async function POST(
         const anfragen = await db.select().from(anfrageTabelle).where(eq(anfrageTabelle.ksNummer, befehl.ksNummer)).limit(1);
         const a = anfragen[0];
         if (!a) return NextResponse.json({ ok: false, rueckmeldung: '', fehler: `Vorgang ${befehl.ksNummer} wurde nicht gefunden.` });
+        // Auch über die KS-Nummer gilt die Zuständigkeit (Bauleiter nur eigene und unzugewiesene Vorgänge).
+        const zugriff = await anfrageFuerSession(a.id, session);
+        if (!zugriff.ok) return zugriff.antwort;
 
         const aktuelleNotiz = a.interneNotizen ? `${a.interneNotizen}\n${befehl.text}` : befehl.text;
-        await db.update(anfrageTabelle).set({ interneNotizen: aktuelleNotiz, bemerkung: 'Anpassung via Dispatch' }).where(eq(anfrageTabelle.id, a.id));
+        // Die Bemerkung bleibt unangetastet: dort steht etwa der Terminwunsch des Kunden.
+        await db.update(anfrageTabelle).set({ interneNotizen: aktuelleNotiz }).where(eq(anfrageTabelle.id, a.id));
         await schreibeEreignis({ anfrageId: a.id, typ: 'dispatch:anpassung', benutzerId: session.benutzerId, payload: { notiz: befehl.text } });
         return NextResponse.json({ ok: true, ksNummer: a.ksNummer, anfrageId: a.id, rueckmeldung: `${a.ksNummer}: Notiz hinzugefügt.` });
       }
@@ -1085,6 +1091,9 @@ export async function POST(
 
   // Terminfenster neu
   if (slug.length === 2 && slug[0] === 'termine' && slug[1] === 'neu') {
+    if (session.rolle !== 'chef' && session.rolle !== 'buero') {
+      return NextResponse.json({ ok: false, fehler: 'Terminfenster legen Chef und Büro an.' }, { status: 403 });
+    }
     const body = await leseBody(request, terminfensterNeuSchema);
     if (!body.ok) return body.antwort;
     try {
@@ -1104,12 +1113,20 @@ export async function POST(
 
   // Terminfenster löschen
   if (slug.length === 2 && slug[0] === 'termine' && slug[1] === 'loeschen') {
+    if (session.rolle !== 'chef') {
+      return NextResponse.json({ ok: false, fehler: 'Terminfenster löscht nur der Chef.' }, { status: 403 });
+    }
     const body = await leseBody(request, terminfensterLoeschenSchema);
     if (!body.ok) return body.antwort;
     try {
       const { id } = body.daten;
       const db = await getDb();
-      await db.delete(terminfensterReservierung).where(eq(terminfensterReservierung.terminfensterId, id));
+      // Ein reserviertes Fenster gehört zu einem Vorgang (Regel 6) und wird nicht still gelöscht.
+      const belegt = await db.select({ anfrageId: terminfensterReservierung.anfrageId })
+        .from(terminfensterReservierung).where(eq(terminfensterReservierung.terminfensterId, id)).limit(1);
+      if (belegt[0]) {
+        return NextResponse.json({ ok: false, fehler: 'Das Fenster ist für einen Vorgang reserviert. Erst den Vorgang umbuchen oder verwerfen.' }, { status: 409 });
+      }
       await db.delete(terminfenster).where(eq(terminfenster.id, id));
       return NextResponse.json({ ok: true });
     } catch (err) {

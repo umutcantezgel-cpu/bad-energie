@@ -174,6 +174,7 @@ export default async function InternCatchAllPage({
         ende: terminfenster.ende,
         ksNummer: anfrageTabelle.ksNummer,
         anfrageId: anfrageTabelle.id,
+        bearbeiterId: anfrageTabelle.bearbeiterId,
       })
       .from(terminfenster)
       .leftJoin(
@@ -191,8 +192,10 @@ export default async function InternCatchAllPage({
       beschriftung: f.beschriftung,
       beginn: f.beginn ? f.beginn.toISOString() : '',
       ende: f.ende ? f.ende.toISOString() : '',
-      reserviertFuerKsNummer: f.ksNummer,
-      reserviertFuerAnfrageId: f.anfrageId,
+      // Dieselbe Regel wie im Board: fremde, zugeteilte Vorgänge bleiben für den Bauleiter ohne Kennung.
+      ...(f.anfrageId && !darfSehen(session, { bearbeiterId: f.bearbeiterId })
+        ? { reserviertFuerKsNummer: 'belegt', reserviertFuerAnfrageId: null }
+        : { reserviertFuerKsNummer: f.ksNummer, reserviertFuerAnfrageId: f.anfrageId }),
     }));
 
     return (

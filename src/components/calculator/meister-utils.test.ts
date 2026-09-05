@@ -378,9 +378,13 @@ describe('Gebäude im Reduzierer', () => {
 
 describe('Fehlende Angaben zu Zugang und Bestand', () => {
   it('warnt bei einer Türbreite unter 80 cm', () => {
-    const eng = meisterReduzierer(leereAnfrage(), { typ: 'gebaeudePlatz', teil: { tuerbreiteCm: 73 } });
+    // Der Transportweg zählt nur für die Wärmepumpe; ein Bad braucht keine Türbreitenwarnung.
+    const wp = { ...leereAnfrage(), vorlageIds: ['waermepumpe_gas'] };
+    const eng = meisterReduzierer(wp, { typ: 'gebaeudePlatz', teil: { tuerbreiteCm: 73 } });
     expect(fehlendeAngaben(eng).some((f) => f.includes('Türbreite unter 80 cm'))).toBe(true);
-    const breit = meisterReduzierer(leereAnfrage(), { typ: 'gebaeudePlatz', teil: { tuerbreiteCm: 90 } });
+    const bad = meisterReduzierer({ ...leereAnfrage(), vorlageIds: ['bad_komplett'] }, { typ: 'gebaeudePlatz', teil: { tuerbreiteCm: 73 } });
+    expect(fehlendeAngaben(bad).some((f) => f.includes('Türbreite'))).toBe(false);
+    const breit = meisterReduzierer(wp, { typ: 'gebaeudePlatz', teil: { tuerbreiteCm: 90 } });
     expect(breit.gebaeude.platz.tuerbreiteCm).toBe(90);
     expect(fehlendeAngaben(breit).some((f) => f.includes('Türbreite'))).toBe(false);
   });

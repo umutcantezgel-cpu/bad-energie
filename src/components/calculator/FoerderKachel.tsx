@@ -115,13 +115,14 @@ export default function FoerderKachel({ eingabe, regeln, ergebnis, kundenansicht
       {!kundenansicht ? (
         <label className="mt-4 block">
           <span className="block text-sm font-medium text-slate-700">Satz von Hand in Prozent</span>
+          <span className="block text-sm text-slate-500">Leer lassen für die Bausteine. Ohne Förderung den Schalter „Förderung prüfen“ abwählen.</span>
           <input
             type="number"
             inputMode="numeric"
-            min={0}
+            min={1}
             max={regeln?.deckel ?? 70}
             value={eingabe.satzManuell === null || eingabe.satzManuell === undefined ? '' : String(eingabe.satzManuell)}
-            onChange={(e) => onAendern({ satzManuell: e.target.value === '' ? null : Number(e.target.value) })}
+            onChange={(e) => onAendern({ satzManuell: e.target.value === '' || Number(e.target.value) < 1 ? null : Number(e.target.value) })}
             className="glass-input mt-1 h-12 w-32 rounded-2xl border border-slate-200 bg-white px-3 text-base tabular-nums text-slate-900"
           />
         </label>
