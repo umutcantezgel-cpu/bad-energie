@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { badAntwortenSchema, dringlichkeitSchema, heizungAntwortenSchema, objektSchema, wpAntwortenSchema } from '@/lib/types';
+import { foerderSatzText, heizkostenSatz } from '@/components/calculator/konfigurator-utils';
+import {
+  badAntwortenSchema,
+  dringlichkeitSchema,
+  heizungAntwortenSchema,
+  objektSchema,
+  wpAntwortenSchema,
+  type OeffentlicheErgebnisDTO,
+} from '@/lib/types';
 import {
   JOURNEYS,
   JOURNEY_IDS,
@@ -14,7 +22,7 @@ import {
 } from './index';
 import type { AuswahlFrage, Journey, JourneyId } from './typen';
 
-const ERWARTETE_SCHRITTE: Record<JourneyId, number> = { bad: 6, heizung: 7, waermepumpe: 6 };
+const ERWARTETE_SCHRITTE: Record<JourneyId, number> = { bad: 6, heizung: 7, waermepumpe: 7 };
 
 function auswahlFragen(journey: Journey): AuswahlFrage[] {
   return journey.schritte
@@ -167,13 +175,121 @@ describe('Journeys: Schrittpruefung', () => {
   it('waermepumpe: der vollstaendige Zustand laeuft durch', () => {
     const journey = JOURNEYS.waermepumpe;
     let zustand = leererZustand(journey);
-    const zeitSchritt = journey.schritte[4];
+    const zeitSchritt = journey.schritte[5];
     for (const frage of zeitSchritt.fragen) {
       if (frage.feld === 'plz') zustand = schreibeWert(zustand, frage, '35576');
       if (frage.feld === 'eigentum') zustand = schreibeWert(zustand, frage, 'eigentum');
       if (frage.feld === 'dringlichkeit') zustand = schreibeWert(zustand, frage, 'sofort');
     }
     expect(pruefeAlle(journey, zustand)).toBeNull();
+  });
+});
+
+describe('Journeys: Portal-Felder', () => {
+  it('heizung und waermepumpe fragen Personen, Verbrauch und Standort ab', () => {
+    for (const id of ['heizung', 'waermepumpe'] as const) {
+      const felder = JOURNEYS[id].schritte.flatMap((s) => s.fragen).map((f) => f.feld);
+      expect(felder, id).toContain('personen');
+      expect(felder, id).toContain('verbrauchJahr');
+      expect(felder, id).toContain('standortHeizung');
+    }
+  });
+
+  it('waermepumpe fragt Alter, Selbstbewohnung und Einkommen ab', () => {
+    const felder = JOURNEYS.waermepumpe.schritte.flatMap((s) => s.fragen).map((f) => f.feld);
+    expect(felder).toContain('alter');
+    expect(felder).toContain('selbstBewohnt');
+    expect(felder).toContain('einkommenUnterGrenze');
+    expect(JOURNEYS.waermepumpe.schritte.map((s) => s.id)).toEqual([
+      'heute',
+      'haus',
+      'verteilung',
+      'komfort',
+      'foerderung',
+      'zeit',
+      'kontakt',
+    ]);
+  });
+
+  it('die Verbrauchsfrage ist ein optionales Zahlenfeld mit passender Einheit', () => {
+    for (const id of ['heizung', 'waermepumpe'] as const) {
+      const fragen = JOURNEYS[id].schritte
+        .flatMap((s) => s.fragen)
+        .filter((f) => f.feld === 'verbrauchJahr' && f.art === 'zahl');
+      expect(fragen, id).toHaveLength(2);
+      for (const frage of fragen) {
+        expect(frage.optional, id).toBe(true);
+        expect((frage as { eingabe?: string }).eingabe, id).toBe('feld');
+      }
+      const einheiten = fragen.map((f) => (f as { einheit: string }).einheit);
+      expect(einheiten, id).toContain('kWh im Jahr');
+      expect(einheiten, id).toContain('Liter im Jahr');
+    }
+  });
+
+  it('eine leere Verbrauchsangabe ist gueltig, eine gefuellte ebenso', () => {
+    for (const id of ['heizung', 'waermepumpe'] as const) {
+      const journey = JOURNEYS[id];
+      const zustand = leererZustand(journey);
+      expect(zustand.antworten.verbrauchJahr, id).toBeNull();
+      expect(pruefeSchritt(journey, 0, zustand), id).toEqual({});
+
+      const gefuellt = { ...zustand, antworten: { ...zustand.antworten, verbrauchJahr: 22_000 } };
+      expect(pruefeSchritt(journey, 0, gefuellt), id).toEqual({});
+      expect(antwortenSchemaFuer(id).safeParse(gefuellt.antworten).success, id).toBe(true);
+    }
+  });
+
+  it('die Standardantworten der Oel-Strecke bleiben gueltig', () => {
+    const journey = JOURNEYS.heizung;
+    const zustand = leererZustand(journey);
+    zustand.antworten.heutig = 'oel';
+    zustand.antworten.verbrauchJahr = null;
+    expect(pruefeSchritt(journey, 0, zustand)).toEqual({});
+  });
+});
+
+describe('Ergebnistexte: Sprache', () => {
+  const dto: OeffentlicheErgebnisDTO = {
+    pfad: 'spanne',
+    bruttoVonGerundet: 22_000,
+    bruttoBisGerundet: 27_000,
+    foerderzuschuss: 14_850,
+    foerderSatz: 55,
+    foerderBausteine: ['Grundförderung 30 %', 'Alte Gas- oder Ölheizung 20 %', 'Natürliches Kältemittel (R290) 5 %'],
+    eigenanteilVon: 7_000,
+    eigenanteilBis: 12_000,
+    heizkostenHeuteJahr: 2_420,
+    heizkostenWpJahr: 1_510,
+    heizkostenWpMonat: 125,
+    ersparnisJahr: 910,
+    energieartLabel: 'Gas',
+    nichtEnthalten: [],
+  };
+
+  it('der Heizkostensatz nennt beide Betraege, den Monat und die Ersparnis', () => {
+    const satz = heizkostenSatz(dto);
+    expect(satz).toContain('2.420 € im Jahr');
+    expect(satz).toContain('1.510 € im Jahr');
+    expect(satz).toContain('125 € im Monat');
+    expect(satz).toContain('910 € im Jahr');
+    expect(satz).toContain('(Gas)');
+  });
+
+  it('der Foerdertext nennt Satz und Bausteine', () => {
+    const text = foerderSatzText(dto);
+    expect(text).toContain('55 Prozent');
+    expect(text).toContain('Darin enthalten: Grundförderung 30 %');
+  });
+
+  it('beide Texte tragen keinen verbotenen Fachbegriff', () => {
+    expect(verboteneBegriffe(heizkostenSatz(dto))).toEqual([]);
+    expect(verboteneBegriffe(foerderSatzText(dto))).toEqual([]);
+  });
+
+  it('ohne Heizkosten bleibt der Satz leer', () => {
+    expect(heizkostenSatz({ pfad: 'vorangebot', nichtEnthalten: [] })).toBe('');
+    expect(foerderSatzText({ pfad: 'vorangebot', nichtEnthalten: [] })).toBe('');
   });
 });
 

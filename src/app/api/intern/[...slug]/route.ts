@@ -1,7 +1,7 @@
 import { NextResponse, after } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
-import { and, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNull } from 'drizzle-orm';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { Webhook } from 'svix';
 import { getDb } from '@/db/client';
@@ -44,9 +44,9 @@ import {
   legeAusKundenAnfrage,
   speichereInternAnfrage,
   stornieren as stornierenService,
+  triageFuerAnfrage,
 } from '@/lib/services/estimates';
 import {
-  ladeEinstellungen,
   ladeFoerderRegeln,
   ladeKalkulationsdaten as ladeKalkulationsdatenService,
   ladeMatrix,
@@ -56,7 +56,7 @@ import { pinGueltig, pinHashen } from '@/lib/services/pin';
 import { pruefeLimit } from '@/lib/services/ratelimit';
 import { schreibeEreignis } from '@/lib/services/statusmaschine';
 import { ausDataUrl, getStorage, speichereFoto, speichereSkizze } from '@/lib/services/storage';
-import { euro } from '@/lib/services/calculation';
+import { euro, positionAusBaustein } from '@/lib/services/calculation';
 import {
   sendeBueroHinweis,
   sendeEingangsbestaetigung,
@@ -68,7 +68,6 @@ import { speicherfristJob } from '@/lib/jobs/speicherfrist';
 import { versandJob } from '@/lib/jobs/versand';
 import { wiedervorlageJob } from '@/lib/jobs/wiedervorlage';
 import { istJobName, mitJobSperre, type JobErgebnis, type JobName } from '@/lib/jobs/runner';
-import type { DispatchBefehl } from '@/lib/services/dispatch-parser';
 import {
   estimateRequestSchema,
   type AnfrageStatus,
@@ -77,12 +76,12 @@ import {
   type InternAnfrage,
   type Rolle,
 } from '@/lib/types';
-import { leeresGebaeude } from '@/lib/services/heizlast';
+import { geraeteVorschlag, heizlastSchaetzen, leeresGebaeude, speicherVorschlag } from '@/lib/services/heizlast';
 import { pruefeHerkunft } from '@/lib/services/herkunft';
 import {
-  benutzerNeuSchema, benutzerPinSchema, benutzerToggleSchema, einstellungenSchema, foerderRegelnSchema, freigebenSchema,
+  benutzerNeuSchema, benutzerPinSchema, benutzerToggleSchema, dispatchBefehlSchema, einstellungenSchema, foerderRegelnSchema, freigebenSchema,
   matrixDemoSchema, matrixZeileSchema, statusWechselSchema, stornierenSchema, terminfensterLoeschenSchema, terminfensterNeuSchema,
-  vorbehaltNeuSchema, vorbehaltToggleSchema,
+  vorbehaltNeuSchema,
 } from '@/lib/types';
 import { demoPreiseSetzen } from '@/db/seed';
 import type { VersandArt } from '@/lib/types';
@@ -160,6 +159,13 @@ async function leseBody<S extends z.ZodType>(request: NextRequest, schema: S): P
   }
   return { ok: true, daten: parse.data as z.infer<S> };
 }
+
+/** Kurzlabel des Triage-Vorschlags für die Rückmeldung im Dispatch. */
+const TRIAGE_KURZ: Record<'kostenschaetzung' | 'terminmail' | 'verwerfen', string> = {
+  kostenschaetzung: 'Kostenschätzung erstellen',
+  terminmail: 'Nur Terminmail',
+  verwerfen: 'Verwerfen',
+};
 
 const VERSAND_BUDGET_MS = 90_000;
 function warte(ms: number): Promise<'zeit'> {
@@ -355,11 +361,8 @@ export async function POST(
         return NextResponse.json({ fehler: 'Ungültige Signatur.' }, { status: 400 });
       }
     } else {
-      try {
-        event = JSON.parse(rawBody);
-      } catch {
-        return NextResponse.json({ fehler: 'Ungültiges JSON.' }, { status: 400 });
-      }
+      // Ohne Signaturgeheimnis wird kein Ereignis angenommen: sonst könnte jeder Zustellstatus fälschen.
+      return NextResponse.json({ fehler: 'Webhook nicht konfiguriert (RESEND_WEBHOOK_SECRET fehlt).' }, { status: 401 });
     }
 
     const resendId = event.data?.email_id || event.data?.id;
@@ -653,21 +656,6 @@ export async function POST(
     }
   }
 
-  // Vorbehalt toggle
-  if (slug.length === 2 && slug[0] === 'matrix' && slug[1] === 'vorbehalt-toggle') {
-    if (session.rolle !== 'chef') return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf den Vorbehaltskatalog ändern.' }, { status: 403 });
-    const body = await leseBody(request, vorbehaltToggleSchema);
-    if (!body.ok) return body.antwort;
-    try {
-      const { id, aktiv } = body.daten;
-      const db = await getDb();
-      await db.update(vorbehalt).set({ aktiv }).where(eq(vorbehalt.id, id));
-      return NextResponse.json({ ok: true });
-    } catch (err) {
-      return NextResponse.json({ ok: false, fehler: (err as Error).message }, { status: 500 });
-    }
-  }
-
   // Vorbehalt neu
   if (slug.length === 2 && slug[0] === 'matrix' && slug[1] === 'vorbehalt-neu') {
     if (session.rolle !== 'chef') return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf den Vorbehaltskatalog ändern.' }, { status: 403 });
@@ -697,8 +685,10 @@ export async function POST(
 
   // Mobile Dispatch
   if (slug.length === 1 && slug[0] === 'dispatch') {
+    const dispatchBody = await leseBody(request, dispatchBefehlSchema);
+    if (!dispatchBody.ok) return dispatchBody.antwort;
+    const befehl = dispatchBody.daten;
     try {
-      const befehl = (await request.json()) as DispatchBefehl;
       const db = await getDb();
 
       if (befehl.art === 'freigeben' || befehl.art === 'freigeben_sofort') {
@@ -802,6 +792,83 @@ export async function POST(
           ksNummer: res.ksNummer,
           anfrageId: res.anfrageId,
           rueckmeldung: `${res.ksNummer} ${befehl.nachname || 'ohne Namen'}, ${befehl.vorhabenKurz}, ${spanneBrutto}, liegt in ${res.status}.${fehltText}`,
+        });
+      }
+
+      if (befehl.art === 'portal_lead') {
+        const { vorlagen, matrix } = await ladeKalkulationsdatenService();
+        const gebaeude = befehl.gebaeude;
+        const schaetzung = heizlastSchaetzen(gebaeude);
+        const hersteller = gebaeude.geraet.hersteller;
+
+        // Positionen wie im Meister-Modus: Größenvariante aus der Heizlast, Speicher nach Personen.
+        const positionen = befehl.vorlageIds.flatMap((vId) => {
+          const v = vorlagen.find((x) => x.id === vId);
+          if (!v) return [];
+          return v.bausteine.map((b) => {
+            const vorschlag = schaetzung ? geraeteVorschlag(schaetzung.kwBis, b.groessenVarianten, hersteller) : null;
+            const variante = b.groessenVarianten?.find((x) => x.matrixNr === vorschlag?.matrixNr) ?? null;
+            const speicher = vorschlag ? speicherVorschlag(gebaeude.personen, variante?.speicherLiterOptionen) : null;
+            return positionAusBaustein(b, matrix, {
+              varianteMatrixNr: vorschlag?.matrixNr ?? null,
+              kW: vorschlag?.geraetKw,
+              liter: speicher?.liter,
+            });
+          });
+        });
+
+        const vorlage = vorlagen.find((v) => v.id === befehl.vorlageIds[0]) ?? null;
+        const portalLabel = befehl.portal === 'wattfox' ? 'WattFox' : 'unbekanntes Portal';
+
+        const res = await speichereInternAnfrage({
+          modus: 'intern',
+          aktion: 'entwurf',
+          quelle: 'dispatch',
+          vorlageIds: befehl.vorlageIds,
+          kontakt: { ...befehl.kontakt, kenntnisnahme: true },
+          objekt: befehl.objekt,
+          gebaeude,
+          dringlichkeit: 'unklar',
+          vorhabenKurz: befehl.vorhabenKurz,
+          positionen,
+          kalkulation: {},
+          foerderung: {
+            aktiv: vorlage?.foerderungStandard ?? false,
+            wohneinheiten: befehl.objekt.wohneinheiten,
+            selbstBewohnt: befehl.foerderung.selbstBewohnt,
+            altOelOderGas: befehl.foerderung.altOelOderGas,
+            einkommenUnterGrenze: false,
+            natuerlichesKaeltemittel: true,
+          },
+          // Der Portal-Text ist eine interne Notiz, nie der persönliche Satz des Kundendokuments.
+          persoenlicherSatz: '',
+          annahmen: [],
+          vorbehalte: [],
+          ausfuehrungSatz: '',
+          terminfensterIds: [],
+          notizen: {
+            etage: null, aufzug: null, montagehindernisse: '', leitungswege: '',
+            intern: `Portal-Lead (${portalLabel}):\n${befehl.rohtext}`.slice(0, 3000),
+          },
+          skizzen: [],
+          fotos: [],
+        }, session);
+
+        const triageErgebnis = await triageFuerAnfrage(res.anfrageId, { eigentum: befehl.objekt.eigentum });
+        const daten = await ladeVorgang(res.anfrageId);
+        const fehlt = daten ? fehlendeAngaben(daten, res.ergebnis) : [];
+        const spanneBrutto = res.ergebnis.bruttoBis > 0
+          ? `${euro(res.ergebnis.bruttoVon)} bis ${euro(res.ergebnis.bruttoBis)} € brutto`
+          : 'noch ohne Spanne';
+        const fehltAlle = [...befehl.hinweise, ...fehlt];
+        const fehltText = fehltAlle.length > 0 ? ` Fehlt: ${fehltAlle.slice(0, 4).join('; ')}.` : '';
+        const triageText = triageErgebnis ? TRIAGE_KURZ[triageErgebnis.vorschlag] : 'offen';
+
+        return NextResponse.json({
+          ok: true,
+          ksNummer: res.ksNummer,
+          anfrageId: res.anfrageId,
+          rueckmeldung: `${res.ksNummer} ${befehl.kontakt.nachname || 'ohne Namen'}, ${befehl.vorhabenKurz}, ${spanneBrutto}, Triage: ${triageText}.${fehltText}`,
         });
       }
 
@@ -1146,7 +1213,10 @@ export async function GET(
 
     const encodedFilename = encodeURIComponent(a.dateiname).replace(/['()]/g, escape);
     const istPdf = a.mime === 'application/pdf';
-    const disposition = istPdf
+    // PDFs werden heruntergeladen; mit ?inline=1 laufen sie in die Vorschau im Rahmen (Anfrage-Detail).
+    const inlineGewuenscht = request.nextUrl.searchParams.get('inline') === '1';
+    const alsAnhang = istPdf && !inlineGewuenscht;
+    const disposition = alsAnhang
       ? `attachment; filename="${a.dateiname.replace(/"/g, '')}"; filename*=UTF-8''${encodedFilename}`
       : `inline; filename="${a.dateiname.replace(/"/g, '')}"; filename*=UTF-8''${encodedFilename}`;
 

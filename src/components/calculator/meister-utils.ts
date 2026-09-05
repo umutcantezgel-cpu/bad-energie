@@ -6,12 +6,16 @@
  * Textregeln direkt mit Vitest pruefbar. Zugriffe auf localStorage und document
  * stehen ausschliesslich in den Ansichtsfunktionen und sind dort abgesichert.
  */
+import { gebaeudeSchema, internAnfrageSchema } from '@/lib/types';
 import type {
   Baustein,
+  GebaeudeDaten,
   Gewerk,
+  GroessenVariante,
   Hinweis,
   InternAnfrage,
   InternAnfrageDTO,
+  KalkulationsErgebnis,
   Position,
   SkizzeExport,
 } from '@/lib/types';
@@ -92,6 +96,11 @@ export function textregelWarnungen(text: string): string[] {
   return warnungen;
 }
 
+/** Mindestens eine Waermepumpen-Vorlage gewaehlt (steuert Pflichtangaben und Geraetevorschlag). */
+export function istWaermepumpenVorlage(vorlageIds: string[]): boolean {
+  return vorlageIds.some((id) => id.toLowerCase().includes('waermepumpe'));
+}
+
 /** Fehlende Pflichtangaben nach Regel 3 (Anzeige im Abschluss). */
 export function fehlendeAngaben(a: InternAnfrage): string[] {
   const fehlt: string[] = [];
@@ -102,7 +111,74 @@ export function fehlendeAngaben(a: InternAnfrage): string[] {
   if (!a.objekt.adresse) fehlt.push('Objektadresse');
   if (a.terminfensterIds.length !== 2) fehlt.push('Zwei Terminfenster');
   if (!a.persoenlicherSatz.trim()) fehlt.push('Persoenlicher Satz');
+  // Zugang und Bestand nach der Arbeitsweise des Chefs (Beleg 3 und 10).
+  const tuer = a.gebaeude.platz.tuerbreiteCm;
+  if (tuer !== null && tuer < 80) fehlt.push('Türbreite unter 80 cm, Transportweg klären');
+  if (istWaermepumpenVorlage(a.vorlageIds) && !a.gebaeude.bestand.energieart) fehlt.push('Bestehende Heizung');
   return fehlt;
+}
+
+/** Kennungen der Abschnitte des Meister-Modus (Reihenfolge des gefuehrten Modus). */
+export const ABSCHNITT_IDS = ['vorhaben', 'bausteine', 'kunde', 'gebaeude', 'notizen', 'dokument', 'abschluss'] as const;
+export type AbschnittId = (typeof ABSCHNITT_IDS)[number];
+
+/**
+ * Offene Punkte eines Abschnitts im gefuehrten Modus. Reine Pruefung ohne Nebenwirkung.
+ * Nur blockierte Basispositionen sperren das Weitergehen; alles andere ist ein Hinweis.
+ */
+export function schrittPruefung(id: AbschnittId, a: InternAnfrage, ergebnis: KalkulationsErgebnis): string[] {
+  const offen: string[] = [];
+  switch (id) {
+    case 'vorhaben':
+      if (!a.vorlageIds.length) offen.push('Mindestens ein Vorhaben wählen.');
+      break;
+    case 'bausteine':
+      for (const p of ergebnis.positionen) {
+        if (!p.zuschlag && p.blockiert) offen.push(`„${p.titel}“ hat keine Spanne. Größe oder Matrixzeile klären.`);
+      }
+      break;
+    case 'kunde':
+      if (!a.kontakt.nachname || a.kontakt.nachname.trim().length < 2) offen.push('Nachname fehlt.');
+      if (!a.kontakt.email.trim() && !(a.kontakt.telefon ?? '').trim()) offen.push('E-Mail oder Telefon fehlt.');
+      break;
+    case 'gebaeude':
+      if (!a.gebaeude.wohnflaeche) offen.push('Wohnfläche fehlt.');
+      if (istWaermepumpenVorlage(a.vorlageIds) && !a.gebaeude.bestand.energieart) offen.push('Bestehende Heizung fehlt.');
+      break;
+    case 'notizen':
+      break;
+    case 'dokument':
+      if (!a.persoenlicherSatz.trim()) offen.push('Persönlicher Satz fehlt.');
+      if (a.terminfensterIds.length !== 2) offen.push('Zwei Terminfenster wählen.');
+      break;
+    case 'abschluss':
+      break;
+    default:
+      break;
+  }
+  return offen;
+}
+
+/** Nur blockierte Basispositionen sperren den naechsten Schritt (Fachregel 2). */
+export function schrittSperrt(id: AbschnittId, ergebnis: KalkulationsErgebnis): boolean {
+  return id === 'bausteine' && ergebnis.positionen.some((p) => !p.zuschlag && p.blockiert);
+}
+
+/**
+ * kW-Wert fuer den Positionstext: das vor Ort bestaetigte Geraet, wenn es zur gewaehlten
+ * Groessenvariante passt, sonst die Beschriftung der Variante („5 bis 7“).
+ */
+export function kwFuerVariante(
+  variante: GroessenVariante | null | undefined,
+  geraetKw: number | null | undefined,
+): string | number | undefined {
+  if (!variante) return undefined;
+  if (geraetKw !== null && geraetKw !== undefined && Number.isFinite(geraetKw)) {
+    const von = variante.heizlastKwVon ?? 0;
+    const bis = variante.heizlastKwBis ?? Number.POSITIVE_INFINITY;
+    if (geraetKw >= von && geraetKw <= bis) return geraetKw;
+  }
+  return variante.kwLabel;
 }
 
 // ---------------------------------------------------------------------------
@@ -142,6 +218,45 @@ export function leereAnfrage(): InternAnfrage {
   };
 }
 
+/** Fuellt fehlende Gebaeudeteile mit Standardwerten (alte Datensaetze ohne `gebaeude`). */
+export function normalisiereGebaeude(roh: unknown): GebaeudeDaten {
+  const geparst = gebaeudeSchema.safeParse(roh ?? {});
+  return geparst.success ? geparst.data : leeresGebaeude();
+}
+
+/**
+ * Ergaenzt einen alten Entwurf aus IndexedDB um neue Teile (vor allem `gebaeude`).
+ * Vollstaendige Entwuerfe laufen ueber `internAnfrageSchema`, unvollstaendige werden
+ * feldweise mit der leeren Anfrage aufgefuellt, damit ein Termin nie an einer
+ * fehlenden Struktur scheitert.
+ */
+export function normalisiereAnfrage(lokal: unknown): InternAnfrage {
+  const leer = leereAnfrage();
+  if (!lokal || typeof lokal !== 'object') return leer;
+  const geparst = internAnfrageSchema.safeParse(lokal);
+  if (geparst.success) return geparst.data;
+  const roh = lokal as Partial<InternAnfrage>;
+  return {
+    ...leer,
+    ...roh,
+    modus: 'intern',
+    aktion: roh.aktion ?? 'entwurf',
+    kontakt: { ...leer.kontakt, ...roh.kontakt, kenntnisnahme: true },
+    objekt: { ...leer.objekt, ...roh.objekt },
+    gebaeude: normalisiereGebaeude(roh.gebaeude),
+    kalkulation: { ...leer.kalkulation, ...roh.kalkulation },
+    foerderung: { ...leer.foerderung, ...roh.foerderung },
+    notizen: { ...leer.notizen, ...roh.notizen },
+    vorlageIds: Array.isArray(roh.vorlageIds) ? [...roh.vorlageIds] : [],
+    positionen: Array.isArray(roh.positionen) ? roh.positionen.map((p) => ({ ...p })) : [],
+    annahmen: Array.isArray(roh.annahmen) ? [...roh.annahmen] : [],
+    vorbehalte: Array.isArray(roh.vorbehalte) ? [...roh.vorbehalte] : [],
+    terminfensterIds: Array.isArray(roh.terminfensterIds) ? roh.terminfensterIds.slice(0, 2) : [],
+    skizzen: Array.isArray(roh.skizzen) ? [...roh.skizzen] : [],
+    fotos: Array.isArray(roh.fotos) ? roh.fotos.map((f) => ({ ...f, beschreibung: f.beschreibung ?? '' })) : [],
+  };
+}
+
 /** Uebernimmt eine geladene Anfrage in den Bearbeitungszustand. */
 export function ausDTO(dto: InternAnfrageDTO): InternAnfrage {
   const leer = leereAnfrage();
@@ -166,6 +281,7 @@ export function ausDTO(dto: InternAnfrageDTO): InternAnfrage {
       eigentum: dto.objekt.eigentum,
       wohneinheiten: dto.objekt.wohneinheiten,
     },
+    gebaeude: normalisiereGebaeude(dto.gebaeude),
     dringlichkeit: dto.dringlichkeit,
     vorhabenKurz: dto.vorhabenKurz,
     gewerkHaupt: dto.gewerkHaupt ?? undefined,
@@ -186,6 +302,10 @@ export type MeisterAktion =
   | { typ: 'feld'; teil: Partial<InternAnfrage> }
   | { typ: 'kontakt'; teil: Partial<InternAnfrage['kontakt']> }
   | { typ: 'objekt'; teil: Partial<InternAnfrage['objekt']> }
+  | { typ: 'gebaeude'; teil: Partial<GebaeudeDaten> }
+  | { typ: 'gebaeudeBestand'; teil: Partial<GebaeudeDaten['bestand']> }
+  | { typ: 'gebaeudePlatz'; teil: Partial<GebaeudeDaten['platz']> }
+  | { typ: 'gebaeudeGeraet'; teil: Partial<GebaeudeDaten['geraet']> }
   | { typ: 'kalkulation'; teil: Partial<InternAnfrage['kalkulation']> }
   | { typ: 'foerderung'; teil: Partial<InternAnfrage['foerderung']> }
   | { typ: 'notizen'; teil: Partial<InternAnfrage['notizen']> }
@@ -197,6 +317,7 @@ export type MeisterAktion =
   | { typ: 'skizzeSetzen'; index: number; skizze: SkizzeExport }
   | { typ: 'skizzeEntfernen'; index: number }
   | { typ: 'fotosHinzu'; fotos: InternAnfrage['fotos'] }
+  | { typ: 'fotoBeschreibung'; index: number; beschreibung: string }
   | { typ: 'fotoEntfernen'; index: number };
 
 /** Reiner Reduzierer des Bearbeitungszustands. */
@@ -219,6 +340,14 @@ export function meisterReduzierer(zustand: InternAnfrage, aktion: MeisterAktion)
         gebaeude: { ...zustand.gebaeude, wohneinheiten: objekt.wohneinheiten },
       };
     }
+    case 'gebaeude':
+      return { ...zustand, gebaeude: { ...zustand.gebaeude, ...aktion.teil } };
+    case 'gebaeudeBestand':
+      return { ...zustand, gebaeude: { ...zustand.gebaeude, bestand: { ...zustand.gebaeude.bestand, ...aktion.teil } } };
+    case 'gebaeudePlatz':
+      return { ...zustand, gebaeude: { ...zustand.gebaeude, platz: { ...zustand.gebaeude.platz, ...aktion.teil } } };
+    case 'gebaeudeGeraet':
+      return { ...zustand, gebaeude: { ...zustand.gebaeude, geraet: { ...zustand.gebaeude.geraet, ...aktion.teil } } };
     case 'kalkulation':
       return { ...zustand, kalkulation: { ...zustand.kalkulation, ...aktion.teil } };
     case 'foerderung':
@@ -259,6 +388,11 @@ export function meisterReduzierer(zustand: InternAnfrage, aktion: MeisterAktion)
       return { ...zustand, skizzen: zustand.skizzen.filter((_, i) => i !== aktion.index) };
     case 'fotosHinzu':
       return { ...zustand, fotos: [...zustand.fotos, ...aktion.fotos].slice(0, 10) };
+    case 'fotoBeschreibung':
+      return {
+        ...zustand,
+        fotos: zustand.fotos.map((f, i) => (i === aktion.index ? { ...f, beschreibung: aktion.beschreibung } : f)),
+      };
     case 'fotoEntfernen':
       return { ...zustand, fotos: zustand.fotos.filter((_, i) => i !== aktion.index) };
     default:
@@ -457,6 +591,29 @@ function gespeichert(schluessel: string): boolean | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Grobes Zeigegeraet (Finger statt Maus). Quelle fuer den Standard des gefuehrten Modus;
+ * als externer Speicher fuer `useSyncExternalStore`, damit Server und Client gleich starten.
+ */
+export function zeigerAbonnieren(hoerer: () => void): () => void {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return () => undefined;
+  try {
+    const abfrage = window.matchMedia('(pointer: coarse)');
+    abfrage.addEventListener('change', hoerer);
+    return () => abfrage.removeEventListener('change', hoerer);
+  } catch {
+    return () => undefined;
+  }
+}
+
+export function zeigerGrobLesen(): boolean {
+  return medienTreffer('(pointer: coarse)');
+}
+
+export function zeigerServerLesen(): boolean {
+  return false;
 }
 
 /** Standard: Kundenansicht an auf Touch unter 1280 px, Baustellen-Modus bei reduzierter Transparenz. */

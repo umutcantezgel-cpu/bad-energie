@@ -122,14 +122,19 @@ function KundenModus({
     queueMicrotask(() => {
       const stand = ladeStand(journeyId);
       if (stand) {
-        setZustand(stand.zustand);
+        // Aeltere Staende kennen neue Fragen nicht: Standardantworten untermischen,
+        // damit der Zustand gegen das aktuelle Schema gueltig bleibt.
+        setZustand({
+          ...stand.zustand,
+          antworten: { ...journey.standardAntworten, ...stand.zustand.antworten },
+        });
         setSchritt(Math.min(stand.schritt, anzahl - 2));
         setWiederaufnahme(true);
         setAusgeklappt(true);
       }
       setBereit(true);
     });
-  }, [journeyId, anzahl]);
+  }, [journey, journeyId, anzahl]);
 
   // Nur anonyme Antworten werden gespeichert, nie der Kontaktschritt.
   useEffect(() => {

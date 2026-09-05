@@ -2,7 +2,24 @@
 
 import { useState } from 'react';
 import type { Einstellungen } from '@/lib/services/kalkulationsdaten';
+import type { BetriebskostenEinstellungen } from '@/lib/types';
 import { speichereEinstellungen } from './actions';
+
+/** Felder des Betriebskostenvergleichs in der Reihenfolge, in der der Chef rechnet. */
+const BETRIEBSKOSTEN_FELDER: {
+  feld: keyof BetriebskostenEinstellungen;
+  label: string;
+  schritt: number;
+}[] = [
+  { feld: 'gasCtKwh', label: 'Gaspreis (ct je kWh)', schritt: 0.1 },
+  { feld: 'oelCtLiter', label: 'Heizölpreis (ct je Liter)', schritt: 1 },
+  { feld: 'stromCtKwh', label: 'Strompreis (ct je kWh)', schritt: 0.1 },
+  { feld: 'wpStromCtKwh', label: 'Wärmepumpenstrom (ct je kWh)', schritt: 0.1 },
+  { feld: 'jazStandard', label: 'Jahresarbeitszahl', schritt: 0.1 },
+  { feld: 'pvEigenanteilProzent', label: 'PV-Eigenanteil (%)', schritt: 1 },
+  { feld: 'pelletsCtKg', label: 'Pelletspreis (ct je kg)', schritt: 0.1 },
+  { feld: 'holzEurM3', label: 'Holzpreis (Euro je m³)', schritt: 1 },
+];
 
 export default function EinstellungenClient({
   initialEinstellungen,
@@ -14,21 +31,34 @@ export default function EinstellungenClient({
   const [einst, setEinst] = useState<Einstellungen>(initialEinstellungen);
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<string | null>(null);
+  const [fehler, setFehler] = useState<string | null>(null);
+
+  function setzeBetriebskosten(feld: keyof BetriebskostenEinstellungen, wert: string) {
+    const zahl = Number(wert);
+    setEinst({
+      ...einst,
+      betriebskosten: {
+        ...einst.betriebskosten,
+        [feld]: Number.isFinite(zahl) ? zahl : einst.betriebskosten[feld],
+      },
+    });
+  }
 
   async function handleSpeichern(e: React.FormEvent) {
     e.preventDefault();
     if (!istChef) return;
     setLaeuft(true);
     setMeldung(null);
+    setFehler(null);
     try {
       const res = await speichereEinstellungen(einst);
       if (res.ok) {
-        setMeldung('Einstellungen erfolgreich gespeichert.');
+        setMeldung('Einstellungen gespeichert.');
       } else {
-        alert(res.fehler || 'Fehler beim Speichern.');
+        setFehler(res.fehler || 'Die Einstellungen konnten nicht gespeichert werden.');
       }
     } catch {
-      alert('Ein Fehler ist aufgetreten.');
+      setFehler('Die Einstellungen konnten nicht gespeichert werden.');
     } finally {
       setLaeuft(false);
     }
@@ -46,6 +76,12 @@ export default function EinstellungenClient({
       {meldung ? (
         <div className="p-4 rounded-2xl bg-emerald-50 text-emerald-800 text-sm font-medium">
           {meldung}
+        </div>
+      ) : null}
+
+      {fehler ? (
+        <div role="alert" className="p-4 rounded-2xl bg-[#FEF3F2] text-[#B42318] text-sm font-medium">
+          {fehler}
         </div>
       ) : null}
 
@@ -191,7 +227,42 @@ export default function EinstellungenClient({
           </div>
         </section>
 
-        {/* 3. Briefbogen & Impressum */}
+        {/* 3. Betriebskostenvergleich */}
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 space-y-4">
+          <h2 className="text-lg font-bold text-slate-900">Betriebskostenvergleich</h2>
+          <p className="text-sm text-slate-600">
+            Grundlage für den Vergleich „heute gegen Wärmepumpe“ in der Live-Leiste, im Kundendokument und auf der
+            Ergebnisseite. Die Preise stehen nie im Kundendokument, nur die gerundeten Beträge.
+          </p>
+
+          {einst.demoPreise ? (
+            <p className="rounded-2xl border border-[color:var(--modul-orange,#EE6C1F)] bg-orange-50 p-3 text-sm font-semibold text-[color:var(--modul-orange,#EE6C1F)]">
+              Demo-Preise, vom Chef zu bestätigen. In der Matrix tragen die betroffenen Zeilen ein Demo-Kennzeichen.
+            </p>
+          ) : null}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {BETRIEBSKOSTEN_FELDER.map(({ feld, label, schritt }) => (
+              <div key={feld}>
+                <label htmlFor={`bk-${feld}`} className="block text-sm font-bold text-slate-700 mb-1">
+                  {label}
+                </label>
+                <input
+                  id={`bk-${feld}`}
+                  type="number"
+                  inputMode="decimal"
+                  step={schritt}
+                  disabled={!istChef}
+                  value={einst.betriebskosten[feld]}
+                  onChange={(e) => setzeBetriebskosten(feld, e.target.value)}
+                  className="glass-input h-12 w-full rounded-xl border border-slate-200 px-3 text-base font-semibold tabular-nums"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 4. Briefbogen & Impressum */}
         <section className="rounded-3xl border border-slate-200 bg-white p-6 space-y-4">
           <h2 className="text-lg font-bold text-slate-900">Briefbogen-Stammdaten (PDF &amp; Dokumente)</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

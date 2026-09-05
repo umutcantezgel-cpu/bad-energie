@@ -107,6 +107,74 @@ function Mengensteller({
   );
 }
 
+/** Zahlenfeld mit Einheit als Suffix. Leer bedeutet `null`. */
+function Zahlenfeld({
+  id,
+  label,
+  beschreibung,
+  wert,
+  min,
+  max,
+  einheit,
+  optional,
+  ungueltig,
+  beschriebenVon,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  beschreibung?: string;
+  wert: number | null;
+  min: number;
+  max: number;
+  einheit: string;
+  optional: boolean;
+  ungueltig: boolean;
+  beschriebenVon?: string;
+  onChange: (wert: number | null) => void;
+}) {
+  const anzeige = wert === null ? '' : String(wert);
+  return (
+    <div className="max-w-sm">
+      <label htmlFor={id} className="font-bold text-slate-900" style={{ fontSize: 'var(--font-size-base)' }}>
+        {label}
+      </label>
+      {beschreibung ? (
+        <p className="mt-1 text-slate-600" style={{ fontSize: 'var(--font-size-sm)' }}>
+          {beschreibung}
+        </p>
+      ) : null}
+      <div className="mt-3 flex items-center gap-3">
+        <input
+          id={id}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          value={anzeige}
+          aria-invalid={ungueltig ? true : undefined}
+          aria-describedby={beschriebenVon}
+          placeholder={optional ? 'Bitte eintragen oder frei lassen' : undefined}
+          onChange={(e) => {
+            const ziffern = e.target.value.replace(/[^0-9]/g, '');
+            if (ziffern === '') {
+              onChange(null);
+              return;
+            }
+            const zahlwert = Number(ziffern);
+            if (!Number.isFinite(zahlwert)) return;
+            onChange(Math.min(max, Math.max(min, zahlwert)));
+          }}
+          className="glass-input zahl-tabellarisch fokus-ring w-44 font-bold"
+          style={{ minHeight: '44px' }}
+        />
+        <span className="text-slate-600" style={{ fontSize: 'var(--font-size-base)' }}>
+          {einheit}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function JourneyStep({
   journey,
   schritt,
@@ -194,6 +262,28 @@ export default function JourneyStep({
         }
 
         if (frage.art === 'zahl') {
+          if (frage.eingabe === 'feld') {
+            const roh = leseWert(zustand, frage);
+            const feldWert = typeof roh === 'number' && Number.isFinite(roh) ? roh : null;
+            return (
+              <div key={frage.id}>
+                <Zahlenfeld
+                  id={`feld-${frage.id}`}
+                  label={frage.frage}
+                  beschreibung={frage.erklaerung}
+                  wert={feldWert}
+                  min={frage.min}
+                  max={frage.max}
+                  einheit={frage.einheit}
+                  optional={frage.optional === true}
+                  ungueltig={Boolean(meldung)}
+                  beschriebenVon={meldung ? fehlerId : undefined}
+                  onChange={(neu) => onAendern(frage, neu)}
+                />
+                {meldung ? <Fehlermeldung text={meldung} id={fehlerId} /> : null}
+              </div>
+            );
+          }
           const wert = Number(leseWert(zustand, frage) ?? frage.min);
           return (
             <div key={frage.id}>

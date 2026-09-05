@@ -34,22 +34,6 @@ export async function speichereFoerderRegeln(
   }
 }
 
-export async function toggleVorbehalt(
-  id: number,
-  aktiv: boolean,
-): Promise<{ ok: boolean }> {
-  try {
-    const res = await fetch('/api/intern/matrix/vorbehalt-toggle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, aktiv }),
-    });
-    return await res.json();
-  } catch {
-    return { ok: false };
-  }
-}
-
 export async function erstelleVorbehalt(
   text: string,
   gewerk: Gewerk | null = null,
@@ -59,6 +43,22 @@ export async function erstelleVorbehalt(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, gewerk }),
+    });
+    return await res.json();
+  } catch (err) {
+    return { ok: false, fehler: (err as Error).message };
+  }
+}
+
+/** Spielt den Demo-Preissatz in die Matrix ein oder entfernt ihn wieder (nur Chef). */
+export async function setzeDemoPreise(
+  an: boolean,
+): Promise<{ ok: boolean; demoPreise?: boolean; fehler?: string }> {
+  try {
+    const res = await fetch('/api/intern/matrix/demo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ an }),
     });
     return await res.json();
   } catch (err) {

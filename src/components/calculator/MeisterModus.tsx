@@ -4,7 +4,10 @@
  * Meister-Modus: lineare Oberflaeche fuer den Termin vor Ort (Plan 4.8, Ablauf 2).
  *
  * Aufbau: Sticky-Navigation oben, Abschnitte Vorhaben, Bausteine, Kunde und Objekt,
- * Notizen und Skizze, Dokument, Abschluss; unten die Live-Kalkulationsleiste.
+ * Gebaeude und Heizung, Notizen und Skizze, Dokument, Abschluss; unten die
+ * Live-Kalkulationsleiste. Der gefuehrte Modus schaltet die Abschnitte nacheinander
+ * und nennt je Schritt die offenen Punkte; gesperrt wird nur bei blockierten
+ * Basispositionen (Fachregel 2).
  *
  * Der gesamte Zustand ist eine InternAnfrage in einem useReducer. Die Kalkulation
  * laeuft live mit derselben reinen Funktion wie auf dem Server; die Matrix kommt
@@ -15,29 +18,35 @@
  * Notizen nicht gerendert, also aus dem DOM entfernt.
  */
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from 'react';
-import { ClipboardList, Image as ImageIcon, Percent, Send, Save, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ClipboardList, Image as ImageIcon, Percent, Send, Save, Users } from 'lucide-react';
 import {
   ladeKalkulationsdaten,
   ladeTerminfenster,
   speichereEntwurf,
 } from '@/app/(intern)/intern/actions';
 import { berechne, euro, positionAusBaustein, vorschlagManuell } from '@/lib/services/calculation';
+import { betriebskosten, geraeteVorschlag, heizlastSchaetzen } from '@/lib/services/heizlast';
 import {
+  BETRIEBSKOSTEN_STANDARD,
   GEWERKE,
   type Baustein,
   type EstimateResponse,
   type Gewerk,
+  type GroessenVariante,
   type InternAnfrage,
   type InternAnfrageDTO,
   type Kalkulationsdaten,
   type KalkulationsErgebnis,
   type Position,
   type TerminfensterOption,
+  type VersandStatus,
 } from '@/lib/types';
 import AbschlussSheet from './AbschlussSheet';
 import BausteinTile from './BausteinTile';
 import DokumentSchritt from './DokumentSchritt';
+import FoerderKachel from './FoerderKachel';
 import FotoAufnahme from './FotoAufnahme';
+import GebaeudeSchritt from './GebaeudeSchritt';
 import LiveCalcBar from './LiveCalcBar';
 import MengenStepper from './MengenStepper';
 import SketchPad from './SketchPad';
@@ -58,21 +67,38 @@ import {
   ausDTO,
   ersteBlockierte,
   fehlendeAngaben,
+  kwFuerVariante,
   leereAnfrage,
   meisterReduzierer,
   neueId,
+  schrittPruefung,
+  schrittSperrt,
+  zeigerAbonnieren,
+  zeigerGrobLesen,
+  zeigerServerLesen,
+  type AbschnittId,
 } from './meister-utils';
 
 export type MeisterModusProps = { anfrageId?: string; initial?: InternAnfrageDTO | null };
 
-const ABSCHNITTE = [
+const ABSCHNITTE: { id: AbschnittId; titel: string }[] = [
   { id: 'vorhaben', titel: 'Vorhaben' },
   { id: 'bausteine', titel: 'Bausteine' },
   { id: 'kunde', titel: 'Kunde und Objekt' },
+  { id: 'gebaeude', titel: 'Gebäude und Heizung' },
   { id: 'notizen', titel: 'Notizen und Skizze' },
   { id: 'dokument', titel: 'Dokument' },
   { id: 'abschluss', titel: 'Abschluss' },
-] as const;
+];
+
+/** Klartext der Versandstati fuer die Rueckmeldung nach dem Sofortversand. */
+const VERSAND_TEXT: Record<VersandStatus, string> = {
+  entwurf: 'liegt als Entwurf',
+  freigegeben: 'ist freigegeben',
+  versendet: 'ist raus',
+  fehlgeschlagen: 'ist fehlgeschlagen',
+  storniert: 'ist storniert',
+};
 
 const LEERES_ERGEBNIS: KalkulationsErgebnis = {
   positionen: [],
@@ -152,7 +178,11 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
   const [laedt, setLaedt] = useState(true);
   const [terminfenster, setTerminfenster] = useState<TerminfensterOption[]>([]);
   const [terminfehler, setTerminfehler] = useState('');
-  const [abschnitt, setAbschnitt] = useState<(typeof ABSCHNITTE)[number]['id']>('vorhaben');
+  const [abschnitt, setAbschnitt] = useState<AbschnittId>('vorhaben');
+  // Gefuehrt ist der Standard auf Touchgeraeten; die Wahl des Meisters gilt bis zum Neuladen.
+  const zeigerGrob = useSyncExternalStore(zeigerAbonnieren, zeigerGrobLesen, zeigerServerLesen);
+  const [fuehrungWahl, setFuehrungWahl] = useState<boolean | null>(null);
+  const gefuehrt = fuehrungWahl ?? zeigerGrob;
   const [margenOffen, setMargenOffen] = useState(false);
   const [manuell, setManuell] = useState<ManuellForm>(LEERE_MANUELL);
   const [speicherWahl, setSpeicherWahl] = useState<Record<string, number>>({});
@@ -161,6 +191,7 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
   const [abschlussOffen, setAbschlussOffen] = useState(false);
   const [sendet, setSendet] = useState(false);
   const [rueckmeldung, setRueckmeldung] = useState('');
+  const [versandHinweise, setVersandHinweise] = useState<string[]>([]);
   const [online, setOnline] = useState(true);
 
   const autosave = useRef<Autosave | null>(null);
@@ -262,6 +293,21 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
     [anfrage.positionen],
   );
 
+  // Heizlast und Betriebskosten laufen mit denselben reinen Funktionen wie Server und Dokument.
+  const heizlast = useMemo(() => heizlastSchaetzen(anfrage.gebaeude), [anfrage.gebaeude]);
+  const betrieb = useMemo(
+    // Ohne gepflegte Preise gelten die Standardwerte der Einstellungen (Beleg 4).
+    () => (daten ? betriebskosten(anfrage.gebaeude, daten.betriebskosten ?? BETRIEBSKOSTEN_STANDARD, heizlast) : null),
+    [daten, anfrage.gebaeude, heizlast],
+  );
+
+  /** Bausteine der Waermepumpen-Vorlagen mit Groessenvarianten (Ziel des Geraetevorschlags). */
+  const wpBausteine = useMemo(
+    () => gewaehlteBausteine.filter((b) => b.vorlageId.toLowerCase().includes('waermepumpe') && b.groessenVarianten?.length),
+    [gewaehlteBausteine],
+  );
+  const wpVarianten = useMemo<GroessenVariante[]>(() => wpBausteine[0]?.groessenVarianten ?? [], [wpBausteine]);
+
   // Annahmen und Vorbehalte einmal aus der Vorlage vorbelegen.
   useEffect(() => {
     if (!daten || !anfrage.vorlageIds.length) return;
@@ -283,7 +329,10 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
   }, [daten, anfrage.vorlageIds, anfrage.annahmen.length, anfrage.vorbehalte.length, anfrage.vorhabenKurz, anfrage.gewerkHaupt]);
 
   const setzePosition = useCallback(
-    (b: Baustein, teil: { aktiv?: boolean; varianteMatrixNr?: number | null; menge?: number; liter?: number }) => {
+    (
+      b: Baustein,
+      teil: { aktiv?: boolean; varianteMatrixNr?: number | null; menge?: number; liter?: number; kW?: string | number },
+    ) => {
       const alt = positionZu(b.id);
       const variante =
         teil.varianteMatrixNr !== undefined
@@ -291,11 +340,13 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
           : (alt?.varianteMatrixNr ?? b.groessenVarianten?.[0]?.matrixNr ?? null);
       const gewaehlteVariante = b.groessenVarianten?.find((v) => v.matrixNr === variante) ?? null;
       const liter = teil.liter ?? speicherWahl[b.id] ?? gewaehlteVariante?.speicherLiterDefault;
+      // Steht das Geraet fest und passt es zur Variante, steht seine Leistung im Text ("10"), sonst die Beschriftung.
+      const kW = teil.kW ?? kwFuerVariante(gewaehlteVariante, anfrage.gebaeude.geraet.kw);
       const neu = positionAusBaustein(b, daten?.matrix ?? [], {
         varianteMatrixNr: variante,
         menge: teil.menge ?? alt?.menge ?? b.mengeDefault,
         liter,
-        kW: gewaehlteVariante?.kwLabel,
+        kW,
         aktiv: teil.aktiv ?? alt?.aktiv ?? !b.zuschlag,
       });
       dispatch({
@@ -303,7 +354,7 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
         position: { ...neu, notizIntern: alt?.notizIntern ?? '', intern: alt?.intern ?? {} },
       });
     },
-    [daten, positionZu, speicherWahl],
+    [daten, positionZu, speicherWahl, anfrage.gebaeude.geraet.kw],
   );
 
   // Basispositionen anlegen, sobald eine Vorlage gewaehlt wurde.
@@ -315,6 +366,40 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
       setzePosition(b, { aktiv: true });
     }
   }, [daten, gewaehlteBausteine, anfrage.positionen, setzePosition]);
+
+  /** Matrixnummer des Geraetevorschlags; die Kachel markiert diese Variante. */
+  const vorschlagMatrixNr = useMemo(() => {
+    if (!heizlast || !wpVarianten.length) return null;
+    return geraeteVorschlag(heizlast.kwBis, wpVarianten, anfrage.gebaeude.geraet.hersteller)?.matrixNr ?? null;
+  }, [heizlast, wpVarianten, anfrage.gebaeude.geraet.hersteller]);
+
+  /** Uebernimmt Geraet und Speicher in das Gebaeude und in alle Waermepumpen-Positionen. */
+  const vorschlagUebernehmen = useCallback(
+    ({ kw, matrixNr, liter }: { kw: number; matrixNr: number; liter: number }) => {
+      dispatch({ typ: 'gebaeudeGeraet', teil: { kw, speicherLiter: liter } });
+      setSpeicherWahl((alt) => {
+        const naechste = { ...alt };
+        for (const b of wpBausteine) naechste[b.id] = liter;
+        return naechste;
+      });
+      for (const b of wpBausteine) setzePosition(b, { varianteMatrixNr: matrixNr, liter, kW: kw, aktiv: true });
+    },
+    [wpBausteine, setzePosition],
+  );
+
+  /** Setzt nur das Speichervolumen (Kachel „Speicher und Platz“). */
+  const speicherUebernehmen = useCallback(
+    (liter: number) => {
+      dispatch({ typ: 'gebaeudeGeraet', teil: { speicherLiter: liter } });
+      setSpeicherWahl((alt) => {
+        const naechste = { ...alt };
+        for (const b of wpBausteine) naechste[b.id] = liter;
+        return naechste;
+      });
+      for (const b of wpBausteine) setzePosition(b, { liter, aktiv: true });
+    },
+    [wpBausteine, setzePosition],
+  );
 
   const hinweiseZu = useCallback(
     (id: string) => ergebnis.blockiert.filter((h) => h.positionId === id),
@@ -371,6 +456,9 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
   };
 
   const fehlt = fehlendeAngaben(anfrage);
+  const schrittIndex = Math.max(0, ABSCHNITTE.findIndex((a) => a.id === abschnitt));
+  const offenePunkte = schrittPruefung(abschnitt, anfrage, ergebnis);
+  const weiterGesperrt = schrittSperrt(abschnitt, ergebnis);
 
   const alsEntwurf = async () => {
     setSendet(true);
@@ -391,20 +479,37 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
     }
   };
 
-  const sofortSenden = async () => {
+  /**
+   * Sofortversand. 202 heisst: freigegeben, der Versand laeuft im Hintergrund;
+   * 422 nennt offene Punkte, 403 fehlende Berechtigung.
+   */
+  const sofortSenden = async (aktion: 'sofort' | 'terminmail') => {
     setSendet(true);
     setRueckmeldung('');
+    setVersandHinweise([]);
     try {
       const antwort = await fetch('/api/estimate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...anfrage, modus: 'intern', aktion: 'sofort' }),
+        body: JSON.stringify({ ...anfrage, modus: 'intern', aktion }),
       });
       const ergebnisAntwort = (await antwort.json()) as EstimateResponse;
-      if (ergebnisAntwort.ok && ergebnisAntwort.modus === 'intern') {
-        setRueckmeldung(ergebnisAntwort.rueckmeldung);
+      if (antwort.status === 403) {
+        setRueckmeldung(
+          !ergebnisAntwort.ok && ergebnisAntwort.fehler
+            ? ergebnisAntwort.fehler
+            : 'Für den Versand fehlt die Berechtigung. Bitte den Chef freigeben lassen.',
+        );
       } else if (!ergebnisAntwort.ok) {
         setRueckmeldung(ergebnisAntwort.fehler);
+        setVersandHinweise((ergebnisAntwort.hinweise ?? []).map((h) => h.text));
+      } else if (ergebnisAntwort.modus === 'intern') {
+        const versand = ergebnisAntwort.versand
+          ? ` Kundenmail ${VERSAND_TEXT[ergebnisAntwort.versand.kunde]}, Dossier ${VERSAND_TEXT[ergebnisAntwort.versand.dossier]}.`
+          : '';
+        const wartet = antwort.status === 202 ? ' Der Versand läuft im Hintergrund, den Stand zeigen die Entwürfe.' : '';
+        setRueckmeldung(`${ergebnisAntwort.rueckmeldung}${versand}${wartet}`.trim());
+        setVersandHinweise(ergebnisAntwort.hinweise.map((h) => h.text));
       } else {
         setRueckmeldung('Gesendet.');
       }
@@ -426,6 +531,29 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
       ) : null}
 
       <nav aria-label="Abschnitte" className="glass-toolbar sticky top-0 z-20 -mx-4 mb-6 border-b border-white/60 bg-white/85 px-4 py-2">
+        <div className="mb-2 flex items-center gap-2" role="radiogroup" aria-label="Fuehrung">
+          {([
+            [true, 'Geführt'],
+            [false, 'Frei'],
+          ] as const).map(([wert, beschriftung]) => (
+            <button
+              key={beschriftung}
+              type="button"
+              role="radio"
+              aria-checked={gefuehrt === wert}
+              onClick={() => setFuehrungWahl(wert)}
+              className={[
+                'fokus-ring min-h-[44px] rounded-full px-4 text-sm font-semibold',
+                gefuehrt === wert ? 'bg-slate-900 text-white' : 'bg-white text-slate-700',
+              ].join(' ')}
+            >
+              {beschriftung}
+            </button>
+          ))}
+          <span className="ml-auto text-sm font-medium text-slate-600">
+            Schritt {schrittIndex + 1} von {ABSCHNITTE.length}
+          </span>
+        </div>
         <ul className="flex gap-2 overflow-x-auto">
           {ABSCHNITTE.map((a) => (
             <li key={a.id}>
@@ -498,6 +626,7 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
                 hinweise={hinweiseZu(b.id)}
                 kundenansicht={kundenansicht}
                 speicherWahl={speicherWahl[b.id] ?? null}
+                vorschlagMatrixNr={wpBausteine.some((w) => w.id === b.id) ? vorschlagMatrixNr : null}
                 onUmschalten={(an) => setzePosition(b, { aktiv: an })}
                 onVariante={(matrixNr) => setzePosition(b, { varianteMatrixNr: matrixNr, aktiv: true })}
                 onSpeicher={(liter) => {
@@ -657,39 +786,27 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
             </label>
           </div>
 
-          <fieldset className="mt-8">
-            <legend className="text-lg font-semibold text-slate-900">Foerderung</legend>
-            <div className="mt-3 space-y-2">
-              {(
-                [
-                  ['aktiv', 'Foerderung pruefen'],
-                  ['selbstBewohnt', 'selbst bewohnt'],
-                  ['altOelOderGas', 'alte Oel- oder Gasheizung'],
-                  ['einkommenUnterGrenze', 'Einkommen unter der Grenze'],
-                  ['natuerlichesKaeltemittel', 'natuerliches Kaeltemittel'],
-                ] as const
-              ).map(([schluesselName, beschriftung]) => (
-                <label key={schluesselName} className="flex min-h-[44px] items-center gap-3 text-base text-slate-800">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(anfrage.foerderung[schluesselName])}
-                    onChange={(e) => dispatch({ typ: 'foerderung', teil: { [schluesselName]: e.target.checked } })}
-                    className="h-6 w-6 rounded border-slate-300"
-                  />
-                  {beschriftung}
-                </label>
-              ))}
-              {!kundenansicht ? (
-                <Feld
-                  beschriftung="Satz von Hand in Prozent"
-                  modus="numeric"
-                  wert={anfrage.foerderung.satzManuell === null || anfrage.foerderung.satzManuell === undefined ? '' : String(anfrage.foerderung.satzManuell)}
-                  onChange={(w) => dispatch({ typ: 'foerderung', teil: { satzManuell: w === '' ? null : Number(w) } })}
-                />
-              ) : null}
-            </div>
-          </fieldset>
+          <FoerderKachel
+            eingabe={anfrage.foerderung}
+            regeln={daten?.foerderRegeln ?? null}
+            ergebnis={ergebnis.foerderung}
+            kundenansicht={kundenansicht}
+            onAendern={(teil) => dispatch({ typ: 'foerderung', teil })}
+          />
         </section>
+      ) : null}
+
+      {abschnitt === 'gebaeude' ? (
+        <GebaeudeSchritt
+          anfrage={anfrage}
+          dispatch={dispatch}
+          daten={daten}
+          ergebnis={ergebnis}
+          kundenansicht={kundenansicht}
+          varianten={wpVarianten}
+          onVorschlagUebernehmen={vorschlagUebernehmen}
+          onSpeicher={speicherUebernehmen}
+        />
       ) : null}
 
       {abschnitt === 'notizen' ? (
@@ -804,6 +921,7 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
               onFotos={(neue) => dispatch({ typ: 'fotosHinzu', fotos: neue })}
               onOffeneDateien={(dateien) => setOffeneDateien((alt) => [...alt, ...dateien])}
               onEntfernen={(index) => dispatch({ typ: 'fotoEntfernen', index })}
+              onBeschreibung={(index, beschreibung) => dispatch({ typ: 'fotoBeschreibung', index, beschreibung })}
             />
           </div>
         </section>
@@ -874,6 +992,16 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
               Kein Vorbehalt gesetzt. Bitte den Block &bdquo;Nicht enthalten und bauseits&ldquo; pr&uuml;fen.
             </p>
           ) : null}
+          {versandHinweise.length ? (
+            <div className="mt-4 rounded-2xl bg-[#FEF3F2] p-3 text-base text-[#B42318]">
+              <p className="font-medium">Offene Punkte des Versands</p>
+              <ul className="mt-1 list-disc space-y-1 pl-5">
+                {versandHinweise.map((h, i) => (
+                  <li key={`${h}-${i}`}>{h}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {rueckmeldung ? (
             <p aria-live="polite" className="mt-4 rounded-2xl bg-slate-100 p-3 text-base text-slate-800">
               {rueckmeldung}
@@ -906,7 +1034,53 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
         </section>
       ) : null}
 
-      <LiveCalcBar ergebnis={ergebnis} kundenansicht={kundenansicht} onSprungZuBlockierter={springeZuBlockierter} />
+      {gefuehrt ? (
+        <div className="mt-8">
+          {offenePunkte.length ? (
+            <div className="rounded-2xl bg-[#FFFBEB] p-3 text-base text-[#92400E]">
+              <p className="font-medium">In diesem Schritt noch offen</p>
+              <ul className="mt-1 list-disc space-y-1 pl-5">
+                {offenePunkte.map((punkt) => (
+                  <li key={punkt}>{punkt}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setAbschnitt(ABSCHNITTE[Math.max(0, schrittIndex - 1)].id)}
+              disabled={schrittIndex === 0}
+              className="fokus-ring inline-flex min-h-[56px] items-center gap-2 rounded-2xl bg-white px-5 text-base font-semibold text-slate-800 disabled:opacity-50"
+            >
+              <ChevronLeft aria-hidden className="h-5 w-5" /> Zurück
+            </button>
+            <p aria-live="polite" className="flex-1 text-center text-base font-semibold text-slate-700">
+              Schritt {schrittIndex + 1} von {ABSCHNITTE.length}: {ABSCHNITTE[schrittIndex].titel}
+            </p>
+            <button
+              type="button"
+              onClick={() => setAbschnitt(ABSCHNITTE[Math.min(ABSCHNITTE.length - 1, schrittIndex + 1)].id)}
+              disabled={schrittIndex === ABSCHNITTE.length - 1 || weiterGesperrt}
+              className="fokus-ring inline-flex min-h-[56px] items-center gap-2 rounded-2xl bg-[color:var(--modul-blau,#1B3A8C)] px-5 text-base font-semibold text-white disabled:opacity-50"
+            >
+              Weiter <ChevronRight aria-hidden className="h-5 w-5" />
+            </button>
+          </div>
+          {weiterGesperrt ? (
+            <p className="mt-2 text-base font-medium text-[#B42318]">
+              Eine Basisposition hat keine Spanne. Erst klären, dann weiter.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <LiveCalcBar
+        ergebnis={ergebnis}
+        kundenansicht={kundenansicht}
+        betriebskosten={betrieb ? { proMonat: betrieb.proMonat, ersparnisJahr: betrieb.ersparnisJahr } : null}
+        onSprungZuBlockierter={springeZuBlockierter}
+      />
 
       {margenOffen && !kundenansicht ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 sm:items-center sm:p-6">
@@ -953,7 +1127,9 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
         online={online}
         laeuft={sendet}
         rueckmeldung={rueckmeldung}
-        onSenden={() => void sofortSenden()}
+        hinweise={versandHinweise}
+        onSenden={() => void sofortSenden('sofort')}
+        onTerminmail={() => void sofortSenden('terminmail')}
         onSchliessen={() => setAbschlussOffen(false)}
       />
     </div>

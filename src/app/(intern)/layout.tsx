@@ -13,6 +13,7 @@ import AbmeldenButton from './AbmeldenButton';
 import KundenansichtSchalter from '@/components/calculator/KundenansichtSchalter';
 import BaustellenModusSchalter from '@/components/calculator/BaustellenModusSchalter';
 import { SyncBadge } from '@/components/calculator/LiveCalcBar';
+import { aktuelleSession } from '@/lib/services/auth';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -40,7 +41,15 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export default function InternLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+/** Ein Navigationseintrag der Toolbar. */
+const NAV_KLASSE =
+  'fokus-ring inline-flex min-h-[44px] items-center rounded-full px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100';
+
+export default async function InternLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Die Rolle steuert nur die Sichtbarkeit; die Seiten selbst prüfen erneut (page.tsx, route.ts).
+  const session = await aktuelleSession();
+  const istChef = session?.rolle === 'chef';
+
   return (
     <html lang="de" className={inter.variable}>
       <body className="min-h-screen bg-slate-50 antialiased">
@@ -50,54 +59,35 @@ export default function InternLayout({ children }: Readonly<{ children: React.Re
               Bad &amp; Energie · Intern
             </Link>
             <nav aria-label="Intern" className="flex items-center gap-1 overflow-x-auto py-1">
-              <Link
-                href="/intern/board"
-                className="fokus-ring inline-flex min-h-[40px] items-center rounded-full px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-              >
+              <Link href="/intern/board" className={NAV_KLASSE}>
                 Board
               </Link>
-              <Link
-                href="/intern/entwuerfe"
-                className="fokus-ring inline-flex min-h-[40px] items-center rounded-full px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-              >
+              <Link href="/intern/board#anfragen" className={NAV_KLASSE}>
+                Anfragen
+              </Link>
+              <Link href="/intern/entwuerfe" className={NAV_KLASSE}>
                 Entwürfe
               </Link>
-              <Link
-                href="/intern/konfigurator"
-                className="fokus-ring inline-flex min-h-[40px] items-center rounded-full px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-              >
+              <Link href="/intern/konfigurator" className={NAV_KLASSE}>
                 Konfigurator
               </Link>
-              <Link
-                href="/intern/dispatch"
-                className="fokus-ring inline-flex min-h-[40px] items-center rounded-full px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-              >
+              <Link href="/intern/dispatch" className={NAV_KLASSE}>
                 Dispatch
               </Link>
-              <Link
-                href="/intern/matrix"
-                className="fokus-ring inline-flex min-h-[40px] items-center rounded-full px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-              >
+              <Link href="/intern/matrix" className={NAV_KLASSE}>
                 Matrix
               </Link>
-              <Link
-                href="/intern/termine"
-                className="fokus-ring inline-flex min-h-[40px] items-center rounded-full px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-              >
+              <Link href="/intern/termine" className={NAV_KLASSE}>
                 Termine
               </Link>
-              <Link
-                href="/intern/einstellungen"
-                className="fokus-ring inline-flex min-h-[40px] items-center rounded-full px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-              >
+              <Link href="/intern/einstellungen" className={NAV_KLASSE}>
                 Einstellungen
               </Link>
-              <Link
-                href="/intern/benutzer"
-                className="fokus-ring inline-flex min-h-[40px] items-center rounded-full px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-              >
-                Benutzer
-              </Link>
+              {istChef ? (
+                <Link href="/intern/benutzer" className={NAV_KLASSE}>
+                  Benutzer
+                </Link>
+              ) : null}
             </nav>
             <div className="ml-auto flex flex-wrap items-center gap-2">
               <SyncBadge />

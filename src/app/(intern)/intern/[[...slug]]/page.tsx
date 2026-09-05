@@ -79,25 +79,22 @@ export default async function InternCatchAllPage({
   const db = await getDb();
 
   if (bereich === 'board') {
-    const [anfragen, matrix] = await Promise.all([
-      db
-        .select({
-          id: anfrageTabelle.id,
-          ksNummer: anfrageTabelle.ksNummer,
-          nachname: kundeTabelle.nachname,
-          vorhabenKurz: anfrageTabelle.vorhabenKurz,
-          status: anfrageTabelle.status,
-          dringlichkeit: anfrageTabelle.dringlichkeit,
-          gewerkHaupt: anfrageTabelle.gewerkHaupt,
-          summeNettoVon: anfrageTabelle.summeNettoVon,
-          summeNettoBis: anfrageTabelle.summeNettoBis,
-          erstelltAm: anfrageTabelle.erstelltAm,
-        })
-        .from(anfrageTabelle)
-        .innerJoin(kundeTabelle, eq(anfrageTabelle.kundeId, kundeTabelle.id))
-        .orderBy(desc(anfrageTabelle.erstelltAm)),
-      ladeMatrix(),
-    ]);
+    const anfragen = await db
+      .select({
+        id: anfrageTabelle.id,
+        ksNummer: anfrageTabelle.ksNummer,
+        nachname: kundeTabelle.nachname,
+        vorhabenKurz: anfrageTabelle.vorhabenKurz,
+        status: anfrageTabelle.status,
+        dringlichkeit: anfrageTabelle.dringlichkeit,
+        gewerkHaupt: anfrageTabelle.gewerkHaupt,
+        summeNettoVon: anfrageTabelle.summeNettoVon,
+        summeNettoBis: anfrageTabelle.summeNettoBis,
+        erstelltAm: anfrageTabelle.erstelltAm,
+      })
+      .from(anfrageTabelle)
+      .innerJoin(kundeTabelle, eq(anfrageTabelle.kundeId, kundeTabelle.id))
+      .orderBy(desc(anfrageTabelle.erstelltAm));
 
     const karten: BoardKarte[] = anfragen.map((a) => ({
       ...a,
@@ -127,10 +124,11 @@ export default async function InternCatchAllPage({
   }
 
   if (bereich === 'matrix') {
-    const [matrix, foerderRegeln, vorbehalte] = await Promise.all([
+    const [matrix, foerderRegeln, vorbehalte, einstellungen] = await Promise.all([
       ladeMatrix(),
       ladeFoerderRegeln(),
       ladeVorbehalte(),
+      ladeEinstellungen(),
     ]);
 
     const vorlagen = await ladeVorlagen(matrix);
@@ -156,6 +154,7 @@ export default async function InternCatchAllPage({
         vorlagen={vorlagen}
         blockiertZaehler={blockiertZaehler}
         istChef={session.rolle === 'chef'}
+        demoPreise={einstellungen.demoPreise}
       />
     );
   }

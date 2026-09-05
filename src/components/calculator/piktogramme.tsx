@@ -334,6 +334,41 @@ const P: Record<PiktogrammName, React.ReactNode> = {
       <path d="M9 12h6" />
     </>
   ),
+  // Standort der Heizung im Haus
+  keller: (
+    <>
+      <path d="m3 10 9-6 9 6" />
+      <path d="M5 10v10h14V10" />
+      <rect x="8" y="15" width="8" height="5" />
+    </>
+  ),
+  erdgeschoss: (
+    <>
+      <path d="m3 10 9-6 9 6" />
+      <path d="M5 10v10h14V10" />
+      <rect x="8" y="12" width="8" height="5" />
+    </>
+  ),
+  dachgeschoss: (
+    <>
+      <path d="m3 12 9-8 9 8" />
+      <path d="M6 12v8h12v-8" />
+      <path d="M9 9h6" />
+    </>
+  ),
+  anbau: (
+    <>
+      <path d="M4 20V9l6-5 6 5v11" />
+      <rect x="16" y="13" width="4" height="7" />
+    </>
+  ),
+  aussen: (
+    <>
+      <rect x="3" y="7" width="12" height="10" rx="2" />
+      <circle cx="9" cy="12" r="3" />
+      <path d="M18 9v6M21 7v10" />
+    </>
+  ),
 };
 
 export const PIKTOGRAMM_NAMEN = Object.keys(P) as PiktogrammName[];

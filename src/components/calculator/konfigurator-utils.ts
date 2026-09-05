@@ -4,8 +4,9 @@
  */
 import type { CSSProperties } from 'react';
 import { MUSTERBAEDER } from '@/config/musterbaeder';
+import { euro } from '@/lib/services/calculation';
 import type { JourneyId, JourneyZustand } from '@/lib/journeys';
-import type { Gewerk } from '@/lib/types';
+import type { Gewerk, OeffentlicheErgebnisDTO } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
 // Gewerke-Farben (Tripel aus styles/tokens.css)
@@ -121,6 +122,46 @@ export function ausstellungsbad(stufe: string, qm: number): Ausstellungsbad | nu
 }
 
 export const AUSSTELLUNGSPREIS_LABEL = 'Ausstellungspreis Badeinrichtung, ohne Montage';
+
+// ---------------------------------------------------------------------------
+// Textbausteine der Ergebnisseite (rein, damit der Sprach-Lint sie prueft)
+// ---------------------------------------------------------------------------
+
+/**
+ * Satz zum Betriebskostenvergleich.
+ * Leerer Text, wenn die Serverantwort keine Heizkosten traegt.
+ */
+export function heizkostenSatz(dto: OeffentlicheErgebnisDTO): string {
+  const heute = dto.heizkostenHeuteJahr;
+  const mitPumpe = dto.heizkostenWpJahr;
+  if (typeof heute !== 'number' || typeof mitPumpe !== 'number') return '';
+
+  const energieart = dto.energieartLabel ? ` (${dto.energieartLabel})` : '';
+  let satz = `Heute etwa ${euro(heute)} € im Jahr${energieart}, mit Wärmepumpe etwa ${euro(mitPumpe)} € im Jahr`;
+  satz += typeof dto.heizkostenWpMonat === 'number' ? `, also rund ${euro(dto.heizkostenWpMonat)} € im Monat.` : '.';
+  if (typeof dto.ersparnisJahr === 'number' && dto.ersparnisJahr > 0) {
+    satz += ` Ersparnis etwa ${euro(dto.ersparnisJahr)} € im Jahr.`;
+  }
+  return satz;
+}
+
+/**
+ * Zusatz zum Foerderkasten: Satz in Prozent und die einzelnen Bausteine
+ * in der Sprache des Betriebs.
+ */
+export function foerderSatzText(dto: OeffentlicheErgebnisDTO): string {
+  const teile: string[] = [];
+  if (typeof dto.foerderSatz === 'number' && dto.foerderSatz > 0) {
+    teile.push(`Das sind ${zahl(dto.foerderSatz)} Prozent der Kosten, die gefördert werden.`);
+  }
+  if (dto.foerderBausteine && dto.foerderBausteine.length > 0) {
+    teile.push(`Darin enthalten: ${dto.foerderBausteine.join(', ')}.`);
+  }
+  return teile.join(' ');
+}
+
+/** Auszeichnung des Herstellers, als Textzeile im Vertrauensblock. */
+export const VERTRAUEN_SIEGEL = 'Bosch Premium Partner 2026';
 
 // ---------------------------------------------------------------------------
 // Persistenz: nur anonyme Antworten, nie der Kontaktschritt

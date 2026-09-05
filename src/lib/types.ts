@@ -570,7 +570,6 @@ export const benutzerToggleSchema = z.object({ benutzerId: id64, aktiv: z.boolea
 export const freigebenSchema = z.object({ anfrageId: id64, sofort: z.boolean().default(false), art: z.enum(VERSAND_ARTEN).optional() });
 export const stornierenSchema = z.object({ anfrageId: id64 });
 export const statusWechselSchema = z.object({ status: z.enum(ANFRAGE_STATUS), grund: z.string().trim().max(300).default('') });
-export const vorbehaltToggleSchema = z.object({ id: z.number().int().positive(), aktiv: z.boolean() });
 export const vorbehaltNeuSchema = z.object({ text: z.string().trim().min(3).max(300), gewerk: z.enum(GEWERKE).nullable().default(null) });
 export const matrixDemoSchema = z.object({ an: z.boolean() });
 
@@ -648,3 +647,64 @@ export type TerminfensterOption = { id: string; beschriftung: string; frei: bool
 export type FreigabeErgebnis =
   | { ok: true; anfrageId: string; versand?: { kunde: VersandStatus; dossier: VersandStatus }; rueckmeldung: string }
   | { ok: false; fehler: string; hinweise?: Hinweis[]; grund?: 'berechtigung' | 'blockiert' | 'status' | 'nicht_gefunden' };
+
+// ---------------------------------------------------------------------------
+// Portal-Leads und mobiler Dispatch (Plan AP6)
+// ---------------------------------------------------------------------------
+export const PORTALE = ['wattfox', 'unbekannt'] as const;
+export type Portal = (typeof PORTALE)[number];
+
+/** Ergebnis von parsePortalLead(): eingefügter Portal-Text als vorbelegter Vorgang, ohne erfundene Werte. */
+export const portalLeadSchema = z.object({
+  art: z.literal('portal_lead'),
+  portal: z.enum(PORTALE),
+  kontakt: z.object({
+    anrede: z.enum(['Frau', 'Herr', '']).default(''),
+    vorname: z.string().trim().max(80).default(''),
+    nachname: z.string().trim().max(80).default(''),
+    email: z.string().trim().max(200).default(''),
+    telefon: z.string().trim().max(40).default(''),
+    strasse: z.string().trim().max(120).default(''),
+    plzOrt: z.string().trim().max(120).default(''),
+  }).prefault({}),
+  objekt: z.object({
+    adresse: z.string().trim().max(200).default(''),
+    plz: z.string().trim().max(10).default(''),
+    eigentum: z.enum(['eigentum', 'miete', 'unklar']).default('unklar'),
+    wohneinheiten: z.number().int().min(1).max(12).default(1),
+  }).prefault({}),
+  gebaeude: gebaeudeSchema.prefault({}),
+  vorlageIds: z.array(z.string().trim().max(60)).max(6).default([]),
+  vorhabenKurz: z.string().trim().max(200).default(''),
+  foerderung: z.object({
+    selbstBewohnt: z.boolean().default(false),
+    altOelOderGas: z.boolean().default(false),
+  }).prefault({}),
+  hinweise: z.array(z.string().trim().max(300)).max(20).default([]),
+  unbekannteZeilen: z.array(z.string().trim().max(300)).max(50).default([]),
+  rohtext: z.string().max(8000).default(''),
+});
+export type PortalLead = z.infer<typeof portalLeadSchema>;
+
+const ksNummerSchema = z.string().trim().regex(/^KS-\d{4}-\d{4}$/, 'Erwartet wird eine Nummer der Form KS-JJJJ-NNNN.');
+
+export const dispatchBefehlSchema = z.discriminatedUnion('art', [
+  z.object({ art: z.literal('freigeben'), ksNummer: ksNummerSchema }),
+  z.object({ art: z.literal('freigeben_sofort'), ksNummer: ksNummerSchema }),
+  z.object({ art: z.literal('anpassung'), ksNummer: ksNummerSchema, text: z.string().trim().min(1).max(2000) }),
+  z.object({
+    art: z.literal('neuanlage'),
+    rohtext: z.string().max(8000).default(''),
+    anrede: z.string().trim().max(10).default(''),
+    vorname: z.string().trim().max(80).default(''),
+    nachname: z.string().trim().max(80).default(''),
+    email: z.string().trim().max(200).default(''),
+    telefon: z.string().trim().max(40).default(''),
+    strasse: z.string().trim().max(120).default(''),
+    plzOrt: z.string().trim().max(120).default(''),
+    vorlageIds: z.array(z.string().trim().max(60)).max(6).default([]),
+    persoenlicherSatz: z.string().trim().max(400).default(''),
+    vorhabenKurz: z.string().trim().max(200).default(''),
+  }),
+  portalLeadSchema,
+]);

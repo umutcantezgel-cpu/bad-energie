@@ -1,9 +1,9 @@
 /**
- * Journey Wärmepumpen-Check, sechs Schritte.
+ * Journey Wärmepumpen-Check, sieben Schritte.
  * Seite: /heizung/waermepumpe/check. Beantwortet die Frage, ob eine Wärmepumpe
  * zum Haus passt. Deterministische Eignungsregeln, keine Eurobeträge im Datensatz.
  */
-import type { Journey } from './typen';
+import { ANLAGENALTER_OPTIONEN, STANDORT_HEIZUNG_OPTIONEN, type Journey } from './typen';
 
 export const waermepumpeJourney: Journey = {
   id: 'waermepumpe',
@@ -12,7 +12,7 @@ export const waermepumpeJourney: Journey = {
   quelle: 'web_wp',
   gewerk: 'solar',
   ueberschrift: 'Passt eine Wärmepumpe zu Ihrem Haus?',
-  unterzeile: 'Sechs kurze Fragen. Sie erhalten sofort eine ehrliche Einschätzung.',
+  unterzeile: 'Sieben kurze Fragen. Sie erhalten sofort eine ehrliche Einschätzung.',
   zusage:
     'Ihr Haus schauen wir uns genauer an. Ein Meister meldet sich innerhalb von zwei Werktagen und sagt Ihnen, was möglich ist.',
   standardAntworten: {
@@ -24,6 +24,10 @@ export const waermepumpeJourney: Journey = {
     komfort: 'heizen',
     selbstBewohnt: true,
     einkommenUnterGrenze: false,
+    alter: 'unbekannt',
+    personen: 2,
+    verbrauchJahr: null,
+    standortHeizung: 'unbekannt',
   },
   schritte: [
     {
@@ -47,6 +51,57 @@ export const waermepumpeJourney: Journey = {
             { wert: 'holz', titel: 'Holz oder Pellets', untertitel: 'Kessel oder Ofen', piktogramm: 'holz' },
             { wert: 'sonstiges', titel: 'Etwas anderes', untertitel: 'Sagen Sie es uns im Gespräch', piktogramm: 'fragezeichen' },
           ],
+        },
+        {
+          id: 'alter',
+          ziel: 'antworten',
+          feld: 'alter',
+          art: 'einzelauswahl',
+          frage: 'Wie alt ist die Heizung?',
+          fehler: 'Bitte wählen Sie ein Alter.',
+          optionen: ANLAGENALTER_OPTIONEN,
+        },
+        {
+          id: 'verbrauchJahr',
+          ziel: 'antworten',
+          feld: 'verbrauchJahr',
+          art: 'zahl',
+          frage: 'Was steht auf Ihrer letzten Abrechnung?',
+          erklaerung:
+            'Bei Gas in Kilowattstunden, bei Öl in Litern. Wenn Sie es nicht wissen, lassen Sie das Feld frei.',
+          min: 0,
+          max: 60_000,
+          schritt: 100,
+          einheit: 'kWh im Jahr',
+          eingabe: 'feld',
+          optional: true,
+          sichtbarWenn: { feld: 'heutig', werte: ['gas', 'strom', 'holz', 'sonstiges'] },
+        },
+        {
+          id: 'verbrauchJahrOel',
+          ziel: 'antworten',
+          feld: 'verbrauchJahr',
+          art: 'zahl',
+          frage: 'Was steht auf Ihrer letzten Abrechnung?',
+          erklaerung:
+            'Bei Gas in Kilowattstunden, bei Öl in Litern. Wenn Sie es nicht wissen, lassen Sie das Feld frei.',
+          min: 0,
+          max: 20_000,
+          schritt: 100,
+          einheit: 'Liter im Jahr',
+          eingabe: 'feld',
+          optional: true,
+          sichtbarWenn: { feld: 'heutig', werte: ['oel'] },
+        },
+        {
+          id: 'standortHeizung',
+          ziel: 'antworten',
+          feld: 'standortHeizung',
+          art: 'einzelauswahl',
+          frage: 'Wo steht die Heizung heute?',
+          fehler: 'Bitte wählen Sie einen Standort.',
+          spalten: 3,
+          optionen: STANDORT_HEIZUNG_OPTIONEN,
         },
       ],
     },
@@ -82,6 +137,17 @@ export const waermepumpeJourney: Journey = {
           max: 600,
           schritt: 5,
           einheit: 'Quadratmeter',
+        },
+        {
+          id: 'personen',
+          ziel: 'antworten',
+          feld: 'personen',
+          art: 'anzahl',
+          frage: 'Wie viele Personen leben im Haus?',
+          erklaerung: 'Davon hängt die Größe des Warmwasserspeichers ab.',
+          min: 1,
+          max: 12,
+          einheit: 'Personen',
         },
       ],
     },
@@ -125,6 +191,40 @@ export const waermepumpeJourney: Journey = {
             { wert: 'heizen', titel: 'Nur heizen', untertitel: 'Warme Räume im Winter', piktogramm: 'waerme' },
             { wert: 'heizen_kuehlen', titel: 'Heizen und kühlen', untertitel: 'Im Sommer angenehm kühl', piktogramm: 'kuehlen' },
             { wert: 'heizen_kuehlen_warmwasser', titel: 'Heizen, kühlen und Warmwasser', untertitel: 'Auch das Wasser für Bad und Küche', piktogramm: 'warmwasser' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'foerderung',
+      titel: 'Zuschuss',
+      art: 'fragen',
+      frage: 'Wie viel zahlt der Staat dazu?',
+      erklaerung: 'Zwei Fragen genügen, damit wir Ihren Zuschuss einschätzen können.',
+      fragen: [
+        {
+          id: 'selbstBewohnt',
+          ziel: 'antworten',
+          feld: 'selbstBewohnt',
+          art: 'einzelauswahl',
+          frage: 'Wohnen Sie selbst im Haus?',
+          fehler: 'Bitte wählen Sie eine Angabe.',
+          optionen: [
+            { wert: true, titel: 'Ja, ich wohne hier', piktogramm: 'eigentum' },
+            { wert: false, titel: 'Nein, es ist vermietet', piktogramm: 'miete' },
+          ],
+        },
+        {
+          id: 'einkommenUnterGrenze',
+          ziel: 'antworten',
+          feld: 'einkommenUnterGrenze',
+          art: 'einzelauswahl',
+          frage: 'Liegt das Haushaltseinkommen unter 40.000 Euro im Jahr?',
+          erklaerung: 'Wenn ja, zahlt der Staat mehr dazu. Nachweise brauchen wir erst später.',
+          fehler: 'Bitte wählen Sie eine Angabe.',
+          optionen: [
+            { wert: true, titel: 'Ja', piktogramm: 'ja' },
+            { wert: false, titel: 'Nein oder noch offen', piktogramm: 'nein' },
           ],
         },
       ],

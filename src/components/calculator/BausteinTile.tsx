@@ -8,6 +8,9 @@
  * Speicherwahl, Mengenwahl und das interne Notizfeld. Fehlt ein Matrixwert, faerbt
  * sich die Kachel rot und benennt die fehlende Zeile (Fachregel 2).
  *
+ * Die aus der Heizlast vorgeschlagene Groesse traegt den Zusatz „Vorschlag“; eine
+ * abweichende Wahl des Meisters bleibt stehen.
+ *
  * In der Kundenansicht werden Betraege, Matrix-Chip und Notiz nicht gerendert,
  * also aus dem DOM entfernt, nicht nur versteckt.
  */
@@ -25,6 +28,8 @@ export type BausteinTileProps = {
   kundenansicht: boolean;
   /** Gewaehltes Speichervolumen in Litern (nur bei Groessenvarianten mit Speicher). */
   speicherWahl: number | null;
+  /** Matrixnummer der aus der Heizlast vorgeschlagenen Groesse; wird als „Vorschlag“ markiert. */
+  vorschlagMatrixNr?: number | null;
   onUmschalten: (an: boolean) => void;
   onVariante: (matrixNr: number) => void;
   onSpeicher: (liter: number) => void;
@@ -39,6 +44,7 @@ export default function BausteinTile({
   hinweise,
   kundenansicht,
   speicherWahl,
+  vorschlagMatrixNr = null,
   onUmschalten,
   onVariante,
   onSpeicher,
@@ -104,6 +110,7 @@ export default function BausteinTile({
           <div className="flex flex-wrap gap-2">
             {varianten.map((v) => {
               const gewaehlt = v.matrixNr === position?.varianteMatrixNr;
+              const empfohlen = vorschlagMatrixNr !== null && v.matrixNr === vorschlagMatrixNr;
               return (
                 <button
                   key={v.matrixNr}
@@ -115,10 +122,15 @@ export default function BausteinTile({
                     'fokus-ring min-h-[44px] rounded-full border px-4 text-sm font-medium',
                     gewaehlt
                       ? 'border-[color:var(--modul-blau,#1B3A8C)] bg-[color:var(--modul-blau,#1B3A8C)] text-white'
-                      : 'border-slate-200 bg-white text-slate-700',
+                      : empfohlen
+                        ? 'border-[color:var(--modul-gold,#F0C000)] bg-white text-slate-700'
+                        : 'border-slate-200 bg-white text-slate-700',
                   ].join(' ')}
                 >
                   {v.label}
+                  {empfohlen ? (
+                    <span className={gewaehlt ? 'ml-2 text-white/80' : 'ml-2 text-slate-600'}> Vorschlag</span>
+                  ) : null}
                 </button>
               );
             })}

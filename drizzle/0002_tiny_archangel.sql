@@ -1,0 +1,1 @@
+ALTER TABLE "anfrage" ADD COLUMN "eigentum" text DEFAULT 'unklar' NOT NULL;

@@ -6,9 +6,11 @@
  * eine Outbox die betroffenen Schluessel und leert sich beim Ereignis `online`.
  *
  * Konfliktregel: der Server gewinnt bei Status und Nummern, das Geraet gewinnt bei
- * Notizen, Positionsnotizen, Skizzen und Fotos (siehe `verschmelzeEntwurf`).
+ * Notizen, Positionsnotizen, Skizzen, Fotos und den vor Ort erhobenen Gebaeudedaten
+ * (siehe `verschmelzeEntwurf`).
  */
 import type { InternAnfrage } from '@/lib/types';
+import { normalisiereAnfrage } from './meister-utils';
 
 export const DATENBANK = 'bad-energie-entwuerfe';
 export const SPEICHER = 'entwuerfe';
@@ -111,12 +113,19 @@ export function syncZuruecksetzen(): void {
 
 /**
  * Server gewinnt bei Kennungen und Status, das Geraet gewinnt bei allem, was
- * vor Ort entsteht: Notizen, Positionsnotizen, Skizzen und Fotos.
+ * vor Ort entsteht: Notizen, Positionsnotizen, Skizzen, Fotos und die
+ * Gebaeude- und Heizungsdaten (der Meister erhebt sie am Objekt).
  */
 export function verschmelzeEntwurf(server: InternAnfrage, lokal: InternAnfrage): InternAnfrage {
   const notizenJePosition = new Map(lokal.positionen.map((p) => [p.id, p.notizIntern]));
   return {
     ...server,
+    gebaeude: {
+      ...lokal.gebaeude,
+      bestand: { ...lokal.gebaeude.bestand },
+      platz: { ...lokal.gebaeude.platz },
+      geraet: { ...lokal.gebaeude.geraet },
+    },
     notizen: { ...lokal.notizen },
     skizzen: [...lokal.skizzen],
     fotos: [...lokal.fotos],
@@ -180,7 +189,8 @@ export async function speichereLokal(schluessel: string, wert: InternAnfrage): P
 
 export async function ladeLokal(schluessel: string): Promise<InternAnfrage | null> {
   const eintrag = await fuehreAus<Eintrag | undefined>(SPEICHER, 'readonly', (store) => store.get(schluessel) as IDBRequest<Eintrag | undefined>);
-  return eintrag?.wert ?? null;
+  // Aeltere Entwuerfe kennen `gebaeude` noch nicht; fehlende Teile werden ergaenzt.
+  return eintrag?.wert ? normalisiereAnfrage(eintrag.wert) : null;
 }
 
 export async function loescheLokal(schluessel: string): Promise<void> {

@@ -16,7 +16,7 @@ import { gebaeudeAusJourney } from './heizlast';
 import { darfFreigeben } from './auth';
 import { ladeEinstellungen, ladeKalkulationsdaten, ladeFoerderRegeln, ladeMatrix } from './kalkulationsdaten';
 import { mappeJourney } from './vorlagen-mapping';
-import { triage } from './triage';
+import { triage, type TriageErgebnis } from './triage';
 import { pruefeVersandtexte } from './textregeln';
 import { mitNeuerNummer } from './nummernkreis';
 import { schreibeEreignis, setzeVersandStatus, setzeVorgangsStatus } from './statusmaschine';
@@ -197,6 +197,7 @@ export async function legeAusKundenAnfrage(eingabe: KundenAnfrage, jetzt: Date =
       },
       gebaeude: mapping.gebaeude ?? gebaeudeAusJourney((eingabe.antworten ?? null) as Record<string, unknown> | null, eingabe.objekt.wohneinheiten),
       triageVorschlag: vorschlag.text,
+      eigentum: eingabe.objekt.eigentum,
       wohneinheiten: eingabe.objekt.wohneinheiten,
       foerderung: foerderungSpeicherwert(mapping.foerderung, ergebnis),
       summeNettoVon: ergebnis.nettoVon || null,
@@ -262,6 +263,7 @@ export async function speichereInternAnfrage(eingabe: InternAnfrage, session: Se
     kalkulation: eingabe.kalkulation,
     foerderung: foerderungSpeicherwert(foerderung, ergebnis),
     gebaeude: { ...eingabe.gebaeude, wohneinheiten: eingabe.objekt.wohneinheiten },
+    eigentum: eingabe.objekt.eigentum,
     summeNettoVon: ergebnis.nettoVon || null,
     summeNettoBis: ergebnis.nettoBis || null,
     wohneinheiten: eingabe.objekt.wohneinheiten,
@@ -313,6 +315,38 @@ export async function speichereInternAnfrage(eingabe: InternAnfrage, session: Se
   const daten = await ladeVorgang(anfrageId);
   const rueckmeldung = daten ? baueRueckmeldung(daten, ergebnis) : ksNummer;
   return { anfrageId, ksNummer, status: neuerStatus, hinweise: ergebnis.blockiert, rueckmeldung, ergebnis };
+}
+
+/**
+ * Trägt den Triage-Vorschlag für einen bestehenden Vorgang nach (Dispatch, Portal-Leads).
+ * Eigentum steht nicht am Vorgang, deshalb reicht der Aufrufer es durch, wenn er es kennt.
+ */
+export async function triageFuerAnfrage(
+  anfrageId: string,
+  zusatz: { eigentum?: 'eigentum' | 'miete' | 'unklar'; preisfrage?: boolean } = {},
+): Promise<TriageErgebnis | null> {
+  const daten = await ladeVorgang(anfrageId);
+  if (!daten) return null;
+  const einst = await ladeEinstellungen();
+  const a = daten.anfrage;
+  const k = daten.kunde;
+  const ergebnis = await triage({
+    eigentum: zusatz.eigentum ?? (a.eigentum === 'eigentum' || a.eigentum === 'miete' ? a.eigentum : 'unklar'),
+    wohnflaecheM2: a.gebaeude?.wohnflaeche ?? null,
+    plz: a.objektPlz || k?.plzOrt || '',
+    objektAdresse: a.objektAdresse || k?.strasse || '',
+    email: k?.email ?? '',
+    telefon: k?.telefon ?? '',
+    nachname: k?.nachname ?? '',
+    vorhabenKurz: a.vorhabenKurz,
+    preisfrage: zusatz.preisfrage ?? false,
+  }, { radiusKm: einst.radiusKm, minQm: einst.minQm });
+
+  const db = await getDb();
+  await db.update(anfrageTabelle)
+    .set({ triageVorschlag: ergebnis.text, entfernungKm: ergebnis.entfernungKm })
+    .where(eq(anfrageTabelle.id, anfrageId));
+  return ergebnis;
 }
 
 const STATUS_LABEL: Record<AnfrageStatus, string> = {
@@ -462,7 +496,7 @@ export async function ladeInternAnfrage(anfrageId: string): Promise<InternAnfrag
     },
     objekt: {
       adresse: a.objektAdresse, plz: a.objektPlz,
-      eigentum: 'unklar', wohneinheiten: a.wohneinheiten, entfernungKm: a.entfernungKm,
+      eigentum: (a.eigentum === 'eigentum' || a.eigentum === 'miete' ? a.eigentum : 'unklar'), wohneinheiten: a.wohneinheiten, entfernungKm: a.entfernungKm,
     },
     // Alte Web-Leads ohne Gebäudedaten werden aus den Konfigurator-Antworten vorbelegt.
     gebaeude: a.gebaeude ?? gebaeudeAusJourney(((a.konfiguratorAntworten as { antworten?: unknown } | null)?.antworten ?? null) as Record<string, unknown> | null, a.wohneinheiten),

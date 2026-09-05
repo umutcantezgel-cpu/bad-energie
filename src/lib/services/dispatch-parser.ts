@@ -1,21 +1,25 @@
 /**
- * Deterministischer Parser für den mobilen Dispatch (Plan 4.6).
+ * Deterministischer Parser für den mobilen Dispatch (Plan 4.6 und AP6).
  *
  * Befehle:
  * 1. freigeben KS-JJJJ-NNNN
  * 2. freigeben und sofort senden KS-JJJJ-NNNN
  * 3. KS-JJJJ-NNNN: <Änderungssatz>
- * 4. Sonst: Neuanlage (Name, Adresse, Telefon, E-Mail, Vorlagen, persönlicher Satz)
+ * 4. Eingefügter Portal-Lead (Schlüssel-Wert-Zeilen, etwa WattFox)
+ * 5. Sonst: Neuanlage (Name, Adresse, Telefon, E-Mail, Vorlagen, persönlicher Satz)
  */
+import type { PortalLead } from '../types';
+import { parsePortalLead } from './portal-lead-parser';
 
 export type DispatchBefehl =
   | { art: 'freigeben'; ksNummer: string }
   | { art: 'freigeben_sofort'; ksNummer: string }
   | { art: 'anpassung'; ksNummer: string; text: string }
+  | PortalLead
   | {
       art: 'neuanlage';
-  /** Der erfasste Text, wandert in die internen Notizen. */
-  rohtext: string;
+      /** Der erfasste Text, wandert in die internen Notizen. */
+      rohtext: string;
       anrede: string;
       vorname: string;
       nachname: string;
@@ -53,7 +57,11 @@ export function parseDispatchText(eingabeText: string): DispatchBefehl {
     };
   }
 
-  // 4. Neuanlage parsen
+  // 4. Eingefügter Portal-Lead (Schlüssel-Wert-Zeilen)
+  const portalLead = parsePortalLead(text);
+  if (portalLead) return portalLead;
+
+  // 5. Neuanlage parsen
   let rest = text;
 
   // E-Mail extrahieren

@@ -2,7 +2,7 @@
  * Journey Heizungstausch, sieben Schritte.
  * Kanonische Seite: /heizung/heizungskonfigurator. Texte in Kundensprache.
  */
-import type { Journey } from './typen';
+import { ANLAGENALTER_OPTIONEN, STANDORT_HEIZUNG_OPTIONEN, type Journey } from './typen';
 
 export const heizungJourney: Journey = {
   id: 'heizung',
@@ -28,6 +28,9 @@ export const heizungJourney: Journey = {
     raeume: 3,
     selbstBewohnt: true,
     einkommenUnterGrenze: false,
+    personen: 2,
+    verbrauchJahr: null,
+    standortHeizung: 'unbekannt',
   },
   schritte: [
     {
@@ -60,12 +63,7 @@ export const heizungJourney: Journey = {
           art: 'einzelauswahl',
           frage: 'Wie alt ist die Anlage ungefähr?',
           fehler: 'Bitte wählen Sie ein Alter.',
-          optionen: [
-            { wert: 'unter_10', titel: 'Jünger als zehn Jahre', piktogramm: 'zeit-1' },
-            { wert: '10_bis_20', titel: 'Zehn bis zwanzig Jahre', piktogramm: 'zeit-2' },
-            { wert: 'ueber_20', titel: 'Älter als zwanzig Jahre', piktogramm: 'zeit-3' },
-            { wert: 'unbekannt', titel: 'Weiß ich nicht', piktogramm: 'fragezeichen' },
-          ],
+          optionen: ANLAGENALTER_OPTIONEN,
         },
         {
           id: 'tanks',
@@ -78,6 +76,48 @@ export const heizungJourney: Journey = {
           max: 6,
           einheit: 'Tanks',
           sichtbarWenn: { feld: 'heutig', werte: ['oel'] },
+        },
+        {
+          id: 'verbrauchJahr',
+          ziel: 'antworten',
+          feld: 'verbrauchJahr',
+          art: 'zahl',
+          frage: 'Was steht auf Ihrer letzten Abrechnung?',
+          erklaerung:
+            'Bei Gas in Kilowattstunden, bei Öl in Litern. Wenn Sie es nicht wissen, lassen Sie das Feld frei.',
+          min: 0,
+          max: 60_000,
+          schritt: 100,
+          einheit: 'kWh im Jahr',
+          eingabe: 'feld',
+          optional: true,
+          sichtbarWenn: { feld: 'heutig', werte: ['gas', 'strom', 'holz', 'sonstiges'] },
+        },
+        {
+          id: 'verbrauchJahrOel',
+          ziel: 'antworten',
+          feld: 'verbrauchJahr',
+          art: 'zahl',
+          frage: 'Was steht auf Ihrer letzten Abrechnung?',
+          erklaerung:
+            'Bei Gas in Kilowattstunden, bei Öl in Litern. Wenn Sie es nicht wissen, lassen Sie das Feld frei.',
+          min: 0,
+          max: 20_000,
+          schritt: 100,
+          einheit: 'Liter im Jahr',
+          eingabe: 'feld',
+          optional: true,
+          sichtbarWenn: { feld: 'heutig', werte: ['oel'] },
+        },
+        {
+          id: 'standortHeizung',
+          ziel: 'antworten',
+          feld: 'standortHeizung',
+          art: 'einzelauswahl',
+          frage: 'Wo steht die Heizung heute?',
+          fehler: 'Bitte wählen Sie einen Standort.',
+          spalten: 3,
+          optionen: STANDORT_HEIZUNG_OPTIONEN,
         },
       ],
     },
@@ -137,6 +177,17 @@ export const heizungJourney: Journey = {
           min: 1,
           max: 12,
           einheit: 'Wohnungen',
+        },
+        {
+          id: 'personen',
+          ziel: 'antworten',
+          feld: 'personen',
+          art: 'anzahl',
+          frage: 'Wie viele Personen leben im Haus?',
+          erklaerung: 'Davon hängt die Größe des Warmwasserspeichers ab.',
+          min: 1,
+          max: 12,
+          einheit: 'Personen',
         },
       ],
     },

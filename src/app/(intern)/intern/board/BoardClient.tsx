@@ -82,7 +82,7 @@ export default function BoardClient({ karten }: { karten: BoardKarte[] }) {
       </div>
 
       {/* Desktop Kanban Spalten (>= 1280px) */}
-      <div className="hidden xl:grid xl:grid-cols-5 gap-4">
+      <div id="anfragen" className="scroll-mt-24 hidden xl:grid xl:grid-cols-5 gap-4">
         {SPALTEN_DEFINITION.map((spalte) => {
           const spaltenKarten = kartenNachSpalte(spalte.status);
           return (

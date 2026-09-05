@@ -3,7 +3,28 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { parseDispatchText, type DispatchBefehl } from '@/lib/services/dispatch-parser';
+import {
+  BAUJAHR_KLASSE_LABEL, ENERGIEART_LABEL, HERSTELLER_LABEL, LAGE_LABEL,
+  geraetAusBaureihe, heizlastSchaetzen, speicherVorschlag,
+} from '@/lib/services/heizlast';
+import type { HeizungsStandort } from '@/lib/types';
 import { fuehreDispatchAus, type DispatchErgebnis } from './actions';
+
+const STANDORT_LABEL: Record<HeizungsStandort, string> = {
+  keller: 'Keller', erdgeschoss: 'Erdgeschoss', dachgeschoss: 'Dachgeschoss',
+  anbau: 'Anbau', aussen: 'Außen', unbekannt: 'unbekannt',
+};
+
+/** Eine Zeile der Vorschau. Fehlende Angaben werden ausdrücklich als „fehlt“ markiert. */
+function Zeile({ beschriftung, wert }: { beschriftung: string; wert: string | number | null | undefined }) {
+  const leer = wert === null || wert === undefined || wert === '' || wert === 'unbekannt';
+  return (
+    <p className="flex flex-wrap gap-x-2 text-sm text-slate-800">
+      <span className="font-bold">{beschriftung}:</span>
+      {leer ? <span className="font-semibold text-[#B42318]">fehlt</span> : <span className="tabular-nums">{wert}</span>}
+    </p>
+  );
+}
 
 export default function DispatchClient() {
   const [text, setText] = useState('');
@@ -16,6 +37,22 @@ export default function DispatchClient() {
     if (!text.trim()) return null;
     return parseDispatchText(text);
   }, [text]);
+
+  // Gerätevorschlag zur Vorschau: reine Funktionen, dieselben wie im Meister-Modus.
+  const vorschau = useMemo(() => {
+    if (befehl?.art !== 'portal_lead') return null;
+    const schaetzung = heizlastSchaetzen(befehl.gebaeude);
+    if (!schaetzung) return null;
+    const hersteller = befehl.gebaeude.geraet.hersteller;
+    const geraet = geraetAusBaureihe(schaetzung.kwBis, hersteller);
+    return {
+      kwVon: schaetzung.kwVon,
+      kwBis: schaetzung.kwBis,
+      geraetKw: geraet.kw,
+      hersteller: HERSTELLER_LABEL[hersteller],
+      liter: speicherVorschlag(befehl.gebaeude.personen).liter,
+    };
+  }, [befehl]);
 
   async function handleAusfuehren() {
     if (!befehl) return;
@@ -122,6 +159,71 @@ export default function DispatchClient() {
             </div>
           )}
 
+          {befehl.art === 'portal_lead' && (
+            <div className="space-y-4 text-sm text-slate-800">
+              <p className="text-base font-bold text-slate-900">
+                Portal-Lead erkannt{befehl.portal === 'wattfox' ? ' (WattFox)' : ''}
+              </p>
+
+              <div className="space-y-1">
+                <p className="text-sm font-bold uppercase tracking-wide text-slate-500">Kunde</p>
+                <Zeile beschriftung="Name" wert={[befehl.kontakt.anrede, befehl.kontakt.vorname, befehl.kontakt.nachname].filter(Boolean).join(' ')} />
+                <Zeile beschriftung="E-Mail" wert={befehl.kontakt.email} />
+                <Zeile beschriftung="Telefon" wert={befehl.kontakt.telefon} />
+                <Zeile beschriftung="Adresse" wert={[befehl.kontakt.strasse, befehl.kontakt.plzOrt].filter(Boolean).join(', ')} />
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-sm font-bold uppercase tracking-wide text-slate-500">Objekt</p>
+                <Zeile beschriftung="PLZ" wert={befehl.objekt.plz} />
+                <Zeile beschriftung="Wohnfläche" wert={befehl.gebaeude.wohnflaeche ? `${befehl.gebaeude.wohnflaeche} m²` : ''} />
+                <Zeile
+                  beschriftung="Baujahr"
+                  wert={befehl.gebaeude.baujahr
+                    ? `${befehl.gebaeude.baujahr}${befehl.gebaeude.baujahrKlasse ? ` (${BAUJAHR_KLASSE_LABEL[befehl.gebaeude.baujahrKlasse]})` : ''}`
+                    : ''}
+                />
+                <Zeile beschriftung="Gebäudeart" wert={befehl.gebaeude.lage ? LAGE_LABEL[befehl.gebaeude.lage] : ''} />
+                <Zeile beschriftung="Wohneinheiten" wert={befehl.objekt.wohneinheiten} />
+                <Zeile beschriftung="Personen" wert={befehl.gebaeude.personen} />
+                <Zeile beschriftung="Heizung" wert={befehl.gebaeude.bestand.energieart ? ENERGIEART_LABEL[befehl.gebaeude.bestand.energieart] : ''} />
+                <Zeile
+                  beschriftung="Alter der Heizung"
+                  wert={befehl.gebaeude.bestand.heizungsalterJahre === null ? '' : `${befehl.gebaeude.bestand.heizungsalterJahre} Jahre`}
+                />
+                <Zeile beschriftung="Standort" wert={STANDORT_LABEL[befehl.gebaeude.bestand.standort]} />
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-sm font-bold uppercase tracking-wide text-slate-500">Daraus abgeleitet</p>
+                <Zeile beschriftung="Vorlage" wert={befehl.vorlageIds.join(', ')} />
+                <Zeile beschriftung="Heizlast" wert={vorschau ? `${vorschau.kwVon} bis ${vorschau.kwBis} kW` : ''} />
+                <Zeile beschriftung="Gerät" wert={vorschau ? `${vorschau.hersteller} ${vorschau.geraetKw} kW` : ''} />
+                <Zeile beschriftung="Speicher" wert={vorschau ? `${vorschau.liter} Liter` : ''} />
+                <Zeile beschriftung="Förderung" wert={befehl.foerderung.altOelOderGas ? 'Alte Gas- oder Ölheizung, Bonus möglich' : 'kein Bonus für alte Heizung'} />
+              </div>
+
+              {befehl.hinweise.length > 0 && (
+                <ul className="list-disc space-y-1 rounded-2xl bg-amber-50 p-4 pl-8 text-sm text-amber-900">
+                  {befehl.hinweise.map((h) => <li key={h}>{h}</li>)}
+                </ul>
+              )}
+
+              {befehl.unbekannteZeilen.length > 0 && (
+                <div className="rounded-2xl bg-slate-100 p-4">
+                  <p className="text-sm font-bold text-slate-700">Nicht zugeordnete Zeilen (gehen in die interne Notiz):</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                    {befehl.unbekannteZeilen.map((z) => <li key={z}>{z}</li>)}
+                  </ul>
+                </div>
+              )}
+
+              <p className="text-sm font-semibold text-slate-700">
+                Der Portal-Text wird als interne Notiz gespeichert. Den persönlichen Satz für den Kunden bitte im Konfigurator ergänzen.
+              </p>
+            </div>
+          )}
+
           <div className="pt-2">
             <button
               type="button"
@@ -182,6 +284,7 @@ export default function DispatchClient() {
           <li><code className="bg-slate-100 px-1 py-0.5 rounded font-mono">freigeben und sofort senden KS-2026-0031</code> – Sofortiger Mailversand mit PDF</li>
           <li><code className="bg-slate-100 px-1 py-0.5 rounded font-mono">KS-2026-0031: Kunde möchte 200L Speicher</code> – Fügt dem Vorgang eine Notiz hinzu</li>
           <li><code className="bg-slate-100 px-1 py-0.5 rounded font-mono">Neue Anfrage. Herr Müller, Wetzlar ...</code> – Legt automatisch einen neuen Vorgang an</li>
+          <li><code className="bg-slate-100 px-1 py-0.5 rounded font-mono">Portal-Text einfügen</code> – Zeilen der Form „Interesse an: …“ aus WattFox werden erkannt und die Felder vorbelegt</li>
         </ul>
       </div>
     </div>

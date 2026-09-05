@@ -18,9 +18,11 @@ export type FotoAufnahmeProps = {
   onFotos: (fotos: FotoWert[]) => void;
   onOffeneDateien: (dateien: File[]) => void;
   onEntfernen: (index: number) => void;
+  /** Beschreibung eines Bildes aendern (Index in `fotos`). */
+  onBeschreibung: (index: number, beschreibung: string) => void;
 };
 
-export default function FotoAufnahme({ fotos, offeneDateien, onFotos, onOffeneDateien, onEntfernen }: FotoAufnahmeProps) {
+export default function FotoAufnahme({ fotos, offeneDateien, onFotos, onOffeneDateien, onEntfernen, onBeschreibung }: FotoAufnahmeProps) {
   const eingabe = useRef<HTMLInputElement>(null);
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState('');
@@ -99,6 +101,17 @@ export default function FotoAufnahme({ fotos, offeneDateien, onFotos, onOffeneDa
               >
                 <Trash2 aria-hidden className="h-4 w-4" />
               </button>
+              <label className="block p-2">
+                <span className="sr-only">{`Beschreibung fuer ${foto.name}`}</span>
+                <input
+                  type="text"
+                  value={foto.beschreibung}
+                  maxLength={200}
+                  placeholder="Was ist zu sehen?"
+                  onChange={(e) => onBeschreibung(index, e.target.value)}
+                  className="glass-input h-12 w-full rounded-2xl border border-slate-200 bg-white px-3 text-base text-slate-900"
+                />
+              </label>
             </li>
           ))}
         </ul>

@@ -3,9 +3,12 @@
 /**
  * Bestaetigungs-Sheet vor dem Sofortversand. Zeigt Empfaenger, Pflichtnamen des
  * Anhangs und die Bruttospanne. Ohne Netz ist der Versand gesperrt und erklaert.
+ *
+ * Zwei Wege: die vollstaendige Kostenschaetzung oder nur die Terminmail ohne Betraege.
+ * Meldet der Server offene Punkte, stehen sie hier als Liste.
  */
 import { useEffect, useRef } from 'react';
-import { AlertTriangle, Send, X } from 'lucide-react';
+import { AlertTriangle, CalendarClock, Send, X } from 'lucide-react';
 import { euro } from '@/lib/services/calculation';
 
 export type AbschlussSheetProps = {
@@ -18,7 +21,11 @@ export type AbschlussSheetProps = {
   online: boolean;
   laeuft: boolean;
   rueckmeldung: string;
+  /** Offene Punkte aus der Antwort des Servers (Statuscode 422). */
+  hinweise?: string[];
   onSenden: () => void;
+  /** Nur die Terminmail senden, ohne Kostenschaetzung. */
+  onTerminmail: () => void;
   onSchliessen: () => void;
 };
 
@@ -32,7 +39,9 @@ export default function AbschlussSheet({
   online,
   laeuft,
   rueckmeldung,
+  hinweise = [],
   onSenden,
+  onTerminmail,
   onSchliessen,
 }: AbschlussSheetProps) {
   const box = useRef<HTMLDivElement>(null);
@@ -103,6 +112,17 @@ export default function AbschlussSheet({
           </p>
         ) : null}
 
+        {hinweise.length ? (
+          <div className="mt-4 rounded-2xl bg-[#FEF3F2] p-3 text-sm text-[#B42318]">
+            <p className="font-medium">Offene Punkte</p>
+            <ul className="mt-1 list-disc space-y-1 pl-5">
+              {hinweise.map((h, i) => (
+                <li key={`${h}-${i}`}>{h}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
         {rueckmeldung ? (
           <p aria-live="polite" className="mt-4 rounded-2xl bg-slate-100 p-3 text-sm text-slate-800">
             {rueckmeldung}
@@ -118,6 +138,15 @@ export default function AbschlussSheet({
           >
             <Send aria-hidden className="h-5 w-5" />
             {laeuft ? 'Wird gesendet' : 'Jetzt senden'}
+          </button>
+          <button
+            type="button"
+            onClick={onTerminmail}
+            disabled={!online || laeuft || !empfaenger}
+            className="fokus-ring inline-flex min-h-[56px] flex-1 items-center justify-center gap-2 rounded-2xl bg-white px-6 text-base font-semibold text-slate-800 disabled:opacity-50"
+          >
+            <CalendarClock aria-hidden className="h-5 w-5" />
+            Nur Terminmail senden
           </button>
           <button
             type="button"

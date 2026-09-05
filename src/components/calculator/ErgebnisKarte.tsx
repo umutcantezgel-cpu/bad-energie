@@ -10,7 +10,13 @@ import { COMPANY_DATA } from '@/config/company';
 import { euro } from '@/lib/services/calculation';
 import type { OeffentlicheErgebnisDTO } from '@/lib/types';
 import type { Eignung } from '@/lib/journeys';
-import { AUSSTELLUNGSPREIS_LABEL, type Ausstellungsbad } from './konfigurator-utils';
+import {
+  AUSSTELLUNGSPREIS_LABEL,
+  VERTRAUEN_SIEGEL,
+  foerderSatzText,
+  heizkostenSatz,
+  type Ausstellungsbad,
+} from './konfigurator-utils';
 import Piktogramm from './piktogramme';
 
 export type AntwortChip = { id: string; label: string; wert: string; schrittIndex: number };
@@ -47,6 +53,8 @@ export default function ErgebnisKarte({
     typeof ergebnis.bruttoBisGerundet === 'number';
 
   const gesamt = hatSpanne ? Number(ergebnis.bruttoBisGerundet) : null;
+  const heizkosten = heizkostenSatz(ergebnis);
+  const foerderZusatz = foerderSatzText(ergebnis);
 
   return (
     <div className="space-y-8" aria-live="polite">
@@ -92,6 +100,11 @@ export default function ErgebnisKarte({
                       Für Sie bleiben etwa {euro(ergebnis.eigenanteilVon)} bis {euro(ergebnis.eigenanteilBis)} €.
                     </span>
                   ) : null}
+                  {foerderZusatz ? (
+                    <span className="mt-2 block font-semibold" style={{ fontSize: 'var(--font-size-base)' }}>
+                      {foerderZusatz}
+                    </span>
+                  ) : null}
                 </p>
               ) : null}
             </>
@@ -105,6 +118,17 @@ export default function ErgebnisKarte({
               </p>
             </>
           )}
+
+          {heizkosten ? (
+            <div className="mt-5 rounded-2xl border border-slate-200 p-4">
+              <h3 className="font-black text-slate-900" style={{ fontSize: 'var(--font-size-lg)' }}>
+                Ihre Heizkosten
+              </h3>
+              <p className="zahl-tabellarisch mt-2 text-slate-700" style={{ fontSize: 'var(--font-size-base)' }}>
+                {heizkosten}
+              </p>
+            </div>
+          ) : null}
         </section>
 
         {/* Antwort-Chips */}
@@ -219,6 +243,9 @@ export default function ErgebnisKarte({
           </p>
           <p className="mt-4 font-semibold text-slate-900" style={{ fontSize: 'var(--font-size-base)' }}>
             Meisterbetrieb seit {COMPANY_DATA.business.establishmentYear} in Wetzlar
+          </p>
+          <p className="font-semibold text-slate-900" style={{ fontSize: 'var(--font-size-base)' }}>
+            {VERTRAUEN_SIEGEL}
           </p>
           <a
             href={`tel:${COMPANY_DATA.contact.phoneLink}`}

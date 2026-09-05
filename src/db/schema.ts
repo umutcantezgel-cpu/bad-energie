@@ -245,6 +245,8 @@ export const anfrage = pgTable('anfrage', {
   summeNettoVon: integer('summe_netto_von'),
   summeNettoBis: integer('summe_netto_bis'),
   wohneinheiten: integer('wohneinheiten').notNull().default(1),
+  /** Eigentum, Miete oder unklar (Triage nach Regel 10). */
+  eigentum: text('eigentum').notNull().default('unklar'),
   bestaetigungsTokenHash: text('bestaetigungs_token_hash'),
   tokenGueltigBis: ts('token_gueltig_bis'),
   tokenEingeloestAm: ts('token_eingeloest_am'),

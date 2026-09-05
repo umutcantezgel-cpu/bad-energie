@@ -60,7 +60,12 @@ export type PiktogrammName =
   | 'uhr'
   | 'haken'
   | 'ja'
-  | 'nein';
+  | 'nein'
+  | 'keller'
+  | 'erdgeschoss'
+  | 'dachgeschoss'
+  | 'anbau'
+  | 'aussen';
 
 /** Wohin der Wert einer Frage geschrieben wird. */
 export type FrageZiel = 'antworten' | 'objekt' | 'meta';
@@ -104,6 +109,12 @@ export type ZahlFrage = FrageBasis & {
   /** Werte, auf die der Regler einrastet. */
   rasten?: number[];
   nachkommastellen?: number;
+  /**
+   * Darstellung: `regler` (Standard) zeigt den Schieberegler, `feld` ein
+   * Zahlenfeld. Ein Feld darf zusammen mit `optional` leer bleiben; der Wert
+   * ist dann `null`.
+   */
+  eingabe?: 'regler' | 'feld';
 };
 
 export type AnzahlFrage = FrageBasis & {
@@ -121,6 +132,28 @@ export type TextFrage = FrageBasis & {
 };
 
 export type Frage = AuswahlFrage | ZahlFrage | AnzahlFrage | TextFrage;
+
+// ---------------------------------------------------------------------------
+// Gemeinsame Optionslisten (Heizung und Wärmepumpen-Check fragen dasselbe ab)
+// ---------------------------------------------------------------------------
+
+/** Alter der bestehenden Anlage. Werte gegen `alter` in den Antwort-Schemata. */
+export const ANLAGENALTER_OPTIONEN: JourneyOption[] = [
+  { wert: 'unter_10', titel: 'Jünger als zehn Jahre', piktogramm: 'zeit-1' },
+  { wert: '10_bis_20', titel: 'Zehn bis zwanzig Jahre', piktogramm: 'zeit-2' },
+  { wert: 'ueber_20', titel: 'Älter als zwanzig Jahre', piktogramm: 'zeit-3' },
+  { wert: 'unbekannt', titel: 'Weiß ich nicht', piktogramm: 'fragezeichen' },
+];
+
+/** Standort der Heizung im Haus. Werte gegen `HEIZUNGS_STANDORTE` in `types.ts`. */
+export const STANDORT_HEIZUNG_OPTIONEN: JourneyOption[] = [
+  { wert: 'keller', titel: 'Im Keller', piktogramm: 'keller' },
+  { wert: 'erdgeschoss', titel: 'Im Erdgeschoss', piktogramm: 'erdgeschoss' },
+  { wert: 'dachgeschoss', titel: 'Im Dachgeschoss', piktogramm: 'dachgeschoss' },
+  { wert: 'anbau', titel: 'In einem Anbau', piktogramm: 'anbau' },
+  { wert: 'aussen', titel: 'Außerhalb des Hauses', piktogramm: 'aussen' },
+  { wert: 'unbekannt', titel: 'Weiß ich nicht', piktogramm: 'fragezeichen' },
+];
 
 export type Schritt = {
   id: string;

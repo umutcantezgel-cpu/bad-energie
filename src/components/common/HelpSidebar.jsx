@@ -2,26 +2,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
-  Search,
   Phone,
-  Mail,
-  MessageCircle,
   AlertCircle,
   FileText,
   CheckSquare,
   ChevronRight,
-  Clock,
-  Send,
-  ShieldCheck,
-  MapPin,
   CheckCircle2
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { COMPANY_DATA } from '@/config/company';
 
 export default function HelpSidebar({ isOpen, onClose }) {
-  const [searchQuery, setSearchQuery] = useState('');
   const [phone, setPhone] = useState('');
+  const [nachname, setNachname] = useState('');
+  const [email, setEmail] = useState('');
+  const [kenntnisnahme, setKenntnisnahme] = useState(false);
   const [currentView, setCurrentView] = useState('main'); // main, emergency, guides, checklists
   const [callbackStatus, setCallbackStatus] = useState('ruhe'); // 'ruhe' | 'laeuft' | 'erfolg' | 'fehler'
   const [callbackError, setCallbackError] = useState(null);
@@ -138,7 +132,7 @@ export default function HelpSidebar({ isOpen, onClose }) {
 
   const handleCallbackRequest = async (e) => {
     e.preventDefault();
-    if (!phone.trim()) return;
+    if (!phone.trim() || nachname.trim().length < 2 || !email.trim() || !kenntnisnahme) return;
 
     setCallbackStatus('laeuft');
     setCallbackError(null);
@@ -162,12 +156,12 @@ export default function HelpSidebar({ isOpen, onClose }) {
           kontakt: {
             anrede: '',
             vorname: '',
-            nachname: 'Rückruf-Interessent',
-            email: 'rueckruf@bad-energie.de',
+            nachname: nachname.trim(),
+            email: email.trim(),
             telefon: phone.trim(),
             strasse: '',
             plzOrt: '35576 Wetzlar',
-            kenntnisnahme: true,
+            kenntnisnahme: kenntnisnahme,
             eingangsbestaetigung: false,
           },
           honig: honig.current,
@@ -282,6 +276,9 @@ export default function HelpSidebar({ isOpen, onClose }) {
                     onClick={() => {
                       setCallbackStatus('ruhe');
                       setPhone('');
+                      setNachname('');
+                      setEmail('');
+                      setKenntnisnahme(false);
                     }}
                     className="text-[10px] font-bold text-emerald-700 underline mt-1"
                   >
@@ -293,13 +290,52 @@ export default function HelpSidebar({ isOpen, onClose }) {
                   <span className="text-xs font-black text-slate-900">Rückruf anfordern</span>
                   <p className="text-[11px] text-slate-500">Wir rufen Sie werktags innerhalb von 2 Stunden zurück.</p>
                   <input
+                    type="text"
+                    required
+                    minLength={2}
+                    autoComplete="family-name"
+                    aria-label="Ihr Nachname"
+                    placeholder="Ihr Nachname"
+                    value={nachname}
+                    onChange={(e) => setNachname(e.target.value)}
+                    className="w-full min-h-11 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-[#0C3A87]"
+                  />
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    aria-label="Ihre E-Mail-Adresse"
+                    placeholder="Ihre E-Mail-Adresse"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full min-h-11 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-[#0C3A87]"
+                  />
+                  <input
                     type="tel"
                     required
+                    autoComplete="tel"
+                    aria-label="Ihre Telefonnummer"
                     placeholder="Ihre Telefonnummer"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold focus:ring-2 focus:ring-[#0C3A87]"
+                    className="w-full min-h-11 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-[#0C3A87]"
                   />
+                  <label className="flex min-h-11 items-start gap-2.5 text-sm text-slate-700 font-medium cursor-pointer">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={kenntnisnahme}
+                      onChange={(e) => setKenntnisnahme(e.target.checked)}
+                      className="mt-0.5 h-5 w-5 shrink-0 rounded border-slate-400 text-[#0C3A87] focus:ring-2 focus:ring-[#0C3A87]"
+                    />
+                    <span>
+                      Ich habe die{' '}
+                      <a href="/datenschutz" className="font-bold text-[#0C3A87] underline">
+                        Datenschutzerklärung
+                      </a>{' '}
+                      zur Kenntnis genommen.
+                    </span>
+                  </label>
                   {callbackStatus === 'fehler' && (
                     <p className="text-[11px] text-red-600 font-medium">
                       {callbackError || 'Fehler beim Absenden. Bitte rufen Sie uns direkt an.'}
@@ -307,7 +343,13 @@ export default function HelpSidebar({ isOpen, onClose }) {
                   )}
                   <button
                     type="submit"
-                    disabled={callbackStatus === 'laeuft'}
+                    disabled={
+                      callbackStatus === 'laeuft' ||
+                      !kenntnisnahme ||
+                      nachname.trim().length < 2 ||
+                      !email.trim() ||
+                      !phone.trim()
+                    }
                     className="w-full py-2.5 px-4 rounded-xl bg-[#0C3A87] hover:bg-[#0E1C76] text-white font-black text-xs shadow-xs transition-colors disabled:opacity-60"
                   >
                     {callbackStatus === 'laeuft' ? 'Wird übermittelt...' : 'Rückruf anfragen →'}

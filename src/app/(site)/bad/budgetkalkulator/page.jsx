@@ -12,7 +12,7 @@ export default function BudgetkalkulatorPage() {
     return (
         <div className="pt-32 pb-20 bg-slate-50 min-h-screen">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <TouchConfigurator modus="kunde" journey="bad" quelle="web_bad" />
+                <TouchConfigurator modus="kunde" journey="bad" quelle="web_budget" />
             </div>
             <QualityPromise />
         </div>

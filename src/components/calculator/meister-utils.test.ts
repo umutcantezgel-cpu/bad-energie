@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest';
-import type { InternAnfrageDTO, Position } from '@/lib/types';
+import type { InternAnfrage, InternAnfrageDTO, KalkulationsErgebnis, Position, PositionErgebnis } from '@/lib/types';
 import {
   LEINWAND_BREITE,
   LEINWAND_HOEHE,
@@ -16,14 +16,19 @@ import {
   begrenzeZoom,
   ersteBlockierte,
   fehlendeAngaben,
+  istWaermepumpenVorlage,
   kannRueckgaengig,
+  kwFuerVariante,
   kannWiederholen,
   leereAnfrage,
   massLabel,
   meisterReduzierer,
   neuerStack,
+  normalisiereAnfrage,
   radiere,
   rueckgaengig,
+  schrittPruefung,
+  schrittSperrt,
   textregelWarnungen,
   trifftElement,
   wiederholen,
@@ -293,6 +298,166 @@ describe('Massband', () => {
   it('rechnet die Leinwandbreite auf Zentimeter', () => {
     expect(massLabel({ x: 0, y: 0 }, { x: LEINWAND_BREITE, y: 0 }, 600)).toBe('600 cm');
     expect(massLabel({ x: 0, y: 0 }, { x: LEINWAND_BREITE / 2, y: 0 }, 600)).toBe('300 cm');
+  });
+});
+
+
+function positionErgebnis(teil: Partial<PositionErgebnis> = {}): PositionErgebnis {
+  return {
+    positionId: 'p1',
+    titel: 'Wärmepumpe',
+    gewerk: 'waermepumpe',
+    text: '',
+    menge: 1,
+    einheit: 'pauschal',
+    einzelVon: 100,
+    einzelBis: 200,
+    von: 100,
+    bis: 200,
+    blockiert: false,
+    zuschlag: false,
+    ...teil,
+  };
+}
+
+function kalkulation(positionen: PositionErgebnis[] = []): KalkulationsErgebnis {
+  return {
+    positionen,
+    nettoVon: 0,
+    nettoBis: 0,
+    rabattProzent: 0,
+    bruttoVon: 0,
+    bruttoBis: 0,
+    foerderung: null,
+    blockiert: [],
+    vollstaendig: true,
+  };
+}
+
+describe('Gebäude im Reduzierer', () => {
+  it('setzt Gebäude, Bestand, Platz und Gerät getrennt', () => {
+    const a = meisterReduzierer(leereAnfrage(), { typ: 'gebaeude', teil: { wohnflaeche: 150, baujahr: 1965 } });
+    expect(a.gebaeude.wohnflaeche).toBe(150);
+    const b = meisterReduzierer(a, { typ: 'gebaeudeBestand', teil: { energieart: 'gas', verbrauchJahr: 22000 } });
+    expect(b.gebaeude.bestand.energieart).toBe('gas');
+    expect(b.gebaeude.wohnflaeche).toBe(150);
+    const c = meisterReduzierer(b, { typ: 'gebaeudePlatz', teil: { tuerbreiteCm: 73 } });
+    expect(c.gebaeude.platz.tuerbreiteCm).toBe(73);
+    const d = meisterReduzierer(c, { typ: 'gebaeudeGeraet', teil: { kw: 10, speicherLiter: 300 } });
+    expect(d.gebaeude.geraet.kw).toBe(10);
+    expect(d.gebaeude.geraet.speicherLiter).toBe(300);
+    expect(d.gebaeude.bestand.verbrauchJahr).toBe(22000);
+  });
+
+  it('spiegelt die Wohneinheiten aus dem Objekt nach Förderung und Gebäude', () => {
+    const a = meisterReduzierer(leereAnfrage(), { typ: 'objekt', teil: { wohneinheiten: 3 } });
+    expect(a.objekt.wohneinheiten).toBe(3);
+    expect(a.foerderung.wohneinheiten).toBe(3);
+    expect(a.gebaeude.wohneinheiten).toBe(3);
+  });
+
+  it('ändert die Beschreibung eines Fotos', () => {
+    const mit = meisterReduzierer(leereAnfrage(), {
+      typ: 'fotosHinzu',
+      fotos: [{ name: 'a.jpg', dataUrl: 'data:image/png;base64,AA', beschreibung: '' }],
+    });
+    const b = meisterReduzierer(mit, { typ: 'fotoBeschreibung', index: 0, beschreibung: 'Heizraum von der Tür' });
+    expect(b.fotos[0].beschreibung).toBe('Heizraum von der Tür');
+  });
+});
+
+describe('Fehlende Angaben zu Zugang und Bestand', () => {
+  it('warnt bei einer Türbreite unter 80 cm', () => {
+    const eng = meisterReduzierer(leereAnfrage(), { typ: 'gebaeudePlatz', teil: { tuerbreiteCm: 73 } });
+    expect(fehlendeAngaben(eng).some((f) => f.includes('Türbreite unter 80 cm'))).toBe(true);
+    const breit = meisterReduzierer(leereAnfrage(), { typ: 'gebaeudePlatz', teil: { tuerbreiteCm: 90 } });
+    expect(breit.gebaeude.platz.tuerbreiteCm).toBe(90);
+    expect(fehlendeAngaben(breit).some((f) => f.includes('Türbreite'))).toBe(false);
+  });
+
+  it('verlangt die bestehende Heizung bei einer Wärmepumpen-Vorlage', () => {
+    expect(istWaermepumpenVorlage(['waermepumpe_gas'])).toBe(true);
+    expect(istWaermepumpenVorlage(['bad_komplett'])).toBe(false);
+    const wp = meisterReduzierer(leereAnfrage(), { typ: 'vorlage', vorlageId: 'waermepumpe_gas', an: true });
+    expect(fehlendeAngaben(wp)).toContain('Bestehende Heizung');
+    const mitEnergieart = meisterReduzierer(wp, { typ: 'gebaeudeBestand', teil: { energieart: 'gas' } });
+    expect(fehlendeAngaben(mitEnergieart)).not.toContain('Bestehende Heizung');
+  });
+});
+
+describe('Schrittprüfung des geführten Modus', () => {
+  it('verlangt ein Vorhaben, Kontakt, Wohnfläche und Dokument', () => {
+    const leer = leereAnfrage();
+    expect(schrittPruefung('vorhaben', leer, kalkulation())).toHaveLength(1);
+    expect(schrittPruefung('kunde', leer, kalkulation())).toHaveLength(2);
+    expect(schrittPruefung('gebaeude', leer, kalkulation()).some((t) => t.includes('Wohnfläche'))).toBe(true);
+    expect(schrittPruefung('notizen', leer, kalkulation())).toEqual([]);
+    expect(schrittPruefung('dokument', leer, kalkulation())).toHaveLength(2);
+  });
+
+  it('nimmt Telefon statt E-Mail und meldet nur blockierte Basispositionen', () => {
+    let a = meisterReduzierer(leereAnfrage(), { typ: 'kontakt', teil: { nachname: 'Diflo', telefon: '06441 42956' } });
+    expect(schrittPruefung('kunde', a, kalkulation())).toEqual([]);
+    a = meisterReduzierer(a, { typ: 'vorlage', vorlageId: 'waermepumpe_gas', an: true });
+    expect(schrittPruefung('vorhaben', a, kalkulation())).toEqual([]);
+    const mitBlockade = kalkulation([
+      positionErgebnis({ blockiert: true }),
+      positionErgebnis({ positionId: 'p2', titel: 'Zuschlag', zuschlag: true, blockiert: true }),
+    ]);
+    expect(schrittPruefung('bausteine', a, mitBlockade)).toHaveLength(1);
+    expect(schrittSperrt('bausteine', mitBlockade)).toBe(true);
+    expect(schrittSperrt('kunde', mitBlockade)).toBe(false);
+    expect(schrittSperrt('bausteine', kalkulation([positionErgebnis()]))).toBe(false);
+  });
+
+  it('verlangt die bestehende Heizung im Gebäudeschritt bei Wärmepumpe', () => {
+    let a = meisterReduzierer(leereAnfrage(), { typ: 'vorlage', vorlageId: 'waermepumpe_gas', an: true });
+    a = meisterReduzierer(a, { typ: 'gebaeude', teil: { wohnflaeche: 150 } });
+    expect(schrittPruefung('gebaeude', a, kalkulation())).toEqual(['Bestehende Heizung fehlt.']);
+  });
+});
+
+describe('normalisiereAnfrage', () => {
+  it('ergänzt einen alten Entwurf ohne Gebäude', () => {
+    const alt = leereAnfrage() as Partial<InternAnfrage>;
+    delete alt.gebaeude;
+    alt.kontakt = { ...leereAnfrage().kontakt, nachname: 'Horrer' };
+    alt.notizen = { ...leereAnfrage().notizen, intern: 'eng im Keller' };
+    const a = normalisiereAnfrage(alt);
+    expect(a.gebaeude).toEqual(leeresGebaeude());
+    expect(a.kontakt.nachname).toBe('Horrer');
+    expect(a.notizen.intern).toBe('eng im Keller');
+    expect(a.modus).toBe('intern');
+  });
+
+  it('ergänzt fehlende Teile des Gebäudes und hält vorhandene Werte', () => {
+    const alt = { ...leereAnfrage(), gebaeude: { wohnflaeche: 96, personen: 1 } };
+    const a = normalisiereAnfrage(alt);
+    expect(a.gebaeude.wohnflaeche).toBe(96);
+    expect(a.gebaeude.bestand.standort).toBe('unbekannt');
+    expect(a.gebaeude.platz.tuerbreiteCm).toBeNull();
+    expect(a.gebaeude.geraet.hersteller).toBe('bosch');
+  });
+
+  it('liefert bei unbrauchbarer Eingabe die leere Anfrage', () => {
+    expect(normalisiereAnfrage(null).vorlageIds).toEqual([]);
+    expect(normalisiereAnfrage('kaputt').positionen).toEqual([]);
+  });
+});
+
+describe('Kilowattwert der Größenvariante', () => {
+  const klein = { matrixNr: 1, label: '5 bis 7 kW', heizlastKwVon: 0, heizlastKwBis: 7, kwLabel: '5 bis 7' };
+  const mittel = { matrixNr: 2, label: '10 kW', heizlastKwVon: 8, heizlastKwBis: 11, kwLabel: '10' };
+
+  it('nimmt das bestätigte Gerät, wenn es zur Variante passt', () => {
+    expect(kwFuerVariante(mittel, 10)).toBe(10);
+    expect(kwFuerVariante(klein, 7)).toBe(7);
+  });
+
+  it('fällt sonst auf die Beschriftung der Variante zurück', () => {
+    expect(kwFuerVariante(klein, 10)).toBe('5 bis 7');
+    expect(kwFuerVariante(mittel, null)).toBe('10');
+    expect(kwFuerVariante(null, 10)).toBeUndefined();
   });
 });
 

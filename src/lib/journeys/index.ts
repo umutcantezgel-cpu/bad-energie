@@ -81,6 +81,7 @@ export function schreibeWert(zustand: JourneyZustand, frage: Frage, wert: unknow
 function istLeer(wert: unknown): boolean {
   if (wert === undefined || wert === null) return true;
   if (typeof wert === 'string') return wert.trim() === '';
+  if (typeof wert === 'number') return Number.isNaN(wert);
   if (Array.isArray(wert)) return wert.length === 0;
   return false;
 }
@@ -108,6 +109,7 @@ export function pruefeSchritt(journey: Journey, schrittIndex: number, zustand: J
       fehler[frage.id] = frage.fehler ?? STANDARD_FEHLER;
       continue;
     }
+    // Optionale Fragen duerfen leer bleiben (Zahlenfelder tragen dann `null`).
     if (istLeer(wert)) continue;
 
     let ungueltig = false;
