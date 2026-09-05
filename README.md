@@ -101,7 +101,7 @@ Altsystem und lokales Material). Nach jedem Build prüft `npx tsx scripts/bundle
 ### Zeitsteuerung
 
 Die Zeiten stehen in UTC. Auf Pro laufen die Jobs minutengenau; der Versand prüft alle fünf Minuten, ob freigegebene Aufträge fällig sind.
-Beide stehen in `vercel.json` und laufen gegen `/api/jobs/[job]`:
+Alle drei stehen in `vercel.json` und laufen gegen `/api/jobs/[job]`:
 
 | Job | Zeitplan | Bedeutung |
 |---|---|---|
@@ -109,8 +109,8 @@ Beide stehen in `vercel.json` und laufen gegen `/api/jobs/[job]`:
 | `eingang` | `30 5,11 * * *` | bewertet Web-Anfragen im Eingang neu (Matrix inzwischen gefüllt, Triage, Positionen vorbelegt) |
 | `wiedervorlage` | `0 4 * * *` (04:00 UTC) | Erinnerungen nach Regel 9; führt Speicherfrist und Bereinigung mit aus |
 
-Der Job `eingang` hat keinen Zeitplan. Er läuft von Hand: entweder mit dem Bearer-Token oder als angemeldeter
-Benutzer mit der Rolle `chef` aus dem Intern-Bereich heraus.
+Jeder Job lässt sich zusätzlich von Hand auslösen: mit dem Bearer-Token oder als angemeldeter Benutzer mit
+der Rolle `chef` aus dem Intern-Bereich heraus.
 
 ```bash
 # Job von Hand auslösen (CRON_SECRET aus den Projektvariablen)
@@ -126,21 +126,37 @@ Lauf arbeitet oder erfolgreich war.
 
 ## Vorführung
 
-Adresse `https://bad-energie-nu.vercel.app`, Anmeldung mit `chef@bad-energie.de` und PIN. Alle Mails landen
-bei der Auffangadresse aus `MAIL_TEST_TO`.
+Adresse `https://bad-energie-nu.vercel.app`. Anmeldung unter `/intern` mit `chef@bad-energie.de` und der PIN,
+die beim Anlegen des Benutzers vergeben wurde. Bis die Domain `bad-energie.de` bei Resend verifiziert ist,
+sendet Resend nur an die Kontoadresse; alle Kundenmails und Büro-Dossiers landen deshalb bei der Adresse aus
+`MAIL_TEST_TO`, im Betreff steht der eigentliche Empfänger („[an: …]“). Preise sind der Demo-Preissatz
+(unter `/intern/matrix` gekennzeichnet); der Chef ersetzt sie dort durch seine Werte.
 
-1. **Kunde**: Heizungs-Konfigurator durchklicken (Gas, 20 Jahre alt, 150 m², Baujahr 1965, 2 Personen,
-   22.000 kWh, Eigentum, PLZ 35578). Die Ergebnisseite zeigt die Bruttospanne, die Förderung mit ihren
-   Bausteinen, den Eigenanteil und den Betriebskostenvergleich pro Monat.
-2. **Büro**: `/intern/board` zeigt die Anfrage mit dem Triage-Vorschlag „Kostenschätzung erstellen“, die
-   Detailansicht zeigt die Antworten aus dem Konfigurator.
-3. **Meister vor Ort**: `/intern/konfigurator` öffnen, der Abschnitt „Gebäude und Heizung“ ist aus dem Web-Lead
-   vorbelegt; Verbrauch und Kesseltyp ergänzen, Vorschlag für Heizlast, Gerät und Speicher übernehmen, Platz und
-   Zugang prüfen, Skizze anlegen, persönlichen Satz und zwei Terminfenster setzen, dann „Sofort senden“:
-   Kundenmail mit PDF und Büro-Dossier treffen in der Auffangadresse ein.
-4. **Dispatch**: `/intern/dispatch`, Portal-Text einfügen, Vorschau prüfen, anlegen. Die Rückmeldung nennt
-   die KS-Nummer und die Spanne.
-5. **Entwürfe**: „Als Entwurf speichern“, dann unter `/intern/entwuerfe` „Freigeben und sofort senden“.
+1. **Kunde** (öffentlich, ohne Anmeldung): `/heizung/heizungskonfigurator`. Sieben Schritte: Gas, älter als
+   zwanzig Jahre, 22.000 kWh, Standort Keller; Einfamilienhaus, 150 m², vor 1978, 1 Wohnung, 2 Personen;
+   Heizkörper; Wärmepumpe; selbst bewohnt, Einkommen nein; Eigentum, PLZ 35578, in den nächsten Wochen;
+   Kontaktdaten und „Kostenschätzung anfordern“. Ergebnis: Spanne 31.000 bis 40.000 €, Zuschuss 16.500 € mit
+   drei Bausteinen, Eigenanteil 15.000 bis 23.000 €, Heizkosten heute 2.420 € und mit Wärmepumpe 1.510 € im Jahr.
+   Das Büro bekommt sofort eine Hinweismail (Auffangadresse).
+2. **Büro**: `/intern` anmelden, `/intern/board` zeigt die Anfrage in „Eingang“ mit Spanne und Dringlichkeit;
+   „Details“ zeigt Kalkulation, Kunde und Gebäude, Konfigurator-Antworten und den Verlauf.
+3. **Meister vor Ort**: auf der Karte „Bearbeiten“ öffnet den Konfigurator im Meister-Modus (geführt, sieben
+   Abschnitte). „Bausteine“ zeigt die Positionen mit Matrixzeile und die Größenvariante 10 kW als Vorschlag;
+   „Gebäude und Heizung“ ist aus dem Web-Lead vorbelegt und rechnet die Heizlast auf beiden Wegen (9,2 kW aus dem
+   Verbrauch, 18,9 kW aus der Fläche), schlägt Bosch 10 kW mit 200 Litern vor und zeigt die Betriebskosten pro
+   Monat; Türbreite 73 eintragen zeigt die Warnung; „Kunde und Objekt“ braucht die Objektadresse; „Dokument“
+   braucht den persönlichen Satz und genau zwei Terminfenster (freie Fenster unter `/intern/termine` anlegen);
+   „Abschluss“ → „Sofort senden“ → „Jetzt senden“. Nach wenigen Sekunden: Kundenmail mit dem PDF
+   „Kostenschaetzung KS-… Bad und Energie.pdf“ und Büro-Dossier mit Datenblatt, CSV und PDF in der Auffangadresse;
+   die Detailansicht zeigt unter „Dokumente“ die PDF-Vorschau.
+4. **Dispatch** (Handy): `/intern/dispatch`, den Text eines Portal-Leads (WattFox) einfügen, Vorschau prüfen,
+   „Bestätigen & Ausführen“. Ohne Verbrauchsangabe bleibt die Größe der Wärmepumpe bewusst offen (blockiert),
+   der Meister ergänzt sie im Konfigurator.
+5. **Entwürfe**: im Konfigurator „Als Entwurf speichern“, dann `/intern/entwuerfe`: Freigabeblatt mit Warnungen,
+   „Freigeben (18:00)“ oder „Freigeben und sofort senden“. Freigegebene Aufträge sendet der Cron alle fünf Minuten,
+   sobald der 18:00-Puffer abgelaufen ist.
+6. **Kundenansicht**: der Schalter oben rechts blendet Netto, Matrixnummern und interne Faktoren aus, damit das
+   Tablet dem Kunden gezeigt werden kann.
 
 ## Aufbau & Routen
 
