@@ -129,18 +129,30 @@ describe('Öffentliche Spanne', () => {
 });
 
 describe('positionAusBaustein', () => {
+  const wpBaustein = () => ({
+    id: 'z1', vorlageId: 'waermepumpe_gas', position: 1, titel: 'Wärmepumpe und Speicher', gewerk: 'waermepumpe' as const,
+    text: '[Hersteller] Luft/Wasser Wärmepumpe [kW] kW mit [Liter] Liter Speicher', matrixNr: null, zuschlag: false, mengeDefault: 1,
+    einheit: 'pauschal' as const, matrixHinweis: 'Matrix 1 bis 3', spanne: null,
+    groessenVarianten: [{ matrixNr: 2, label: '10 kW', kwLabel: '10', speicherLiterDefault: 300 }],
+  });
+  const matrix: Richtpreis[] = [{ nr: 2, leistung: 'WP 10 kW', von: 19800, bis: 23400, einheit: 'pauschal', hinweis: null }];
+
   it('füllt Platzhalter aus der Größenvariante', () => {
-    const matrix: Richtpreis[] = [{ nr: 2, leistung: 'WP 10 kW', von: 19800, bis: 23400, einheit: 'pauschal', hinweis: null }];
-    const p = positionAusBaustein({
-      id: 'z1', vorlageId: 'waermepumpe_gas', position: 1, titel: 'Wärmepumpe und Speicher', gewerk: 'waermepumpe',
-      text: 'Buderus Luft/Wasser Wärmepumpe [kW] kW mit [Liter] Liter Speicher', matrixNr: null, zuschlag: false, mengeDefault: 1,
-      einheit: 'pauschal', matrixHinweis: 'Matrix 1 bis 3', spanne: null,
-      groessenVarianten: [{ matrixNr: 2, label: '10 kW', kwLabel: '10', speicherLiterDefault: 300 }],
-    }, matrix, { varianteMatrixNr: 2 });
-    expect(p.text).toBe('Buderus Luft/Wasser Wärmepumpe 10 kW mit 300 Liter Speicher');
+    const p = positionAusBaustein(wpBaustein(), matrix, { varianteMatrixNr: 2 });
+    expect(p.text).toBe('Bosch Luft/Wasser Wärmepumpe 10 kW mit 300 Liter Speicher');
     expect(p.von).toBe(19800);
     expect(p.matrixNr).toBe(2);
     expect(offenePlatzhalter(p.text)).toEqual([]);
+  });
+
+  it('setzt die gewählte Marke ein und blockiert nie an ihr', () => {
+    const p = positionAusBaustein(wpBaustein(), matrix, { varianteMatrixNr: 2, hersteller: 'buderus' });
+    expect(p.text).toBe('Buderus Luft/Wasser Wärmepumpe 10 kW mit 300 Liter Speicher');
+    // Ohne Größenwahl bleiben [kW] und [Liter] offen und sperren, die Marke steht trotzdem im Text.
+    const ohne = positionAusBaustein(wpBaustein(), matrix, {});
+    expect(ohne.text.startsWith('Bosch ')).toBe(true);
+    expect(offenePlatzhalter(ohne.text)).toEqual(['kW', 'Liter']);
+    expect(offenePlatzhalter('[Hersteller] Wärmepumpe')).toEqual([]);
   });
 });
 
@@ -148,10 +160,48 @@ describe('positionAusBaustein', () => {
 describe('Förderbausteine und Betriebskosten in der öffentlichen Spanne', () => {
   it('benennt nur wirksame Boni in der Sprache des Chefs', () => {
     const regeln = { ...REGELN, einkommenGrenze: 40000 };
-    expect(foerderBausteine({ grund: 30, effizienz: 5, klimageschwindigkeit: 20, einkommen: 0 }, regeln))
+    expect(foerderBausteine({ satz: 55, boni: { grund: 30, effizienz: 5, klimageschwindigkeit: 20, einkommen: 0 } }, regeln))
       .toEqual(['Grundförderung 30 %', 'Natürliches Kältemittel (R290) 5 %', 'Alte Gas- oder Ölheizung 20 %']);
-    expect(foerderBausteine({ grund: 30, effizienz: 0, klimageschwindigkeit: 0, einkommen: 30 }, regeln))
+    expect(foerderBausteine({ satz: 60, boni: { grund: 30, effizienz: 0, klimageschwindigkeit: 0, einkommen: 30 } }, regeln))
       .toEqual(['Grundförderung 30 %', 'Einkommen bis 40.000 € 30 %']);
+  });
+
+  it('ein von Hand gesetzter Satz erscheint als eigene Zeile, nie als Grundförderung', () => {
+    const e = berechne({
+      positionen: positionenAus(ks32.rows), foerderRegeln: REGELN,
+      foerderung: { aktiv: true, wohneinheiten: 1, selbstBewohnt: true, altOelOderGas: true, einkommenUnterGrenze: false, natuerlichesKaeltemittel: true, satzManuell: 55 },
+    });
+    expect(e.foerderung?.satz).toBe(55);
+    expect(e.foerderung?.manuell).toBe(true);
+    expect(e.foerderung?.boni).toEqual({ grund: 0, effizienz: 0, klimageschwindigkeit: 0, einkommen: 0 });
+    expect(foerderBausteine(e.foerderung!, REGELN)).toEqual(['Vom Fachbetrieb angesetzter Fördersatz 55 %']);
+    expect(oeffentlicheSpanne(e, { foerderRegeln: REGELN }).foerderBausteine).toEqual(['Vom Fachbetrieb angesetzter Fördersatz 55 %']);
+  });
+
+  it('der gezeigte Eigenanteil ist das gezeigte Brutto minus dem gezeigten Zuschuss', () => {
+    const e = berechne({
+      positionen: positionenAus(ks32.rows), foerderRegeln: REGELN,
+      foerderung: { aktiv: true, wohneinheiten: 1, selbstBewohnt: true, altOelOderGas: true, einkommenUnterGrenze: false, natuerlichesKaeltemittel: true },
+    });
+    const dto = oeffentlicheSpanne(e, { foerderRegeln: REGELN });
+    expect(dto.bruttoVonGerundet).toBe(31000);
+    expect(dto.bruttoBisGerundet).toBe(40000);
+    expect(dto.foerderzuschuss).toBe(16500);
+    expect(dto.eigenanteilVon).toBe(14500);
+    expect(dto.eigenanteilBis).toBe(23500);
+    expect((dto.bruttoVonGerundet ?? 0) - (dto.foerderzuschuss ?? 0)).toBe(dto.eigenanteilVon);
+    expect((dto.bruttoBisGerundet ?? 0) - (dto.foerderzuschuss ?? 0)).toBe(dto.eigenanteilBis);
+  });
+
+  it('ein Zuschuss über dem Betrag lässt keinen negativen Eigenanteil entstehen', () => {
+    const e = berechne({
+      positionen: positionenAus([{ titel: 'WP', gewerk: 'waermepumpe', text: '', von: 1000, bis: 30000 }]),
+      foerderRegeln: REGELN,
+      foerderung: { aktiv: true, wohneinheiten: 1, selbstBewohnt: true, altOelOderGas: true, einkommenUnterGrenze: true, natuerlichesKaeltemittel: true },
+    });
+    const dto = oeffentlicheSpanne(e, { foerderRegeln: REGELN });
+    expect(dto.eigenanteilVon).toBe(0);
+    expect(dto.eigenanteilBis).toBeGreaterThanOrEqual(0);
   });
 
   it('trägt Betriebskosten auch im Vorangebots-Pfad und nie Preise oder Netto', () => {

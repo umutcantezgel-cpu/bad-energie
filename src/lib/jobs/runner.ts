@@ -1,13 +1,18 @@
 import 'server-only';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull, lt, or } from 'drizzle-orm';
 import { getDb } from '@/db/client';
 import { jobLauf } from '@/db/schema';
-import { minutenBucket, tagesBucket } from '@/lib/services/zeit';
+import { minutenBucket, plusMinuten, tagesBucket } from '@/lib/services/zeit';
 
 /**
  * Einzelläufer-Sperre für die Cron-Jobs. Der Slot ist ein Minutenbucket (Versand)
  * bzw. ein Tagesbucket; der Unique-Index (job, slot) verhindert Doppelläufe über mehrere Functions.
+ * Gesperrt bleibt ein Slot nur, solange ein Lauf arbeitet oder erfolgreich war: ein gescheiterter
+ * oder abgebrochener Lauf darf wiederholt werden, sonst blockiert ein einziger Fehler den ganzen Tag.
  */
+
+/** Ein Lauf ohne Ende gilt nach dieser Zeit als abgebrochen; die Function läuft höchstens 120 Sekunden. */
+export const LAUF_ABBRUCH_MINUTEN = 15;
 
 export const JOBS = ['versand', 'wiedervorlage', 'eingang', 'speicherfrist', 'bereinigung'] as const;
 export type JobName = (typeof JOBS)[number];
@@ -27,7 +32,8 @@ export function slotFuer(job: JobName, jetzt: Date): string {
 }
 
 /**
- * Führt `arbeit` genau einmal je Slot aus. Ein zweiter Lauf im selben Slot meldet `gesperrt`.
+ * Führt `arbeit` genau einmal je Slot aus. Ein zweiter Lauf im selben Slot meldet `gesperrt`,
+ * solange der erste läuft oder erfolgreich war; nach einem Fehler oder Abbruch übernimmt er den Slot.
  */
 export async function mitJobSperre(
   job: JobName,
@@ -41,8 +47,28 @@ export async function mitJobSperre(
     .values({ job, slot, ausgeloestDurch: ausloeser, gestartet: jetzt })
     .onConflictDoNothing({ target: [jobLauf.job, jobLauf.slot] })
     .returning({ id: jobLauf.id });
-  const lauf = angelegt[0];
-  if (!lauf) return { ok: false, job, slot, grund: 'gesperrt' };
+  let lauf = angelegt[0];
+  if (!lauf) {
+    // Der Slot ist belegt. Übernehmen darf ihn nur, wer einen gescheiterten oder abgebrochenen Lauf
+    // vorfindet; das UPDATE mit RETURNING entscheidet das atomar, ein erfolgreicher Lauf bleibt gesperrt.
+    const abgebrochen = plusMinuten(jetzt, -LAUF_ABBRUCH_MINUTEN);
+    const uebernommen = await db.update(jobLauf)
+      .set({
+        ausgeloestDurch: ausloeser, gestartet: jetzt, beendet: null, fehler: null,
+        verarbeitet: 0, blockiert: 0, zusammenfassung: null,
+      })
+      .where(and(
+        eq(jobLauf.job, job),
+        eq(jobLauf.slot, slot),
+        or(
+          isNotNull(jobLauf.fehler),
+          and(isNull(jobLauf.beendet), lt(jobLauf.gestartet, abgebrochen)),
+        ),
+      ))
+      .returning({ id: jobLauf.id });
+    if (!uebernommen[0]) return { ok: false, job, slot, grund: 'gesperrt' };
+    lauf = uebernommen[0];
+  }
   try {
     const ergebnis = await arbeit();
     await db.update(jobLauf).set({

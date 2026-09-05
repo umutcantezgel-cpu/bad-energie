@@ -78,7 +78,7 @@ export const LAGE_LABEL: Record<Lage, string> = {
   berg: 'Exponiert am Berg', freistehend: 'Freistehend', siedlung: 'In der Siedlung', reiheneck: 'Reiheneckhaus', reihenhaus: 'Reihenhaus',
 };
 export const FENSTER_LABEL: Record<Fenster, string> = { einfach: 'Einfachglas', zweifach: 'Zweifach', dreifach: 'Dreifach', unbekannt: 'Unbekannt' };
-export const HERSTELLER_LABEL: Record<Hersteller, string> = { bosch: 'Bosch', buderus: 'Buderus' };
+export { HERSTELLER_LABEL } from '../types';
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktionen
@@ -125,8 +125,15 @@ export function kesseltypVermutet(b: GebaeudeDaten['bestand']): Kesseltyp {
   return 'unbekannt';
 }
 
-/** Jahresverbrauch in kWh Endenergie; null ohne Verbrauch oder Energieart. */
-export function verbrauchKwh(b: GebaeudeDaten['bestand']): number | null {
+/**
+ * Obergrenze fuer einen Jahresverbrauch im Wohnbau. Ein Wert darueber entsteht praktisch nur,
+ * wenn die Einheit nicht zur Eingabe passt (etwa Raummeter, in die jemand Kilowattstunden tippt);
+ * er wuerde die Heizlast und die Betriebskosten um Groessenordnungen verfaelschen.
+ */
+export const VERBRAUCH_MAX_KWH = 200_000;
+
+/** Roher Jahresverbrauch in kWh Endenergie, ohne Plausibilitaetsgrenze. */
+function verbrauchKwhRoh(b: GebaeudeDaten['bestand']): number | null {
   if (!b.energieart || b.verbrauchJahr === null || b.verbrauchJahr <= 0) return null;
   const heizwert = HEIZWERT[b.energieart];
   const einheit = b.verbrauchEinheit ?? heizwert.einheit;
@@ -134,6 +141,18 @@ export function verbrauchKwh(b: GebaeudeDaten['bestand']): number | null {
   if (einheit === heizwert.einheit) return Math.round(b.verbrauchJahr * heizwert.kwhJeEinheit);
   // Einheit passt nicht zur Energieart (etwa Liter bei Gas): nicht raten.
   return null;
+}
+
+/** false, wenn eine Verbrauchsangabe vorliegt, die ueber der Obergrenze fuer Wohnhaeuser liegt. */
+export function verbrauchPlausibel(b: GebaeudeDaten['bestand']): boolean {
+  const roh = verbrauchKwhRoh(b);
+  return roh === null || roh <= VERBRAUCH_MAX_KWH;
+}
+
+/** Jahresverbrauch in kWh Endenergie; null ohne Verbrauch, ohne Energieart oder ueber der Grenze. */
+export function verbrauchKwh(b: GebaeudeDaten['bestand']): number | null {
+  const roh = verbrauchKwhRoh(b);
+  return roh !== null && roh <= VERBRAUCH_MAX_KWH ? roh : null;
 }
 
 /** Weg (a): Verbrauch × Jahresnutzungsgrad / Volllaststunden. */
@@ -166,8 +185,19 @@ export type HeizlastErgebnis = {
   kwVerbrauch: number | null;
   kwFlaeche: number | null;
   methode: 'verbrauch' | 'flaeche' | 'beide';
+  /**
+   * true, wenn die Schaetzung eine Groessenwahl traegt: es liegt ein Verbrauch vor oder
+   * mindestens eine Angabe zu Daemmung oder Fenstern. Der reine Flaechenweg ohne Daemmungsangaben
+   * rechnet mit dem schlechtesten Fall und ueberschaetzt (150 m2, 1965 ergeben 18,9 kW).
+   */
+  belastbar: boolean;
   hinweise: string[];
 };
+
+/** Liegt mindestens eine Angabe zu Aussenwand, Dach oder Fenstern vor? */
+function daemmungAngegeben(g: GebaeudeDaten): boolean {
+  return g.aussenwandDaemmungCm !== null || g.dachDaemmungCm !== null || (g.fenster !== null && g.fenster !== 'unbekannt');
+}
 
 /** Beide Wege zusammengeführt; null, wenn keiner rechenbar ist. */
 export function heizlastSchaetzen(g: GebaeudeDaten): HeizlastErgebnis | null {
@@ -175,18 +205,23 @@ export function heizlastSchaetzen(g: GebaeudeDaten): HeizlastErgebnis | null {
   const kwFlaeche = heizlastAusFlaeche(g);
   if (kwVerbrauch === null && kwFlaeche === null) return null;
   const hinweise: string[] = [];
+  if (!verbrauchPlausibel(g.bestand)) {
+    hinweise.push('Die Verbrauchsangabe passt nicht zur gewählten Einheit und bleibt außer Betracht. Bitte Wert und Einheit prüfen.');
+  }
+  // Der Verbrauch traegt die Groessenwahl; ohne ihn braucht die Flaeche wenigstens eine Daemmungsangabe.
+  const belastbar = kwVerbrauch !== null || daemmungAngegeben(g);
   if (kwVerbrauch !== null && kwFlaeche !== null) {
     const kwVon = Math.min(kwVerbrauch, kwFlaeche);
     const kwBis = Math.max(kwVerbrauch, kwFlaeche);
     if (kwVon > 0 && (kwBis - kwVon) / kwVon > 0.25) {
       hinweise.push('Verbrauch und Gebäudedaten weichen deutlich voneinander ab. Vor Ort raumweise prüfen.');
     }
-    return { kwVon, kwBis, kwEmpfohlen: kwVerbrauch, kwVerbrauch, kwFlaeche, methode: 'beide', hinweise };
+    return { kwVon, kwBis, kwEmpfohlen: kwVerbrauch, kwVerbrauch, kwFlaeche, methode: 'beide', belastbar, hinweise };
   }
   const kw = (kwVerbrauch ?? kwFlaeche) as number;
   const methode = kwVerbrauch !== null ? 'verbrauch' : 'flaeche';
   hinweise.push(methode === 'verbrauch' ? 'Nur aus dem Verbrauch geschätzt; Gebäudedaten ergänzen.' : 'Nur aus den Gebäudedaten geschätzt; Verbrauch ergänzen, die Fläche allein überschätzt bei fehlender Dämmung.');
-  return { kwVon: kw, kwBis: kw, kwEmpfohlen: kw, kwVerbrauch, kwFlaeche, methode, hinweise };
+  return { kwVon: kw, kwBis: kw, kwEmpfohlen: kw, kwVerbrauch, kwFlaeche, methode, belastbar, hinweise };
 }
 
 // ---------------------------------------------------------------------------
@@ -267,7 +302,8 @@ export function heizkostenHeute(b: GebaeudeDaten['bestand'], preise: Betriebskos
   const kwh = verbrauchKwh(b);
   if (kwh === null || !b.energieart) return null;
   const art = b.energieart;
-  if (art === 'gas' || art === 'sonstiges') return rundeAuf((kwh * preise.gasCtKwh) / 100, 10);
+  // 'sonstiges' hat keinen hinterlegten Preis; ein Gaspreis waere geraten und stuende im Kundendokument.
+  if (art === 'gas') return rundeAuf((kwh * preise.gasCtKwh) / 100, 10);
   if (art === 'strom' || art === 'nachtspeicher') return rundeAuf((kwh * preise.stromCtKwh) / 100, 10);
   if (art === 'oel') return rundeAuf(((kwh / HEIZWERT.oel.kwhJeEinheit) * preise.oelCtLiter) / 100, 10);
   if (art === 'pellets') return rundeAuf(((kwh / HEIZWERT.pellets.kwhJeEinheit) * preise.pelletsCtKg) / 100, 10);

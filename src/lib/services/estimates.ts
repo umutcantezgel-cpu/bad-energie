@@ -15,7 +15,7 @@ import type {
 import { berechne, euro, oeffentlicheSpanne } from './calculation';
 import { pdfDateiname } from './mail';
 import { gebaeudeAusJourney } from './heizlast';
-import { darfFreigeben } from './auth';
+import { darfFreigeben, darfSehen } from './auth';
 import { ladeEinstellungen, ladeKalkulationsdaten, ladeFoerderRegeln, ladeMatrix } from './kalkulationsdaten';
 import { mappeJourney } from './vorlagen-mapping';
 import { triage, type TriageErgebnis } from './triage';
@@ -30,6 +30,18 @@ import { stelleAuftragBereit, versendeAuftrag } from './versand';
 import { jahrVon, naechsteVersandzeit } from './zeit';
 
 export { csvKopfzeile, csvZeile, datenblattJson } from './dokument-eingabe';
+
+/**
+ * Fehler mit fachlichem Grund, damit der Route Handler mit 403 antwortet statt mit 500.
+ * Ein fremder Vorgang darf weder gelesen noch überschrieben werden (Rollenregel 3.3).
+ */
+export class ZugriffFehler extends Error {
+  readonly grund = 'berechtigung' as const;
+  constructor(nachricht: string) {
+    super(nachricht);
+    this.name = 'ZugriffFehler';
+  }
+}
 
 /**
  * Anlage, Aktualisierung, Freigabe und Projektionen von Anfragen.
@@ -238,12 +250,38 @@ function statusAus(ergebnis: KalkulationsErgebnis): AnfrageStatus {
 export async function speichereInternAnfrage(eingabe: InternAnfrage, session: SessionInfo, jetzt: Date = new Date()): Promise<InternAnlage> {
   const db = await getDb();
   const [matrix, regeln] = await Promise.all([ladeMatrix(), ladeFoerderRegeln()]);
+
+  // Der bestehende Vorgang wird vor der Rechnung geladen: an ihm hängt, wer schreiben darf
+  // und ob die Preise unangetastet bleiben müssen.
+  let bestand: typeof anfrageTabelle.$inferSelect | null = null;
+  if (eingabe.anfrageId) {
+    const vorhanden = await db.select().from(anfrageTabelle).where(eq(anfrageTabelle.id, eingabe.anfrageId)).limit(1);
+    bestand = vorhanden[0] ?? null;
+    if (!bestand) throw new Error('Anfrage nicht gefunden.');
+    // Dieselbe Grenze wie beim Lesen: der Bauleiter arbeitet an eigenen und noch nicht
+    // zugeteilten Vorgängen, Chef und Büro an allen. Verglichen wird über die Bearbeiter-Id.
+    if (!darfSehen(session, { bearbeiterId: bestand.bearbeiterId })) {
+      throw new ZugriffFehler('Dieser Vorgang wird von einer anderen Person bearbeitet.');
+    }
+  }
+
+  /**
+   * Rollenregel 3.3: das Büro bereitet vor und gibt nicht frei. Es pflegt Kontakt, Objekt,
+   * Gebäudedaten, persönlichen Satz, Terminvorschlag und Notizen; Positionen, Kalkulationsfaktoren
+   * und Förderangaben eines bestehenden Vorgangs bleiben stehen, damit über diesen Weg keine
+   * Preise entstehen, die kein Meister eingegeben hat (Fachregel 2).
+   */
+  const preiseGesperrt = bestand !== null && session.rolle === 'buero';
+
   const positionen: Position[] = eingabe.positionen.map((p) => ({ ...p, intern: p.intern ?? {} }));
   // Das Objekt ist die eine Quelle für Wohneinheiten (Förderstaffel nach Regel 7).
   const foerderung: FoerderungEingabe | null = eingabe.foerderung.aktiv
     ? { ...eingabe.foerderung, wohneinheiten: eingabe.objekt.wohneinheiten, satzManuell: eingabe.foerderung.satzManuell ?? null }
     : null;
-  const ergebnis = berechne({ positionen, matrix, faktoren: eingabe.kalkulation, foerderung, foerderRegeln: regeln });
+  const gespeicherterVorgang = preiseGesperrt && bestand ? await ladeVorgang(bestand.id) : null;
+  const ergebnis = gespeicherterVorgang
+    ? rechneVorgang(gespeicherterVorgang, matrix, regeln)
+    : berechne({ positionen, matrix, faktoren: eingabe.kalkulation, foerderung, foerderRegeln: regeln });
   const neuerStatus = statusAus(ergebnis);
   const kundeId = await findeOderLegeKundeAn(eingabe.kontakt);
 
@@ -263,8 +301,9 @@ export async function speichereInternAnfrage(eingabe: InternAnfrage, session: Se
     montagehindernisse: eingabe.notizen.montagehindernisse,
     leitungswege: eingabe.notizen.leitungswege,
     interneNotizen: eingabe.notizen.intern,
-    kalkulation: eingabe.kalkulation,
-    foerderung: foerderungSpeicherwert(foerderung, ergebnis),
+    // Bei gesperrten Preisen werden die gespeicherten Werte unverändert zurückgeschrieben.
+    kalkulation: preiseGesperrt && bestand ? (bestand.kalkulation ?? {}) : eingabe.kalkulation,
+    foerderung: preiseGesperrt && bestand ? bestand.foerderung : foerderungSpeicherwert(foerderung, ergebnis),
     gebaeude: { ...eingabe.gebaeude, wohneinheiten: eingabe.objekt.wohneinheiten },
     eigentum: eingabe.objekt.eigentum,
     summeNettoVon: ergebnis.nettoVon || null,
@@ -275,10 +314,9 @@ export async function speichereInternAnfrage(eingabe: InternAnfrage, session: Se
 
   let anfrageId = eingabe.anfrageId ?? '';
   let ksNummer = '';
-  if (anfrageId) {
-    const vorhanden = await db.select().from(anfrageTabelle).where(eq(anfrageTabelle.id, anfrageId)).limit(1);
-    const a = vorhanden[0];
-    if (!a) throw new Error('Anfrage nicht gefunden.');
+  if (bestand) {
+    const a = bestand;
+    anfrageId = a.id;
     ksNummer = a.ksNummer;
     const darfStatusSetzen = (['eingang', 'geplant', 'blockiert'] as AnfrageStatus[]).includes(a.status as AnfrageStatus);
     await db.update(anfrageTabelle).set({
@@ -308,7 +346,7 @@ export async function speichereInternAnfrage(eingabe: InternAnfrage, session: Se
   }
 
   await ersetzeVorlagen(anfrageId, eingabe.vorlageIds);
-  await ersetzePositionen(anfrageId, positionen);
+  if (!preiseGesperrt) await ersetzePositionen(anfrageId, positionen);
   await setzeReservierungen(anfrageId, eingabe.terminfensterIds);
   await schreibeEreignis({
     anfrageId, typ: 'anfrage:gespeichert', benutzerId: session.benutzerId,
@@ -560,7 +598,11 @@ export async function ladeEntwuerfe(session: SessionInfo): Promise<EntwurfKarte[
   const db = await getDb();
   const [matrix, regeln] = await Promise.all([ladeMatrix(), ladeFoerderRegeln()]);
   const auftraege = await db.select().from(versandauftrag)
-    .where(inArray(versandauftrag.status, ['entwurf', 'freigegeben', 'fehlgeschlagen']))
+    .where(and(
+      inArray(versandauftrag.status, ['entwurf', 'freigegeben', 'fehlgeschlagen']),
+      // Dossier und Eingangsbestätigung entstehen automatisch und gehören nie in die Freigabeliste.
+      inArray(versandauftrag.art, ['erstkontakt', 'erinnerung', 'terminmail']),
+    ))
     .orderBy(desc(versandauftrag.erstelltAm));
   const karten: EntwurfKarte[] = [];
   const gesehen = new Set<string>();

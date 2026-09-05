@@ -104,12 +104,18 @@ export function setzeStorage(storage: Storage | undefined): void {
 // Pfade
 // ---------------------------------------------------------------------------
 
-export function anhangPfad(anfrageId: string, endung: string): string {
-  return `anhaenge/${anfrageId}/${randomUUID()}.${endung.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'bin'}`;
+/**
+ * Ablagepfad eines Anhangs. Mit `kennung` (sha256 des Inhalts) ist er je Vorgang und Inhalt
+ * eindeutig: derselbe Upload landet auf demselben Pfad und lässt sich vor dem Einfügen
+ * wiedererkennen, statt bei jedem Speichern eine weitere Kopie anzulegen.
+ */
+export function anhangPfad(anfrageId: string, endung: string, kennung?: string): string {
+  const name = kennung ?? randomUUID();
+  return `anhaenge/${anfrageId}/${name}.${endung.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'bin'}`;
 }
 
-export function thumbPfad(anfrageId: string): string {
-  return `anhaenge/${anfrageId}/${randomUUID()}.webp`;
+export function thumbPfad(anfrageId: string, kennung?: string): string {
+  return `anhaenge/${anfrageId}/${kennung ? `${kennung}-vorschau` : randomUUID()}.webp`;
 }
 
 export function dokumentPfad(anfrageId: string, sha256: string, endung = 'pdf'): string {
@@ -230,14 +236,29 @@ export async function speichereFoto(
   const { randomUUID: uuid } = await import('node:crypto');
   const { getDb } = await import('@/db/client');
   const { anhang } = await import('@/db/schema');
+  const { and, eq } = await import('drizzle-orm');
+
+  // Der Meister-Modus schickt seine Fotos bei jedem Speichern erneut mit. Gleicher Inhalt am
+  // selben Vorgang ist derselbe Anhang; sonst wächst die Ablage mit jedem Zwischenspeichern.
+  const kennung = sha256Hex(roh);
+  // `bildAufbereiten` liefert immer JPEG; der Pfad steht deshalb schon vor der Aufbereitung fest.
+  const pfad = anhangPfad(anfrageId, 'jpg', kennung);
+  const db = await getDb();
+  const schonDa = await db.select().from(anhang).where(and(
+    eq(anhang.anfrageId, anfrageId),
+    eq(anhang.blobPfad, pfad),
+    eq(anhang.art, art),
+  )).limit(1);
+  if (schonDa[0]) {
+    return { id: schonDa[0].id, art, dateiname: schonDa[0].dateiname, groesse: schonDa[0].groesse };
+  }
+
   const bild = await bildAufbereiten(roh);
-  const pfad = anhangPfad(anfrageId, bild.endung);
-  const thumb = thumbPfad(anfrageId);
+  const thumb = thumbPfad(anfrageId, kennung);
   const storage = getStorage();
   await storage.put(pfad, bild.daten, bild.mime);
   await storage.put(thumb, bild.thumb, bild.thumbMime);
   const id = uuid();
-  const db = await getDb();
   const name = (dateiname || 'foto.jpg').replace(/[\r\n/\\]/g, '_').slice(0, 120);
   await db.insert(anhang).values({
     id, anfrageId, art, dateiname: name, mime: bild.mime, groesse: bild.daten.length,
@@ -256,11 +277,24 @@ export async function speichereSkizze(
   const { randomUUID: uuid } = await import('node:crypto');
   const { getDb } = await import('@/db/client');
   const { anhang } = await import('@/db/schema');
+  const { and, eq } = await import('drizzle-orm');
   skizzePruefen(roh);
-  const pfad = anhangPfad(anfrageId, 'png');
+
+  // Wie beim Foto: dieselbe Skizze am selben Vorgang wird nicht ein zweites Mal abgelegt.
+  const kennung = sha256Hex(roh);
+  const pfad = anhangPfad(anfrageId, 'png', kennung);
+  const db = await getDb();
+  const schonDa = await db.select().from(anhang).where(and(
+    eq(anhang.anfrageId, anfrageId),
+    eq(anhang.blobPfad, pfad),
+    eq(anhang.art, 'skizze'),
+  )).limit(1);
+  if (schonDa[0]) {
+    return { id: schonDa[0].id, art: 'skizze', dateiname: schonDa[0].dateiname, groesse: schonDa[0].groesse };
+  }
+
   await getStorage().put(pfad, roh, 'image/png');
   const id = uuid();
-  const db = await getDb();
   const dateiname = `${(name || 'Skizze').replace(/[\r\n/\\]/g, '_').slice(0, 60)}.png`;
   await db.insert(anhang).values({
     id, anfrageId, art: 'skizze', dateiname, mime: 'image/png', groesse: roh.length,

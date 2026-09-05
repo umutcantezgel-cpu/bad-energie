@@ -36,14 +36,29 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  // Die Schlüssel sind Globs auf den Routennamen: Klammern eines dynamischen Segments würden
+  // als Zeichenklasse gelesen und träfen keine Route. Darum die Präfixe mit `**`.
   outputFileTracingIncludes: {
-    "/api/intern/[...slug]": ["src/lib/dokumente/assets/**/*"],
-    "/intern/[[...slug]]": ["src/lib/dokumente/assets/**/*"],
+    "/api/intern/**": ["src/lib/dokumente/assets/**/*"],
+    "/intern/**": ["src/lib/dokumente/assets/**/*"],
   },
-  // PGlite ist nur eine Entwicklungsabhängigkeit (25 MB); der dynamische Import in src/db/client.ts
-  // darf sie nicht in das Function-Bundle ziehen (250-MB-Grenze auf Vercel).
+  // Die entpackte Function darf 250 MB nicht überschreiten. Ausgeschlossen wird alles, was die
+  // Function nie liest: PGlite (nur Entwicklungsabhängigkeit, 25 MB), die Bilder aus `public`
+  // (liefert das CDN aus), die Laufzeitdaten unter `data`, das Altsystem sowie die lokalen
+  // Material- und Belegordner, die nicht im Repository liegen.
   outputFileTracingExcludes: {
-    "/*": ["node_modules/@electric-sql/pglite/**/*"],
+    "/*": [
+      "node_modules/@electric-sql/pglite/**/*",
+      "public/**/*",
+      "legacy/**/*",
+      "data/**/*",
+      ".next/cache/**/*",
+      "Arbeitsweise Chef/**/*",
+      "Pipeline Kopie 5/**/*",
+      "Angebote Bad und energie GmbH Kopie/**/*",
+      "01a05849-*/**/*",
+      "01a0584a-*/**/*",
+    ],
   },
   experimental: {
     optimizePackageImports: [

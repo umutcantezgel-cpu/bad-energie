@@ -97,7 +97,7 @@ const VORBEHALTE: { text: string; gewerk?: Gewerk }[] = [
   { text: 'Verdeckte Mängel hinter Wand, Boden und Estrich sind nicht enthalten.' },
   { text: 'Schadstoffe wie Asbest werden gesondert bewertet und entsorgt.' },
   { text: 'Statische Eingriffe und Wanddurchbrüche sind nicht enthalten.' },
-  { text: 'Der Zustand der Elektro-Hausanschlussleitung wird vor Ort geprüft.', gewerk: 'elektro' },
+  { text: 'Der Zustand der Hausanschlussleitung für Strom wird vor Ort geprüft.', gewerk: 'elektro' },
   { text: 'Malerarbeiten und Tapezieren sind nicht enthalten.' },
   { text: 'Entsorgung über den genannten Umfang hinaus wird nach Aufwand berechnet.' },
   { text: 'Erschwerte Zugänglichkeit, etwa ohne Aufzug ab dem dritten Stock, kann Mehrkosten verursachen.' },
@@ -116,6 +116,17 @@ const PLZ: [string, string, number][] = [
   ['61169', 'Friedberg', 45],
 ];
 
+/**
+ * Kundentexte, die schon in Datenbanken stehen und nachgezogen werden muessen.
+ * Der Seed legt Vorbehalte nur einmal an; ohne diesen Schritt bliebe der alte Wortlaut stehen.
+ */
+const VORBEHALT_TEXT_ANGLEICHUNG: [alt: string, neu: string][] = [
+  [
+    'Der Zustand der Elektro-Hausanschlussleitung wird vor Ort geprüft.',
+    'Der Zustand der Hausanschlussleitung für Strom wird vor Ort geprüft.',
+  ],
+];
+
 export type SeedOptionen = { demoPreise?: boolean };
 
 /** Spielt den Demo-Preissatz ein oder entfernt ihn wieder; setzt die Einstellung `demo_preise`. */
@@ -123,12 +134,21 @@ export async function demoPreiseSetzen(an: boolean): Promise<void> {
   const db = await getDb();
   for (const [nrText, wert] of Object.entries(DEMO_MATRIX)) {
     const nr = Number(nrText);
+    if (an) {
+      await db.update(richtpreis)
+        .set({ von: wert.von, bis: wert.bis, hinweis: sql`concat(coalesce(nullif(regexp_replace(${richtpreis.hinweis}, ' \\| Demo \\([RD]\\)$', ''), ''), ''), ' | Demo (', ${wert.quelle}::text, ')')`, geaendertAm: new Date() })
+        .where(sql`${richtpreis.nr} = ${nr}`);
+      continue;
+    }
+    // Nur Zeilen zuruecksetzen, die noch als Demo gekennzeichnet sind. Ein vom Chef gepflegter Preis
+    // traegt das Kennzeichen nicht mehr und darf beim Abschalten der Demo nicht verloren gehen.
     await db.update(richtpreis)
-      .set(an ? { von: wert.von, bis: wert.bis, hinweis: sql`concat(coalesce(nullif(regexp_replace(${richtpreis.hinweis}, ' \\| Demo \\([RD]\\)$', ''), ''), ''), ' | Demo (', ${wert.quelle}::text, ')')`, geaendertAm: new Date() }
-             : { von: null, bis: null, hinweis: sql`regexp_replace(coalesce(${richtpreis.hinweis}, ''), ' \\| Demo \\([RD]\\)$', '')`, geaendertAm: new Date() })
-      .where(sql`${richtpreis.nr} = ${nr}`);
+      .set({ von: null, bis: null, hinweis: sql`regexp_replace(coalesce(${richtpreis.hinweis}, ''), ' \\| Demo \\([RD]\\)$', '')`, geaendertAm: new Date() })
+      .where(sql`${richtpreis.nr} = ${nr} and coalesce(${richtpreis.hinweis}, '') ~ ' \\| Demo \\([RD]\\)$'`);
   }
-  await db.update(foerderRegel).set({ standardsatz: an ? DEMO_STANDARDSATZ : null }).where(sql`${foerderRegel.id} = 1`);
+  // Der Standardfördersatz wird von keiner Rechenfunktion gelesen und beim Abschalten nicht geleert:
+  // ein von Hand eingetragener Wert soll nicht stillschweigend verschwinden.
+  if (an) await db.update(foerderRegel).set({ standardsatz: DEMO_STANDARDSATZ }).where(sql`${foerderRegel.id} = 1`);
   await db.insert(einstellung).values({ key: 'demo_preise', wert: an }).onConflictDoUpdate({ target: einstellung.key, set: { wert: an, geaendertAm: new Date() } });
 }
 
@@ -147,6 +167,9 @@ export async function seeden(optionen: SeedOptionen = {}): Promise<void> {
     vorbehaltIds.push(...eingefuegt.map((e) => e.id));
   } else {
     vorbehaltIds.push(...vorhandene.map((v) => v.id));
+    for (const [alt, neu] of VORBEHALT_TEXT_ANGLEICHUNG) {
+      await db.update(vorbehalt).set({ text: neu }).where(sql`${vorbehalt.text} = ${alt}`);
+    }
   }
 
   for (const v of VORLAGEN) {
@@ -165,9 +188,22 @@ export async function seeden(optionen: SeedOptionen = {}): Promise<void> {
       vorbehaltIds: vorbehaltIds.slice(0, 3),
       gewerkHaupt: v.gewerkHaupt,
       position: v.position,
-    }).onConflictDoNothing();
+    }).onConflictDoUpdate({
+      // Die Kundentexte der Vorlage kommen aus der Quelldatei und werden nachgezogen; alles andere
+      // (Vorbehalte, Reihenfolge, Aktivkennzeichen) bleibt so, wie der Betrieb es gepflegt hat.
+      target: vorlage.id,
+      set: { annahmenStandard: legacy.annahmen_standard ?? [] },
+    });
     const vorhandeneZeilen = await db.select({ id: vorlageZeile.id }).from(vorlageZeile).where(sql`${vorlageZeile.vorlageId} = ${v.slug}`);
-    if (vorhandeneZeilen.length > 0) continue;
+    if (vorhandeneZeilen.length > 0) {
+      // Nur den Text angleichen. `vorlage_zeile` hat keinen fachlichen Schlüssel, die Position aus der
+      // Quelldatei ist der stabile Bezug; Matrixzuordnung, Menge und Größenvarianten bleiben unberührt.
+      for (const [i, r] of legacy.rows.entries()) {
+        await db.update(vorlageZeile).set({ text: r.text })
+          .where(sql`${vorlageZeile.vorlageId} = ${v.slug} and ${vorlageZeile.position} = ${i + 1}`);
+      }
+      continue;
+    }
     await db.insert(vorlageZeile).values(legacy.rows.map((r, i) => {
       const { matrixNr, einheit, varianten } = matrixParsen(r._matrix);
       return {

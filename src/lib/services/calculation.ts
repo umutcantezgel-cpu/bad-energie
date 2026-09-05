@@ -5,12 +5,14 @@
  * Fachregeln: keine erfundenen Preise (fehlende Matrixwerte blockieren), Spannen von…bis,
  * Brutto = Netto × 1,19, Förderung nach Satzstapel und Deckel, Eigenanteil gerundet nach Einstellung.
  */
+import { HERSTELLER_LABEL } from '../types';
 import type {
   Baustein,
   Einheit,
   FoerderRegeln,
   FoerderungEingabe,
   FoerderungErgebnis,
+  Hersteller,
   Hinweis,
   Kalkulationsfaktoren,
   KalkulationsErgebnis,
@@ -23,7 +25,15 @@ import type {
 
 export const MWST_FAKTOR = 1.19;
 export const OEFFENTLICHE_RUNDUNG = 500;
+/** Platzhalter, die den Versand sperren, solange sie offen sind (Regel 2). */
 export const PLATZHALTER_REGEX = /\[(kW|Liter|Anzahl|lfm)\]/g;
+/**
+ * Alle Platzhalter des Vorlagentexts. `[Hersteller]` steht bewusst nicht in der Sperrliste:
+ * die Marke hat mit Bosch immer einen Standardwert und darf ein Dokument nie blockieren.
+ */
+const PLATZHALTER_ALLE_REGEX = /\[(kW|Liter|Anzahl|lfm|Hersteller)\]/g;
+/** Marke, wenn der Meister nichts anderes waehlt (Bosch Premium Partner). */
+export const HERSTELLER_STANDARD: Hersteller = 'bosch';
 
 // ---------------------------------------------------------------------------
 // Rundung und Formatierung
@@ -64,9 +74,13 @@ export function offenePlatzhalter(text: string): string[] {
   return [...treffer];
 }
 
-export function platzhalterEinsetzen(text: string, werte: Partial<Record<'kW' | 'Liter' | 'Anzahl' | 'lfm', string | number | null | undefined>>): string {
-  return text.replace(PLATZHALTER_REGEX, (ganz, name: 'kW' | 'Liter' | 'Anzahl' | 'lfm') => {
+type PlatzhalterName = 'kW' | 'Liter' | 'Anzahl' | 'lfm' | 'Hersteller';
+
+export function platzhalterEinsetzen(text: string, werte: Partial<Record<PlatzhalterName, string | number | null | undefined>>): string {
+  return text.replace(PLATZHALTER_ALLE_REGEX, (ganz, name: PlatzhalterName) => {
     const wert = werte[name];
+    // Ohne Angabe bleibt die Marke nicht offen stehen, sondern wird zur Standardmarke.
+    if (name === 'Hersteller' && (wert === undefined || wert === null || wert === '')) return HERSTELLER_LABEL[HERSTELLER_STANDARD];
     return wert === undefined || wert === null || wert === '' ? ganz : String(wert);
   });
 }
@@ -90,7 +104,7 @@ export function matrixEinheit(matrix: Richtpreis[], nr: number | null | undefine
 export function positionAusBaustein(
   b: Baustein,
   matrix: Richtpreis[],
-  optionen: { id?: string; varianteMatrixNr?: number | null; menge?: number; kW?: string | number; liter?: number; anzahl?: number; lfm?: number; aktiv?: boolean } = {},
+  optionen: { id?: string; varianteMatrixNr?: number | null; menge?: number; kW?: string | number; liter?: number; anzahl?: number; lfm?: number; aktiv?: boolean; hersteller?: Hersteller } = {},
 ): Position {
   const variante = b.groessenVarianten?.find((v) => v.matrixNr === optionen.varianteMatrixNr) ?? null;
   const matrixNr = variante ? variante.matrixNr : b.groessenVarianten?.length ? (optionen.varianteMatrixNr ?? null) : b.matrixNr;
@@ -100,6 +114,8 @@ export function positionAusBaustein(
     Liter: optionen.liter ?? variante?.speicherLiterDefault,
     Anzahl: optionen.anzahl,
     lfm: optionen.lfm,
+    // Der Vorlagentext nennt die Marke, das Geraet stammt aus der Baureihe dieser Marke.
+    Hersteller: HERSTELLER_LABEL[optionen.hersteller ?? HERSTELLER_STANDARD],
   });
   return {
     id: optionen.id ?? b.id,
@@ -125,6 +141,13 @@ export function positionAusBaustein(
 // Förderung
 // ---------------------------------------------------------------------------
 
+/**
+ * Fördersatz aus den Boni des Chefs (30 + 5 + 20 + 30, Deckel 70).
+ *
+ * `foerder_regel.standardsatz` wird bewusst nicht gelesen: die Boni sind die einzige Quelle des
+ * berechneten Satzes, ein pauschaler Satz je Betrieb wuerde die Bausteine im Dokument verfaelschen.
+ * Ein abweichender Satz im Einzelfall ist `satzManuell` des Meisters.
+ */
 export function foerderSatz(regeln: FoerderRegeln, eingabe: FoerderungEingabe): { satz: number; boni: FoerderungErgebnis['boni'] } {
   const boni = {
     grund: regeln.grund,
@@ -136,8 +159,15 @@ export function foerderSatz(regeln: FoerderRegeln, eingabe: FoerderungEingabe): 
   return { satz: Math.min(summe, regeln.deckel), boni };
 }
 
-/** Förderbausteine in der Sprache des Chefs (Beleg 1): nur die wirksamen Boni, mit Prozent. */
-export function foerderBausteine(boni: FoerderungErgebnis['boni'], regeln: FoerderRegeln): string[] {
+/**
+ * Förderbausteine in der Sprache des Chefs (Beleg 1): nur die wirksamen Boni, mit Prozent.
+ *
+ * Ein von Hand gesetzter Satz laesst sich nicht in Bausteine zerlegen; ihn als „Grundförderung“
+ * auszuweisen waere sachlich falsch, weil die Grundförderung 30 % betraegt.
+ */
+export function foerderBausteine(ergebnis: Pick<FoerderungErgebnis, 'satz' | 'boni' | 'manuell'>, regeln: FoerderRegeln): string[] {
+  if (ergebnis.manuell) return [`Vom Fachbetrieb angesetzter Fördersatz ${ergebnis.satz} %`];
+  const boni = ergebnis.boni;
   const liste: string[] = [];
   if (boni.grund > 0) liste.push(`Grundförderung ${boni.grund} %`);
   if (boni.effizienz > 0) liste.push(`Natürliches Kältemittel (R290) ${boni.effizienz} %`);
@@ -159,9 +189,12 @@ export function berechneFoerderung(
 ): { ergebnis: FoerderungErgebnis | null; hinweis: Hinweis | null } {
   let satz: number;
   let boni: FoerderungErgebnis['boni'];
+  let manuell = false;
   if (eingabe.satzManuell !== null && eingabe.satzManuell !== undefined) {
     satz = Math.min(Math.max(0, eingabe.satzManuell), regeln.deckel);
-    boni = { grund: satz, effizienz: 0, klimageschwindigkeit: 0, einkommen: 0 };
+    // Der Handsatz gehoert in keinen Bonus: er ist nicht die Grundförderung, sondern ersetzt die Rechnung.
+    boni = { grund: 0, effizienz: 0, klimageschwindigkeit: 0, einkommen: 0 };
+    manuell = true;
   } else {
     ({ satz, boni } = foerderSatz(regeln, eingabe));
   }
@@ -171,7 +204,7 @@ export function berechneFoerderung(
   const rundung = regeln.eigenanteilRundung || 1;
   const eigenanteilVon = Math.max(0, rundeAuf(brutto.von - zuschuss, rundung));
   const eigenanteilBis = Math.max(0, rundeAuf(brutto.bis - zuschuss, rundung));
-  return { ergebnis: { satz, kosten, zuschuss, eigenanteilVon, eigenanteilBis, boni }, hinweis: null };
+  return { ergebnis: { satz, kosten, zuschuss, eigenanteilVon, eigenanteilBis, boni, manuell }, hinweis: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -295,11 +328,13 @@ export function oeffentlicheSpanne(ergebnis: KalkulationsErgebnis, extras: Oeffe
       nichtEnthalten,
     };
   if (dto.pfad === 'spanne' && ergebnis.foerderung) {
-    dto.foerderzuschuss = ergebnis.foerderung.zuschuss;
+    // Der Kunde rechnet die drei gezeigten Zahlen nach: Eigenanteil = gerundetes Brutto minus gezeigtem Zuschuss.
+    const zuschuss = Math.floor(ergebnis.foerderung.zuschuss / 100) * 100;
+    dto.foerderzuschuss = zuschuss;
     dto.foerderSatz = ergebnis.foerderung.satz;
-    if (extras.foerderRegeln) dto.foerderBausteine = foerderBausteine(ergebnis.foerderung.boni, extras.foerderRegeln);
-    dto.eigenanteilVon = Math.floor(ergebnis.foerderung.eigenanteilVon / OEFFENTLICHE_RUNDUNG) * OEFFENTLICHE_RUNDUNG;
-    dto.eigenanteilBis = Math.ceil(ergebnis.foerderung.eigenanteilBis / OEFFENTLICHE_RUNDUNG) * OEFFENTLICHE_RUNDUNG;
+    if (extras.foerderRegeln) dto.foerderBausteine = foerderBausteine(ergebnis.foerderung, extras.foerderRegeln);
+    dto.eigenanteilVon = Math.max(0, (dto.bruttoVonGerundet ?? 0) - zuschuss);
+    dto.eigenanteilBis = Math.max(0, (dto.bruttoBisGerundet ?? 0) - zuschuss);
   }
   const b = extras.betriebskosten;
   if (b && b.heuteJahr !== null && b.ersparnisJahr !== null && b.ersparnisJahr > 0) {

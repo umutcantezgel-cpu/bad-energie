@@ -22,8 +22,9 @@ export const VORGANG_UEBERGAENGE: Record<AnfrageStatus, AnfrageStatus[]> = {
 };
 
 export const VERSAND_UEBERGAENGE: Record<VersandStatus, VersandStatus[]> = {
-  // 'versendet' direkt aus 'entwurf': Sofortversand von der Baustelle (Freigabe und Versand in einem Schritt).
-  entwurf: ['freigegeben', 'versendet', 'storniert'],
+  // Gesendet wird nur aus 'freigegeben'. Auch der Sofortversand von der Baustelle geht über die
+  // Freigabe, sie geschieht dort nur im selben Schritt; ein Entwurf verlässt das Haus nie.
+  entwurf: ['freigegeben', 'storniert'],
   freigegeben: ['versendet', 'fehlgeschlagen', 'storniert'],
   fehlgeschlagen: ['freigegeben', 'versendet', 'storniert'],
   versendet: [],

@@ -211,12 +211,12 @@ describe('Journeys: Portal-Felder', () => {
     ]);
   });
 
-  it('die Verbrauchsfrage ist ein optionales Zahlenfeld mit passender Einheit', () => {
+  it('die Verbrauchsfrage ist ein optionales Zahlenfeld mit passender Einheit je Brennstoff', () => {
     for (const id of ['heizung', 'waermepumpe'] as const) {
       const fragen = JOURNEYS[id].schritte
         .flatMap((s) => s.fragen)
         .filter((f) => f.feld === 'verbrauchJahr' && f.art === 'zahl');
-      expect(fragen, id).toHaveLength(2);
+      expect(fragen, id).toHaveLength(3);
       for (const frage of fragen) {
         expect(frage.optional, id).toBe(true);
         expect((frage as { eingabe?: string }).eingabe, id).toBe('feld');
@@ -224,6 +224,21 @@ describe('Journeys: Portal-Felder', () => {
       const einheiten = fragen.map((f) => (f as { einheit: string }).einheit);
       expect(einheiten, id).toContain('kWh im Jahr');
       expect(einheiten, id).toContain('Liter im Jahr');
+      expect(einheiten, id).toContain('Raummeter im Jahr');
+    }
+  });
+
+  it('jede Verbrauchsfrage gilt fuer genau eine Gruppe von Brennstoffen', () => {
+    for (const id of ['heizung', 'waermepumpe'] as const) {
+      const fragen = JOURNEYS[id].schritte
+        .flatMap((s) => s.fragen)
+        .filter((f) => f.feld === 'verbrauchJahr' && f.art === 'zahl');
+      const werte = fragen.flatMap((f) => f.sichtbarWenn?.werte ?? []);
+      // Kilowattstunden nur dort, wo die Abrechnung sie ausweist; Holz hat eine eigene Einheit.
+      expect(new Set(werte).size, id).toBe(werte.length);
+      expect(werte.sort(), id).toEqual(['gas', 'holz', 'oel', 'sonstiges', 'strom']);
+      const holz = fragen.find((f) => (f as { einheit: string }).einheit === 'Raummeter im Jahr');
+      expect(holz?.sichtbarWenn?.werte, id).toEqual(['holz']);
     }
   });
 

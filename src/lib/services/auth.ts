@@ -6,7 +6,7 @@ import { getDb } from '@/db/client';
 import { benutzer } from '@/db/schema';
 import type { AnmeldeErgebnis, Rolle, SessionInfo } from '../types';
 import { dummyHash, pinGueltig, pinPruefen } from './pin';
-import { loescheLimit, pruefeLimit } from './ratelimit';
+import { loescheLimit, pruefeLimit, schluesselHash } from './ratelimit';
 import {
   erstelleSitzung, leseSitzungsCookie, loescheSitzungsCookie, setzeSitzungsCookie, sitzungAusId,
   widerrufeAlleSitzungen, widerrufeSitzung,
@@ -22,6 +22,14 @@ export const SPERRE_MS = 15 * 60 * 1000;
 /** Anmeldeversuche je IP im Zehnminutenfenster. */
 export const IP_VERSUCHE = 20;
 export const IP_FENSTER_MS = 10 * 60 * 1000;
+/**
+ * Anmeldeversuche je E-Mail-Adresse in der Stunde. Der IP-Zähler allein greift nicht,
+ * wenn die Versuche über viele Adressen verteilt kommen; die Kontosperre nach fünf
+ * Fehlversuchen wäre dann ein Werkzeug, um einen Kollegen auszusperren. Der
+ * Adresszähler deckelt genau das, ohne den Zugang nach Ablauf der Sperre zu verbauen.
+ */
+export const EMAIL_VERSUCHE = 30;
+export const EMAIL_FENSTER_MS = 60 * 60 * 1000;
 
 const FEHLER_ALLGEMEIN = 'E-Mail oder PIN stimmt nicht.';
 
@@ -48,6 +56,13 @@ export async function anmeldenMitPin(
     return { ok: false, fehler: FEHLER_ALLGEMEIN };
   }
 
+  // Zähler je Adresse, auch für unbekannte Adressen: sonst zählt nur die IP.
+  const emailSchluessel = `anmeldung:mail:${schluesselHash(email, jetzt)}`;
+  const emailLimit = await pruefeLimit(emailSchluessel, EMAIL_VERSUCHE, EMAIL_FENSTER_MS, jetzt);
+  if (!emailLimit.erlaubt) {
+    return { ok: false, fehler: 'Zu viele Versuche. Bitte in einigen Minuten erneut probieren.' };
+  }
+
   const zeilen = await db.select().from(benutzer).where(eq(sql`lower(${benutzer.email})`, email)).limit(1);
   const person = zeilen[0];
   if (!person) {
@@ -58,6 +73,8 @@ export async function anmeldenMitPin(
     pinPruefen(pin, dummyHash());
     return { ok: false, fehler: FEHLER_ALLGEMEIN };
   }
+  // Eine abgelaufene Sperre hält nicht nach: der Zähler wird beim nächsten Fehlversuch neu
+  // gezählt und ein gültiges PIN-Login setzt Zähler und Sperre unten wieder zurück.
   if (person.gesperrtBis && person.gesperrtBis.getTime() > jetzt.getTime()) {
     return { ok: false, fehler: 'Zugang ist für 15 Minuten gesperrt.' };
   }
@@ -74,6 +91,7 @@ export async function anmeldenMitPin(
 
   await db.update(benutzer).set({ fehlversuche: 0, gesperrtBis: null, letzterLoginAm: jetzt }).where(eq(benutzer.id, person.id));
   if (eingabe.ipHash) await loescheLimit(`anmeldung:ip:${eingabe.ipHash}`);
+  await loescheLimit(emailSchluessel);
   const { id, laeuftAbAm } = await erstelleSitzung(person.id, jetzt, { ipHash: eingabe.ipHash, userAgent: eingabe.userAgent });
   return {
     ok: true,

@@ -53,6 +53,8 @@ export const VERTEILUNGEN = ['heizkoerper', 'fussboden', 'gemischt'] as const;
 export type Verteilung = (typeof VERTEILUNGEN)[number];
 export const HERSTELLER = ['bosch', 'buderus'] as const;
 export type Hersteller = (typeof HERSTELLER)[number];
+/** Markenname im Kundentext. Bosch ist die Standardmarke (Premium Partner), Buderus die Alternative. */
+export const HERSTELLER_LABEL: Record<Hersteller, string> = { bosch: 'Bosch', buderus: 'Buderus' };
 export const HEIZUNGS_STANDORTE = ['keller', 'erdgeschoss', 'dachgeschoss', 'anbau', 'aussen', 'unbekannt'] as const;
 export type HeizungsStandort = (typeof HEIZUNGS_STANDORTE)[number];
 export const SANIERUNGEN = ['dach', 'fenster', 'fassade', 'kellerdecke'] as const;
@@ -215,6 +217,11 @@ export type FoerderungErgebnis = {
   eigenanteilVon: number;
   eigenanteilBis: number;
   boni: { grund: number; effizienz: number; klimageschwindigkeit: number; einkommen: number };
+  /**
+   * true, wenn der Satz vom Fachbetrieb von Hand gesetzt wurde. Dann stehen die Boni auf null,
+   * weil sich ein Handsatz nicht in Grundfoerderung und Zuschlaege zerlegen laesst.
+   */
+  manuell?: boolean;
 };
 
 export type HinweisCode =
@@ -581,7 +588,11 @@ export type EstimateRequest = z.infer<typeof estimateRequestSchema>;
 export type EstimateResponse =
   | { ok: true; modus: 'kunde'; ksNummer: string; ergebnis: OeffentlicheErgebnisDTO }
   | { ok: true; modus: 'intern'; anfrageId: string; ksNummer: string; status: AnfrageStatus; aktion: 'entwurf' | 'sofort' | 'terminmail'; versand?: { kunde: VersandStatus; dossier: VersandStatus }; hinweise: Hinweis[]; rueckmeldung: string }
-  | { ok: false; fehler: string; hinweise?: Hinweis[]; anfrageId?: string; ksNummer?: string; status?: AnfrageStatus };
+  | {
+      ok: false; fehler: string; hinweise?: Hinweis[]; anfrageId?: string; ksNummer?: string; status?: AnfrageStatus;
+      /** Gesetzt, wenn die Sitzung für diesen Vorgang nicht zuständig ist (Rollenregel 3.3). */
+      grund?: 'berechtigung' | 'nicht_gefunden';
+    };
 
 // ---------------------------------------------------------------------------
 // Intern-Bereich: Sitzung, Aktionen, DTOs

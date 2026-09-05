@@ -11,7 +11,8 @@ import type { JobErgebnis } from './runner';
 
 /**
  * Löschung nach Ablauf der Speicherfrist (Artikel 17, Einstellung `speicherfrist_monate`).
- * Maßgeblich ist `termin_am`, ersatzweise `verworfen_am`, ersatzweise `versendet_am`.
+ * Maßgeblich ist `termin_am`, ersatzweise `verworfen_am`, ersatzweise `versendet_am`,
+ * zuletzt `erstellt_am`: auch ein nie bearbeiteter Web-Lead muss nach Fristablauf verschwinden.
  * Positionen, Anhänge, Dokumente, Versandaufträge und Ereignisse hängen an der Fremdschlüsselkaskade;
  * Blob-Objekte werden vorher einzeln entfernt. Das Löschprotokoll enthält keine personenbezogenen Daten.
  */
@@ -21,7 +22,8 @@ export async function speicherfristJob(jetzt: Date): Promise<JobErgebnis> {
   const grenze = minusMonate(jetzt, einst.speicherfristMonate);
   const alle = await db.select().from(anfrageTabelle);
   const faellig = alle.filter((a) => {
-    const stichtag = a.terminAm ?? a.verworfenAm ?? a.versendetAm;
+    // Ohne jeden Bearbeitungsstempel zählt der Eingang, sonst bliebe der Vorgang für immer liegen.
+    const stichtag = a.terminAm ?? a.verworfenAm ?? a.versendetAm ?? a.erstelltAm;
     return stichtag !== null && stichtag.getTime() <= grenze.getTime();
   });
 

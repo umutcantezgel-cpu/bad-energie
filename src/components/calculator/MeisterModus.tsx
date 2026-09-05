@@ -77,7 +77,13 @@ import {
   zeigerGrobLesen,
   zeigerServerLesen,
   type AbschnittId,
+  anhangKennung,
+  koerperBytes,
   lohntServerEntwurf,
+  neueAnhaenge,
+  nurKennungGeaendert,
+  varianteVorbelegung,
+  zuGrossMeldung,
 } from './meister-utils';
 
 export type MeisterModusProps = { anfrageId?: string; initial?: InternAnfrageDTO | null };
@@ -194,9 +200,17 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
   const [rueckmeldung, setRueckmeldung] = useState('');
   const [versandHinweise, setVersandHinweise] = useState<string[]>([]);
   const [online, setOnline] = useState(true);
+  // KS-Nummer des Vorgangs; sie entsteht beim ersten Serverentwurf und gilt danach unveraendert.
+  const [ksNummer, setKsNummer] = useState(initial?.ksNummer ?? '');
+  const [speicherfehler, setSpeicherfehler] = useState('');
 
   const autosave = useRef<Autosave | null>(null);
   const ersteRunde = useRef(true);
+  // Die Kennung des Vorgangs steht hier sofort nach der Antwort, auch bevor der Zustand sie traegt.
+  const serverKennung = useRef<string | null>(anfrageId ?? initial?.anfrageId ?? null);
+  // Kennungen der bereits hochgeladenen Anhaenge; der Server haengt sie an, statt sie zu ersetzen.
+  const gesendeteAnhaenge = useRef<Set<string>>(new Set());
+  const zuletztGemeldet = useRef<InternAnfrage | null>(null);
   const schluessel = entwurfSchluessel(anfrageId ?? initial?.anfrageId);
 
   // Kalkulationsdaten und Terminfenster einmal beim Mount laden.
@@ -243,8 +257,45 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
       schluessel,
       // Ein leerer Konfigurator bleibt lokal; erst mit Vorlage und erkennbarem Kunden entsteht ein Vorgang (KS-Nummer).
       senden: async (a) => {
-        if (!lohntServerEntwurf(a, hatAnfrageId)) return;
-        await speichereEntwurf({ ...a, aktion: 'entwurf' });
+        // Die Kennung aus der letzten Antwort gilt sofort; ohne sie legt jeder Lauf einen neuen Vorgang an.
+        const kennung = a.anfrageId ?? serverKennung.current ?? undefined;
+        if (!lohntServerEntwurf({ ...a, anfrageId: kennung }, hatAnfrageId)) return;
+        // Schon hochgeladene Skizzen und Fotos bleiben draussen: der Server haengt sie an.
+        const anhaenge = neueAnhaenge(a, gesendeteAnhaenge.current);
+        const koerper = { ...a, ...anhaenge, anfrageId: kennung, aktion: 'entwurf' as const };
+        const groesse = koerperBytes(JSON.stringify(koerper));
+        const zuGross = zuGrossMeldung(groesse);
+        if (zuGross) {
+          // Nicht senden: die Plattform antwortet ueber der Grenze ohne JSON. Der Fehler haelt
+          // das Badge auf „Nicht gespeichert“, damit niemand den Entwurf fuer gesichert haelt.
+          setSpeicherfehler(zuGross);
+          throw new Error(zuGross);
+        }
+        let antwort: Awaited<ReturnType<typeof speichereEntwurf>>;
+        try {
+          antwort = await speichereEntwurf(koerper);
+        } catch (fehler) {
+          const status = (fehler as { status?: number }).status;
+          if (status === 403) {
+            // Fremder Vorgang: nicht weiter anklopfen, die Arbeit bleibt auf dem Gerät.
+            setSpeicherfehler('Dieser Vorgang wird von einer anderen Person bearbeitet. Änderungen bleiben nur auf diesem Gerät.');
+            autosave.current?.stoppe();
+          } else if (status === 409) {
+            // Der Vorgang existiert nicht mehr (Storno, Speicherfrist): Kennung verwerfen, der nächste Lauf legt neu an.
+            serverKennung.current = null;
+            dispatch({ typ: 'feld', teil: { anfrageId: undefined } });
+            setSpeicherfehler('Der Vorgang existiert nicht mehr. Beim nächsten Speichern wird ein neuer Vorgang angelegt.');
+          }
+          throw fehler;
+        }
+        setSpeicherfehler('');
+        if (!antwort.ok || antwort.modus !== 'intern') return;
+        for (const s of anhaenge.skizzen) gesendeteAnhaenge.current.add(anhangKennung(s));
+        for (const f of anhaenge.fotos) gesendeteAnhaenge.current.add(anhangKennung(f));
+        serverKennung.current = antwort.anfrageId;
+        setKsNummer(antwort.ksNummer);
+        // Der Zustand traegt die Kennung, damit Speichern und Versand denselben Vorgang meinen.
+        if (!a.anfrageId) dispatch({ typ: 'feld', teil: { anfrageId: antwort.anfrageId } });
       },
     });
     return () => {
@@ -256,8 +307,13 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
   useEffect(() => {
     if (ersteRunde.current) {
       ersteRunde.current = false;
+      zuletztGemeldet.current = anfrage;
       return;
     }
+    const vorher = zuletztGemeldet.current;
+    zuletztGemeldet.current = anfrage;
+    // Die zurueckgeschriebene Vorgangskennung ist keine Aenderung des Meisters.
+    if (vorher && nurKennungGeaendert(vorher, anfrage)) return;
     autosave.current?.melde(anfrage);
   }, [anfrage]);
 
@@ -341,10 +397,8 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
       teil: { aktiv?: boolean; varianteMatrixNr?: number | null; menge?: number; liter?: number; kW?: string | number },
     ) => {
       const alt = positionZu(b.id);
-      const variante =
-        teil.varianteMatrixNr !== undefined
-          ? teil.varianteMatrixNr
-          : (alt?.varianteMatrixNr ?? b.groessenVarianten?.[0]?.matrixNr ?? null);
+      // Die Groesse wird nie geraten: Ohne Wahl bleibt sie offen, die Zeile ist blockiert (Fachregel 2).
+      const variante = teil.varianteMatrixNr !== undefined ? teil.varianteMatrixNr : (alt?.varianteMatrixNr ?? null);
       const gewaehlteVariante = b.groessenVarianten?.find((v) => v.matrixNr === variante) ?? null;
       const liter = teil.liter ?? speicherWahl[b.id] ?? gewaehlteVariante?.speicherLiterDefault;
       // Steht das Geraet fest und passt es zur Variante, steht seine Leistung im Text ("10"), sonst die Beschriftung.
@@ -357,13 +411,15 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
         liter,
         kW,
         aktiv: teil.aktiv ?? alt?.aktiv ?? !b.zuschlag,
+        // Der Vorlagentext nennt den Hersteller; er folgt der Wahl in der Kachel „Heizlast und Gerät“.
+        hersteller: anfrage.gebaeude.geraet.hersteller,
       });
       dispatch({
         typ: 'positionSetzen',
         position: { ...neu, notizIntern: alt?.notizIntern ?? '', intern: alt?.intern ?? {} },
       });
     },
-    [daten, positionZu, speicherWahl, anfrage.gebaeude.geraet.kw],
+    [daten, positionZu, speicherWahl, anfrage.gebaeude.geraet.kw, anfrage.gebaeude.geraet.hersteller],
   );
 
   // Basispositionen anlegen, sobald eine Vorlage gewaehlt wurde.
@@ -373,9 +429,42 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
       if (b.zuschlag) continue;
       // Vom Server geladene Positionen tragen Zeilen-IDs; der Baustein steckt in vorlageZeileId.
       if (anfrage.positionen.some((p) => p.id === b.id || p.vorlageZeileId === b.id)) continue;
-      setzePosition(b, { aktiv: true });
+      // Die Groesse kommt aus der Heizlast, nicht aus der Reihenfolge der Varianten: Ohne belastbare
+      // Schaetzung bleibt sie offen und der Meister waehlt sie vor Ort (Fachregel 2).
+      const vorschlag = b.groessenVarianten?.length
+        ? geraeteVorschlag(heizlast?.kwEmpfohlen ?? 0, b.groessenVarianten, anfrage.gebaeude.geraet.hersteller)
+        : null;
+      setzePosition(b, { aktiv: true, varianteMatrixNr: varianteVorbelegung(b, heizlast, vorschlag) });
     }
-  }, [daten, gewaehlteBausteine, anfrage.positionen, setzePosition]);
+  }, [daten, gewaehlteBausteine, anfrage.positionen, setzePosition, heizlast, anfrage.gebaeude.geraet.hersteller]);
+
+  /**
+   * Wechselt der Meister den Hersteller, tragen die Texte der aktiven Waermepumpen-Positionen
+   * den neuen Namen. Preise, Mengen und Notizen bleiben unberuehrt.
+   */
+  const herstellerVorher = useRef(anfrage.gebaeude.geraet.hersteller);
+  useEffect(() => {
+    const hersteller = anfrage.gebaeude.geraet.hersteller;
+    if (herstellerVorher.current === hersteller) return;
+    // Ohne Matrix laesst sich kein Text bilden; die Umschaltung wird nachgeholt, sobald sie da ist.
+    if (!daten) return;
+    herstellerVorher.current = hersteller;
+    for (const b of wpBausteine) {
+      const alt = positionZu(b.id);
+      if (!alt || alt.quelle !== 'vorlage') continue;
+      const gewaehlteVariante = b.groessenVarianten?.find((v) => v.matrixNr === alt.varianteMatrixNr) ?? null;
+      const neu = positionAusBaustein(b, daten.matrix, {
+        id: alt.id,
+        varianteMatrixNr: alt.varianteMatrixNr,
+        menge: alt.menge,
+        liter: speicherWahl[b.id] ?? gewaehlteVariante?.speicherLiterDefault,
+        kW: kwFuerVariante(gewaehlteVariante, anfrage.gebaeude.geraet.kw),
+        aktiv: alt.aktiv,
+        hersteller,
+      });
+      if (neu.text !== alt.text) dispatch({ typ: 'positionAendern', id: alt.id, teil: { text: neu.text } });
+    }
+  }, [anfrage.gebaeude.geraet.hersteller, anfrage.gebaeude.geraet.kw, daten, wpBausteine, positionZu, speicherWahl]);
 
   /** Matrixnummer des Geraetevorschlags; die Kachel markiert diese Variante. */
   const vorschlagMatrixNr = useMemo(() => {
@@ -412,8 +501,12 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
   );
 
   const hinweiseZu = useCallback(
-    (id: string) => ergebnis.blockiert.filter((h) => h.positionId === id),
-    [ergebnis.blockiert],
+    // Hinweise tragen die Positions-ID; vom Server geladene Positionen haben eine andere ID als der Baustein.
+    (id: string) => {
+      const positionId = positionZu(id)?.id ?? id;
+      return ergebnis.blockiert.filter((h) => h.positionId === positionId);
+    },
+    [ergebnis.blockiert, positionZu],
   );
 
   const springeZuBlockierter = useCallback(() => {
@@ -470,11 +563,30 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
   const offenePunkte = schrittPruefung(abschnitt, anfrage, ergebnis);
   const weiterGesperrt = schrittSperrt(abschnitt, ergebnis);
 
+  /** Zustand mit der bekannten Vorgangskennung; sonst entsteht ein zweiter Vorgang mit eigener KS-Nummer. */
+  const mitKennung = (aktion: InternAnfrage['aktion']): InternAnfrage => ({
+    ...anfrage,
+    anfrageId: anfrage.anfrageId ?? serverKennung.current ?? undefined,
+    aktion,
+  });
+
   const alsEntwurf = async () => {
     setSendet(true);
     setRueckmeldung('');
+    const koerper = mitKennung('entwurf');
+    const zuGross = zuGrossMeldung(koerperBytes(JSON.stringify(koerper)));
+    if (zuGross) {
+      setRueckmeldung(zuGross);
+      setSendet(false);
+      return;
+    }
     try {
-      const antwort = await speichereEntwurf({ ...anfrage, aktion: 'entwurf' }, { auftragAnlegen: true });
+      const antwort = await speichereEntwurf(koerper, { auftragAnlegen: true });
+      if (antwort.ok && antwort.modus === 'intern') {
+        serverKennung.current = antwort.anfrageId;
+        setKsNummer(antwort.ksNummer);
+        if (!anfrage.anfrageId) dispatch({ typ: 'feld', teil: { anfrageId: antwort.anfrageId } });
+      }
       setRueckmeldung(
         antwort.ok && antwort.modus === 'intern'
           ? `Entwurf gespeichert: ${antwort.ksNummer}. ${antwort.rueckmeldung} Der Vorgang wartet unter Entwürfe auf die Freigabe.`
@@ -497,14 +609,30 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
     setSendet(true);
     setRueckmeldung('');
     setVersandHinweise([]);
+    const koerper = JSON.stringify({ ...mitKennung(aktion), modus: 'intern' });
+    // Ueber der Koerpergrenze antwortet die Plattform ohne JSON; dann sagen wir vorher, was zu tun ist.
+    const zuGross = zuGrossMeldung(koerperBytes(koerper));
+    if (zuGross) {
+      setRueckmeldung(zuGross);
+      setSendet(false);
+      return;
+    }
     try {
       const antwort = await fetch('/api/estimate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...anfrage, modus: 'intern', aktion }),
+        body: koerper,
       });
-      const ergebnisAntwort = (await antwort.json()) as EstimateResponse;
-      if (antwort.status === 403) {
+      const ergebnisAntwort = (await antwort.json().catch(() => null)) as EstimateResponse | null;
+      if (!ergebnisAntwort) {
+        // Antwort ohne JSON: Statuscode nennen, damit der Meister weiss, woran es liegt.
+        setRueckmeldung(
+          antwort.status === 413
+            ? (zuGrossMeldung(koerperBytes(koerper)) ??
+              'Fotos und Skizzen sind zusammen zu groß. Bitte Fotos entfernen oder verkleinern.')
+            : `Der Versand ist fehlgeschlagen (Status ${antwort.status}). Bitte erneut versuchen.`,
+        );
+      } else if (antwort.status === 403) {
         setRueckmeldung(
           !ergebnisAntwort.ok && ergebnisAntwort.fehler
             ? ergebnisAntwort.fehler
@@ -514,6 +642,9 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
         setRueckmeldung(ergebnisAntwort.fehler);
         setVersandHinweise((ergebnisAntwort.hinweise ?? []).map((h) => h.text));
       } else if (ergebnisAntwort.modus === 'intern') {
+        serverKennung.current = ergebnisAntwort.anfrageId;
+        setKsNummer(ergebnisAntwort.ksNummer);
+        if (!anfrage.anfrageId) dispatch({ typ: 'feld', teil: { anfrageId: ergebnisAntwort.anfrageId } });
         const versand = ergebnisAntwort.versand
           ? ` Kundenmail ${VERSAND_TEXT[ergebnisAntwort.versand.kunde]}, Dossier ${VERSAND_TEXT[ergebnisAntwort.versand.dossier]}.`
           : '';
@@ -530,7 +661,8 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
     }
   };
 
-  const ksNummer = initial?.ksNummer ?? 'KS-0000-0000';
+  // Vor dem ersten Serverentwurf gibt es noch keine Nummer; der Platzhalter zeigt nur den Aufbau des Anhangs.
+  const anhangNummer = ksNummer || 'KS-0000-0000';
 
   return (
     <div className={kundenansicht ? 'pb-4' : 'pb-4'}>
@@ -585,6 +717,11 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
 
       {laedt ? <p className="rounded-2xl bg-white/80 p-4 text-base text-slate-700">Kalkulationsdaten werden geladen …</p> : null}
       {ladefehler ? <p className="rounded-2xl bg-[#FEF3F2] p-4 text-base text-[#B42318]">{ladefehler}</p> : null}
+      {speicherfehler ? (
+        <p aria-live="polite" className="rounded-2xl bg-[#FEF3F2] p-4 text-base font-medium text-[#B42318]">
+          {speicherfehler}
+        </p>
+      ) : null}
 
       {abschnitt === 'vorhaben' ? (
         <section aria-labelledby="h-vorhaben">
@@ -1130,7 +1267,7 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
       <AbschlussSheet
         offen={abschlussOffen}
         empfaenger={anfrage.kontakt.email}
-        anhangname={anhangName(ksNummer)}
+        anhangname={anhangName(anhangNummer)}
         bruttoVon={ergebnis.bruttoVon}
         bruttoBis={ergebnis.bruttoBis}
         fehlendeAngaben={fehlt}

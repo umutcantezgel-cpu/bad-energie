@@ -149,7 +149,8 @@ function KarteItem({ karte }: { karte: BoardKarte }) {
 
       <div className="mb-3">
         <h4 className="text-sm font-bold text-slate-900 leading-tight">
-          {karte.nachname}
+          {/* Vorgänge ohne hinterlegten Kunden bleiben sichtbar; der Name fehlt dann noch. */}
+          {karte.nachname || 'Ohne Namen'}
         </h4>
         <p className="text-xs text-slate-600 line-clamp-1 mt-0.5">
           {karte.vorhabenKurz}

@@ -21,8 +21,16 @@ export function tagesSalz(jetzt: Date): string {
   return `${pfeffer()}:${tagesBucket(jetzt)}`;
 }
 
+/**
+ * Gesalzener Kurzhash eines Zählerschlüssels (IP, E-Mail). Rohwerte gehören nie in die
+ * Tabelle `rate_limit`: sie wäre sonst ein Personenverzeichnis mit Zeitstempel.
+ */
+export function schluesselHash(wert: string, jetzt: Date): string {
+  return createHash('sha256').update(`${tagesSalz(jetzt)}:${wert}`).digest('hex').slice(0, 32);
+}
+
 export function ipHash(ip: string, jetzt: Date): string {
-  return createHash('sha256').update(`${tagesSalz(jetzt)}:${ip}`).digest('hex').slice(0, 32);
+  return schluesselHash(ip, jetzt);
 }
 
 /** Client-IP aus den Vercel-Headern (x-real-ip, sonst erster Eintrag von x-forwarded-for). */

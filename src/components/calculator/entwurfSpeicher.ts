@@ -237,16 +237,21 @@ export function starteAutosave(optionen: AutosaveOptionen): Autosave {
   const verzoegerung = optionen.verzoegerung ?? ENTPRELLUNG_MS;
   let letzte: InternAnfrage | null = null;
   let zeitgeber: ReturnType<typeof setTimeout> | null = null;
-  let laeuft = false;
+  // Zwei Speicherlaeufe duerfen sich nie ueberholen: Ein zweiter Lauf ohne bekannte
+  // Vorgangskennung legt sonst einen zweiten Vorgang mit eigener KS-Nummer an.
+  // Deshalb haengen alle Laeufe an einer Kette; waehrend ein Lauf laeuft, wird nur
+  // vorgemerkt und danach der juengste Stand einmal nachgereicht.
+  let kette: Promise<void> = Promise.resolve();
+  let offen = false;
 
-  const senden = async (): Promise<void> => {
-    if (!letzte || laeuft) return;
+  const ausfuehren = async (): Promise<void> => {
+    if (!offen || !letzte) return;
+    offen = false;
     if (!online()) {
       syncMelden({ typ: 'offline' });
       await outboxSetzen(optionen.schluessel);
       return;
     }
-    laeuft = true;
     syncMelden({ typ: 'sendet' });
     try {
       await optionen.senden(letzte);
@@ -255,9 +260,15 @@ export function starteAutosave(optionen: AutosaveOptionen): Autosave {
     } catch {
       await outboxSetzen(optionen.schluessel);
       syncMelden({ typ: 'fehler', meldung: 'Nicht gespeichert, wird erneut versucht' });
-    } finally {
-      laeuft = false;
     }
+  };
+
+  const senden = (): Promise<void> => {
+    offen = true;
+    // Ein Fehler darf die Kette nicht abreissen lassen, sonst speichert das Geraet nie wieder.
+    const naechste = kette.then(ausfuehren, ausfuehren);
+    kette = naechste;
+    return naechste;
   };
 
   const beiOnline = () => {

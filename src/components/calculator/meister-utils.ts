@@ -19,7 +19,7 @@ import type {
   Position,
   SkizzeExport,
 } from '@/lib/types';
-import { leeresGebaeude } from '@/lib/services/heizlast';
+import { geraetAusBaureihe, heizlastSchaetzen, leeresGebaeude } from '@/lib/services/heizlast';
 
 // ---------------------------------------------------------------------------
 // Farben und Bezeichner
@@ -115,6 +115,14 @@ export function fehlendeAngaben(a: InternAnfrage): string[] {
   const tuer = a.gebaeude.platz.tuerbreiteCm;
   if (tuer !== null && tuer < 80) fehlt.push('Türbreite unter 80 cm, Transportweg klären');
   if (istWaermepumpenVorlage(a.vorlageIds) && !a.gebaeude.bestand.energieart) fehlt.push('Bestehende Heizung');
+  // Dieselben Punkte wie im Büro-Dossier (dokument-eingabe.ts), damit der Meister vor Ort dasselbe sieht.
+  if (istWaermepumpenVorlage(a.vorlageIds)) {
+    const h = heizlastSchaetzen(a.gebaeude);
+    if (h && !h.belastbar) fehlt.push('Jahresverbrauch fehlt, die Heizlast aus der Wohnfläche allein trägt die Gerätewahl nicht');
+    if (h && geraetAusBaureihe(h.kwEmpfohlen, a.gebaeude.geraet.hersteller).ueberBaureihe) {
+      fehlt.push('Die errechnete Heizlast liegt über der Baureihe, die Auslegung klären wir vor Ort.');
+    }
+  }
   return fehlt;
 }
 
@@ -687,4 +695,82 @@ export function lohntServerEntwurf(a: InternAnfrage, hatAnfrageId: boolean): boo
   if (a.vorlageIds.length === 0) return false;
   const k = a.kontakt;
   return Boolean(k.nachname.trim() || k.email.trim() || (k.telefon ?? '').trim());
+}
+
+/**
+ * Der Server schreibt die Vorgangskennung in den Zustand zurueck. Das ist keine Aenderung
+ * des Meisters und darf keinen weiteren Speicherlauf ausloesen, sonst dreht sich
+ * Speichern und Zurueckschreiben endlos im Kreis.
+ */
+export function nurKennungGeaendert(vorher: InternAnfrage, nachher: InternAnfrage): boolean {
+  if (vorher === nachher) return true;
+  if (vorher.anfrageId === nachher.anfrageId) return false;
+  return JSON.stringify({ ...vorher, anfrageId: '' }) === JSON.stringify({ ...nachher, anfrageId: '' });
+}
+
+// ---------------------------------------------------------------------------
+// Groesse des Sendekoerpers und Anhaenge
+// ---------------------------------------------------------------------------
+
+/**
+ * Vercel nimmt hoechstens 4,5 MB Koerper an und antwortet darueber ohne JSON. Wir bleiben
+ * darunter und sagen dem Meister im Klartext, was zu tun ist.
+ */
+export const KOERPER_GRENZE_BYTE = 4_000_000;
+
+/** Groesse einer JSON-Zeichenkette in Byte (UTF-8). */
+export function koerperBytes(json: string): number {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(json).length;
+  return json.length;
+}
+
+/** Meldung, wenn der Koerper zu gross ist; sonst null. */
+export function zuGrossMeldung(bytes: number, grenze = KOERPER_GRENZE_BYTE): string | null {
+  if (bytes <= grenze) return null;
+  const mb = (bytes / 1_000_000).toFixed(1).replace('.', ',');
+  const grenzeMb = String(Math.round(grenze / 1_000_000));
+  return `Fotos und Skizzen sind zusammen zu groß (${mb} MB, erlaubt ${grenzeMb} MB). Bitte Fotos entfernen oder verkleinern.`;
+}
+
+/** Kennung eines Anhangs fuer den Abgleich; Name und Laenge der Datenspur genuegen. */
+export function anhangKennung(anhang: { name: string; dataUrl: string }): string {
+  return `${anhang.name}|${anhang.dataUrl.length}`;
+}
+
+/**
+ * Nur die seit dem letzten erfolgreichen Speichern hinzugekommenen Anhaenge. Der Server
+ * haengt Skizzen und Fotos an den Vorgang an, deshalb wuerde jeder Speicherlauf sie sonst
+ * erneut hochladen und der Koerper waechst mit jedem Foto.
+ */
+export function neueAnhaenge(
+  anfrage: Pick<InternAnfrage, 'skizzen' | 'fotos'>,
+  gesendet: ReadonlySet<string> | null,
+): Pick<InternAnfrage, 'skizzen' | 'fotos'> {
+  if (!gesendet || gesendet.size === 0) return { skizzen: anfrage.skizzen, fotos: anfrage.fotos };
+  return {
+    skizzen: anfrage.skizzen.filter((s) => !gesendet.has(anhangKennung(s))),
+    fotos: anfrage.fotos.filter((f) => !gesendet.has(anhangKennung(f))),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Vorbelegung der Groessenvariante
+// ---------------------------------------------------------------------------
+
+/**
+ * Groesse einer Basisposition beim Anlegen. Geraten wird nie: Ohne belastbare Heizlast
+ * bleibt die Groesse offen, die Zeile ist blockiert und der Meister waehlt sie nach
+ * Heizlast (Fachregel 2). Vorbelegt wird nur der Vorschlag, der zur Baureihe passt.
+ */
+export function varianteVorbelegung(
+  baustein: Pick<Baustein, 'groessenVarianten'>,
+  heizlast: { belastbar: boolean } | null | undefined,
+  vorschlag: { matrixNr: number; ueberBaureihe: boolean } | null | undefined,
+): number | null {
+  const varianten = baustein.groessenVarianten ?? [];
+  if (!varianten.length) return null;
+  if (!heizlast?.belastbar) return null;
+  if (!vorschlag || vorschlag.ueberBaureihe) return null;
+  if (!varianten.some((v) => v.matrixNr === vorschlag.matrixNr)) return null;
+  return vorschlag.matrixNr;
 }

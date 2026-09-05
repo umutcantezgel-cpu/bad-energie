@@ -24,6 +24,7 @@ import {
   abmelden as authAbmelden,
   aktuelleSession,
   anmelden as authAnmelden,
+  darfSehen,
   deaktiviereBenutzer,
   verifySessionApi,
 } from '@/lib/services/auth';
@@ -46,6 +47,7 @@ import {
   stornieren as stornierenService,
   triageFuerAnfrage,
   dokumentDateiname,
+  ZugriffFehler,
 } from '@/lib/services/estimates';
 import {
   ladeFoerderRegeln,
@@ -54,13 +56,14 @@ import {
   type Einstellungen,
 } from '@/lib/services/kalkulationsdaten';
 import { pinGueltig, pinHashen } from '@/lib/services/pin';
-import { pruefeLimit } from '@/lib/services/ratelimit';
+import { clientIp, ipHash, pruefeLimit } from '@/lib/services/ratelimit';
 import { schreibeEreignis } from '@/lib/services/statusmaschine';
 import { ausDataUrl, getStorage, speichereFoto, speichereSkizze } from '@/lib/services/storage';
 import { euro, positionAusBaustein } from '@/lib/services/calculation';
 import {
   sendeBueroHinweis,
   sendeEingangsbestaetigung,
+  sendeTerminMeldung,
   stelleAuftragBereit,
 } from '@/lib/services/versand';
 import { bereinigungJob } from '@/lib/jobs/bereinigung';
@@ -71,12 +74,14 @@ import { wiedervorlageJob } from '@/lib/jobs/wiedervorlage';
 import { istJobName, mitJobSperre, type JobErgebnis, type JobName } from '@/lib/jobs/runner';
 import {
   estimateRequestSchema,
+  internAnfrageSchema,
   type AnfrageStatus,
   type FoerderRegeln,
-  type InternAnfrage,
   type Rolle,
+  type SessionInfo,
 } from '@/lib/types';
-import { geraeteVorschlag, heizlastSchaetzen, leeresGebaeude, speicherVorschlag } from '@/lib/services/heizlast';
+import { geraeteVorschlag,
+  geraetAusBaureihe, heizlastSchaetzen, leeresGebaeude, speicherVorschlag } from '@/lib/services/heizlast';
 import { pruefeHerkunft } from '@/lib/services/herkunft';
 import {
   benutzerNeuSchema, benutzerPinSchema, benutzerToggleSchema, dispatchBefehlSchema, einstellungenSchema, foerderRegelnSchema, freigebenSchema,
@@ -85,7 +90,7 @@ import {
 } from '@/lib/types';
 import { demoPreiseSetzen } from '@/db/seed';
 import type { VersandArt } from '@/lib/types';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -160,6 +165,36 @@ async function leseBody<S extends z.ZodType>(request: NextRequest, schema: S): P
   return { ok: true, daten: parse.data as z.infer<S> };
 }
 
+/**
+ * Lädt die Anfragezeile und prüft die Leseberechtigung der Sitzung (Rollenregel 3.3).
+ * Verglichen wird über `bearbeiterId`, nie über den Anzeigenamen: Namen sind nicht eindeutig
+ * und lassen sich in der Benutzerverwaltung ändern.
+ */
+async function anfrageFuerSession(
+  anfrageId: string,
+  session: SessionInfo,
+): Promise<{ ok: true; anfrage: typeof anfrageTabelle.$inferSelect } | { ok: false; antwort: Response }> {
+  const db = await getDb();
+  const zeilen = await db.select().from(anfrageTabelle).where(eq(anfrageTabelle.id, anfrageId)).limit(1);
+  const a = zeilen[0];
+  if (!a) return { ok: false, antwort: NextResponse.json({ ok: false, fehler: 'Anfrage nicht gefunden.' }, { status: 404 }) };
+  if (!darfSehen(session, { bearbeiterId: a.bearbeiterId })) {
+    return { ok: false, antwort: NextResponse.json({ ok: false, fehler: 'Keine Berechtigung für diesen Vorgang.' }, { status: 403 }) };
+  }
+  return { ok: true, anfrage: a };
+}
+
+/** Wie `anfrageFuerSession`, aber mit Klartext-Antwort für die Datei-Endpunkte. */
+async function anfrageFuerDownload(
+  anfrageId: string,
+  session: SessionInfo,
+): Promise<{ ok: true; anfrage: typeof anfrageTabelle.$inferSelect } | { ok: false; antwort: Response }> {
+  const treffer = await anfrageFuerSession(anfrageId, session);
+  if (treffer.ok) return treffer;
+  const status = treffer.antwort.status;
+  return { ok: false, antwort: new NextResponse(status === 404 ? 'Anfrage nicht gefunden.' : 'Keine Berechtigung.', { status }) };
+}
+
 /** Kurzlabel des Triage-Vorschlags für die Rückmeldung im Dispatch. */
 const TRIAGE_KURZ: Record<'kostenschaetzung' | 'terminmail' | 'verwerfen', string> = {
   kostenschaetzung: 'Kostenschätzung erstellen',
@@ -167,9 +202,13 @@ const TRIAGE_KURZ: Record<'kostenschaetzung' | 'terminmail' | 'verwerfen', strin
   verwerfen: 'Verwerfen',
 };
 
-const VERSAND_BUDGET_MS = 90_000;
-function warte(ms: number): Promise<'zeit'> {
-  return new Promise((resolve) => setTimeout(() => resolve('zeit'), ms));
+// Unter der Laufzeitgrenze von 120 s bleibt Luft für Antwort und Nachlauf; 90 s ließen keine.
+const VERSAND_BUDGET_MS = 55_000;
+/** Zeitfenster für das Rennen mit dem Versand; `abbrechen` räumt den Timer, sonst hält er die Funktion offen. */
+function warte(ms: number): { zeit: Promise<'zeit'>; abbrechen: () => void } {
+  let kennung: ReturnType<typeof setTimeout> | undefined;
+  const zeit = new Promise<'zeit'>((resolve) => { kennung = setTimeout(() => resolve('zeit'), ms); });
+  return { zeit, abbrechen: () => { if (kennung) clearTimeout(kennung); } };
 }
 
 // ---------------------------------------------------------------------------
@@ -211,7 +250,8 @@ export async function POST(
         return NextResponse.json({ ok: false, fehler: 'Bitte nehmen Sie sich einen Moment Zeit zum Ausfüllen.' }, { status: 400 });
       }
 
-      const ip = request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '127.0.0.1';
+      // Nur der gesalzene Hash wird gespeichert: die Zählertabelle darf kein Besucherverzeichnis werden.
+      const ip = ipHash(clientIp(request.headers), new Date());
       const limit = await pruefeLimit(`estimate:kunde:ip:${ip}`, 20, 10 * 60 * 1000);
       if (!limit.erlaubt) {
         return NextResponse.json(
@@ -223,18 +263,21 @@ export async function POST(
       try {
         const anlage = await legeAusKundenAnfrage(payload);
 
+        // Der Versand läuft im Nachlauf: ein schwebendes Promise überlebt die Antwort
+        // in einer serverlosen Umgebung nicht, `after()` schon.
         if (payload.kontakt.eingangsbestaetigung) {
           await stelleAuftragBereit(anlage.anfrageId, 'eingangsbestaetigung', {
             empfaenger: payload.kontakt.email,
           });
-          sendeEingangsbestaetigung(anlage.anfrageId, payload.kontakt.email).catch((err) => {
+          const email = payload.kontakt.email;
+          after(sendeEingangsbestaetigung(anlage.anfrageId, email).then(() => undefined, (err) => {
             console.error('[Mail] Eingangsbestätigung fehlgeschlagen:', err);
-          });
+          }));
         }
 
-        sendeBueroHinweis(anlage.anfrageId).catch((err) => {
+        after(sendeBueroHinweis(anlage.anfrageId).then(() => undefined, (err) => {
           console.error('[Mail] Büro-Hinweis fehlgeschlagen:', err);
-        });
+        }));
 
         return NextResponse.json({
           ok: true,
@@ -289,7 +332,9 @@ export async function POST(
         const art: VersandArt = payload.aktion === 'terminmail' ? 'terminmail' : 'erstkontakt';
         const versand = freigebenService(anlage.anfrageId, session, { art, sofort: true });
         after(versand.then(() => undefined, () => undefined));
-        const ergebnis = await Promise.race([versand, warte(VERSAND_BUDGET_MS)]);
+        const fenster = warte(VERSAND_BUDGET_MS);
+        const ergebnis = await Promise.race([versand, fenster.zeit]);
+        fenster.abbrechen();
         if (ergebnis === 'zeit') {
           return NextResponse.json({
             ok: true, modus: 'intern', anfrageId: anlage.anfrageId, ksNummer: anlage.ksNummer, status: anlage.status,
@@ -320,6 +365,16 @@ export async function POST(
         rueckmeldung: anlage.rueckmeldung,
       });
     } catch (err) {
+      if (err instanceof ZugriffFehler) {
+        return NextResponse.json({ ok: false, fehler: err.message, grund: err.grund }, { status: 403 });
+      }
+      if (err instanceof Error && err.message === 'Anfrage nicht gefunden.') {
+        // Verwaiste Kennung (Storno, Speicherfrist): der Client verwirft sie und legt beim nächsten Speichern neu an.
+        return NextResponse.json(
+          { ok: false, fehler: 'Der Vorgang existiert nicht mehr. Beim nächsten Speichern wird ein neuer Vorgang angelegt.', grund: 'nicht_gefunden' },
+          { status: 409 },
+        );
+      }
       const msg = err instanceof Error ? err.message : 'Interner Fehler bei der Speicherung.';
       return NextResponse.json({ ok: false, fehler: msg }, { status: 500 });
     }
@@ -408,9 +463,13 @@ export async function POST(
   if (slug.length === 1 && slug[0] === 'anmelden') {
     try {
       const body = await request.json();
+      // Ohne diese beiden Angaben zählt das IP-Limit in auth.ts nie und die Sitzung
+      // trägt keinen Hinweis auf ihr Gerät.
       const ergebnis = await authAnmelden({
         email: String(body.email ?? ''),
         pin: String(body.pin ?? ''),
+        ipHash: ipHash(clientIp(request.headers), new Date()),
+        userAgent: request.headers.get('user-agent'),
       });
       return NextResponse.json(ergebnis);
     } catch {
@@ -477,12 +536,29 @@ export async function POST(
         return NextResponse.json({ ok: false, fehler: 'Der Termin wurde bereits bestätigt.' });
       }
 
-      await loeseReservierungen(a.id);
+      // Das gewählte Fenster bleibt reserviert, damit es nicht in der nächsten
+      // Kostenschätzung ein zweites Mal vorgeschlagen wird (Fachregel 6).
+      const reserviert = await db.select().from(terminfensterReservierung)
+        .where(eq(terminfensterReservierung.anfrageId, a.id));
+      const gewaehlt = fensterId && reserviert.some((r) => r.terminfensterId === fensterId) ? fensterId : '';
+      await loeseReservierungen(a.id, gewaehlt ? [gewaehlt] : []);
+
+      let beschriftung = '';
+      if (gewaehlt) {
+        const fenster = await db.select().from(terminfenster).where(eq(terminfenster.id, gewaehlt)).limit(1);
+        beschriftung = fenster[0]?.beschriftung ?? '';
+      }
       await schreibeEreignis({
         anfrageId: a.id,
         typ: 'termin:bestaetigt',
-        payload: { fensterId, alternativ: alternativ.slice(0, 300) },
+        payload: { fensterId: gewaehlt, alternativ: alternativ.slice(0, 300) },
       });
+
+      // Das Büro erfährt von der Zusage; ein Fehler im Mailweg darf die Bestätigung des Kunden nicht kippen.
+      after(sendeTerminMeldung(a.id, beschriftung || alternativ.slice(0, 300) || 'ohne Angabe').then(
+        () => undefined,
+        (err) => { console.error('[Mail] Terminmeldung fehlgeschlagen:', err); },
+      ));
 
       return NextResponse.json({ ok: true });
     } catch (err) {
@@ -537,17 +613,26 @@ export async function POST(
       const anfrageId = formData.get('anfrageId');
       const datei = formData.get('datei');
       const beschreibung = (formData.get('beschreibung') as string) || '';
-      const art = (formData.get('art') as 'foto' | 'foto_annotiert') || 'foto';
+      const rohArt = String(formData.get('art') ?? 'foto');
 
       if (!anfrageId || typeof anfrageId !== 'string') {
         return NextResponse.json({ ok: false, fehler: 'anfrageId fehlt.' }, { status: 400 });
       }
+      // Die Art kommt aus dem Formular und bestimmt, wie der Anhang später erscheint;
+      // ein freier Wert würde ungeprüft in der Datenbank landen.
+      if (rohArt !== 'foto' && rohArt !== 'foto_annotiert') {
+        return NextResponse.json({ ok: false, fehler: 'Unbekannte Anhangsart.' }, { status: 400 });
+      }
+      const art: 'foto' | 'foto_annotiert' = rohArt;
       if (!datei || !(datei instanceof File)) {
         return NextResponse.json({ ok: false, fehler: 'Datei fehlt oder ist ungültig.' }, { status: 400 });
       }
       if (datei.size > 4 * 1024 * 1024) {
         return NextResponse.json({ ok: false, fehler: 'Datei überschreitet das Limit von 4 MB.' }, { status: 400 });
       }
+      // Ein Foto gehört an einen bestehenden Vorgang, für den diese Sitzung zuständig ist.
+      const zugang = await anfrageFuerSession(anfrageId, session);
+      if (!zugang.ok) return zugang.antwort;
 
       const arrayBuffer = await datei.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
@@ -560,8 +645,12 @@ export async function POST(
 
   // Entwurf speichern
   if (slug.length === 1 && slug[0] === 'entwurf') {
+    // Derselbe Prüfweg wie im Estimate-Zweig: ohne Schema landet ein beliebiger Body
+    // ungeprüft in der Datenbank. Die Aktion ist hier serverseitig immer „entwurf“.
+    const body = await leseBody(request, internAnfrageSchema.extend({ auftragAnlegen: z.boolean().optional() }));
+    if (!body.ok) return body.antwort;
+    const input = { ...body.daten, aktion: 'entwurf' as const };
     try {
-      const input = (await request.json()) as InternAnfrage & { auftragAnlegen?: boolean };
       const anlage = await speichereInternAnfrage(input, session);
       // Nur das bewusste „Als Entwurf speichern“ stellt den Erstkontakt-Auftrag bereit (Status entwurf),
       // damit der Vorgang in der Freigabeliste erscheint. Der Autosave legt keinen Auftrag an.
@@ -579,6 +668,16 @@ export async function POST(
         rueckmeldung: anlage.rueckmeldung,
       });
     } catch (err) {
+      if (err instanceof ZugriffFehler) {
+        return NextResponse.json({ ok: false, fehler: err.message, grund: err.grund }, { status: 403 });
+      }
+      if (err instanceof Error && err.message === 'Anfrage nicht gefunden.') {
+        // Verwaiste Kennung (Storno, Speicherfrist): der Client verwirft sie und legt beim nächsten Speichern neu an.
+        return NextResponse.json(
+          { ok: false, fehler: 'Der Vorgang existiert nicht mehr. Beim nächsten Speichern wird ein neuer Vorgang angelegt.', grund: 'nicht_gefunden' },
+          { status: 409 },
+        );
+      }
       return NextResponse.json({ ok: false, fehler: (err as Error).message }, { status: 500 });
     }
   }
@@ -587,6 +686,8 @@ export async function POST(
   if (slug.length === 1 && slug[0] === 'freigeben') {
     const body = await leseBody(request, freigebenSchema);
     if (!body.ok) return body.antwort;
+    const zugang = await anfrageFuerSession(body.daten.anfrageId, session);
+    if (!zugang.ok) return zugang.antwort;
     try {
       const ergebnis = await freigebenService(body.daten.anfrageId, session, { sofort: body.daten.sofort, art: body.daten.art });
       return NextResponse.json(ergebnis, { status: ergebnis.ok ? 200 : ergebnis.grund === 'berechtigung' ? 403 : ergebnis.grund === 'nicht_gefunden' ? 404 : 422 });
@@ -599,6 +700,8 @@ export async function POST(
   if (slug.length === 1 && slug[0] === 'stornieren') {
     const body = await leseBody(request, stornierenSchema);
     if (!body.ok) return body.antwort;
+    const zugang = await anfrageFuerSession(body.daten.anfrageId, session);
+    if (!zugang.ok) return zugang.antwort;
     try {
       const ergebnis = await stornierenService(body.daten.anfrageId, session);
       return NextResponse.json(ergebnis);
@@ -812,15 +915,28 @@ export async function POST(
           if (!v) return [];
           return v.bausteine.map((b) => {
             const vorschlag = schaetzung ? geraeteVorschlag(schaetzung.kwEmpfohlen, b.groessenVarianten, hersteller) : null;
-            const variante = b.groessenVarianten?.find((x) => x.matrixNr === vorschlag?.matrixNr) ?? null;
-            const speicher = vorschlag ? speicherVorschlag(gebaeude.personen, variante?.speicherLiterOptionen) : null;
+            // Eine Größe nur aus einer belastbaren Heizlast (Verbrauch oder Dämmungsangabe) und nur
+            // innerhalb der Baureihe; sonst bleibt die Zeile blockiert und der Ortstermin entscheidet.
+            const groesseBelastbar = Boolean(schaetzung?.belastbar && vorschlag && !vorschlag.ueberBaureihe);
+            const varianteNr = groesseBelastbar && vorschlag ? vorschlag.matrixNr : null;
+            const variante = b.groessenVarianten?.find((x) => x.matrixNr === varianteNr) ?? null;
+            const speicher = varianteNr !== null ? speicherVorschlag(gebaeude.personen, variante?.speicherLiterOptionen) : null;
             return positionAusBaustein(b, matrix, {
-              varianteMatrixNr: vorschlag?.matrixNr ?? null,
-              kW: vorschlag?.geraetKw,
+              varianteMatrixNr: varianteNr,
+              kW: groesseBelastbar ? vorschlag?.geraetKw : undefined,
               liter: speicher?.liter,
+              hersteller,
             });
           });
         });
+        // Dieselben Annahmen wie im Web-Trichter, wenn die Größe nicht aus den Daten folgt.
+        const portalAnnahmen: string[] = [];
+        if (schaetzung && !schaetzung.belastbar) {
+          portalAnnahmen.push('Für die Größe der Wärmepumpe brauchen wir Ihren Jahresverbrauch; die genaue Auslegung folgt beim Termin vor Ort.');
+        }
+        if (schaetzung && geraetAusBaureihe(schaetzung.kwEmpfohlen, hersteller).ueberBaureihe) {
+          portalAnnahmen.push('Die berechnete Größe liegt über der größten Baureihe, die Auslegung klären wir vor Ort.');
+        }
 
         const vorlage = vorlagen.find((v) => v.id === befehl.vorlageIds[0]) ?? null;
         const portalLabel = befehl.portal === 'wattfox' ? 'WattFox' : 'unbekanntes Portal';
@@ -847,7 +963,7 @@ export async function POST(
           },
           // Der Portal-Text ist eine interne Notiz, nie der persönliche Satz des Kundendokuments.
           persoenlicherSatz: '',
-          annahmen: [],
+          annahmen: portalAnnahmen,
           vorbehalte: [],
           ausfuehrungSatz: '',
           terminfensterIds: [],
@@ -1035,13 +1151,9 @@ export async function POST(
     try {
       const anfrageId = slug[1];
       const db = await getDb();
-      const anfragen = await db.select().from(anfrageTabelle).where(eq(anfrageTabelle.id, anfrageId)).limit(1);
-      const a = anfragen[0];
-      if (!a) return NextResponse.json({ ok: false, fehler: 'Anfrage nicht gefunden.' }, { status: 404 });
-
-      if (session.rolle === 'bauleiter' && a.bearbeiterId && a.bearbeiterId !== session.benutzerId) {
-        return NextResponse.json({ ok: false, fehler: 'Keine Berechtigung zum Löschen dieser Anfrage.' }, { status: 403 });
-      }
+      const zugang = await anfrageFuerSession(anfrageId, session);
+      if (!zugang.ok) return zugang.antwort;
+      const a = zugang.anfrage;
 
       const [anhaenge, dokumente] = await Promise.all([
         db.select().from(anhangTabelle).where(eq(anhangTabelle.anfrageId, anfrageId)),
@@ -1086,6 +1198,8 @@ export async function POST(
       const body = await leseBody(request, statusWechselSchema);
       if (!body.ok) return body.antwort;
       const { status: neuerStatus, grund } = body.daten;
+      const zugang = await anfrageFuerSession(anfrageId, session);
+      if (!zugang.ok) return zugang.antwort;
       const daten = await ladeVorgang(anfrageId);
       if (!daten) return NextResponse.json({ ok: false, fehler: 'Anfrage nicht gefunden.' }, { status: 404 });
 
@@ -1153,6 +1267,8 @@ export async function GET(
 
   // Einzelne Anfrage
   if (slug.length === 2 && slug[0] === 'anfragen') {
+    const zugang = await anfrageFuerSession(slug[1], session);
+    if (!zugang.ok) return zugang.antwort;
     const dto = await ladeInternAnfrage(slug[1]);
     if (!dto) return NextResponse.json({ fehler: 'Anfrage nicht gefunden.' }, { status: 404 });
     return NextResponse.json(dto);
@@ -1161,17 +1277,18 @@ export async function GET(
   // DSGVO Auskunft JSON
   if (slug.length === 3 && slug[0] === 'anfragen' && slug[2] === 'auskunft') {
     const anfrageId = slug[1];
+    const zugang = await anfrageFuerDownload(anfrageId, session);
+    if (!zugang.ok) return zugang.antwort;
     const dto = await ladeInternAnfrage(anfrageId);
     if (!dto) return new NextResponse('Anfrage nicht gefunden.', { status: 404 });
-    if (session.rolle === 'bauleiter' && dto.bearbeiter && dto.bearbeiter !== session.name) {
-      return new NextResponse('Keine Berechtigung.', { status: 403 });
-    }
     return NextResponse.json(dto);
   }
 
   // CSV-Export
   if (slug.length === 3 && slug[0] === 'anfragen' && slug[2] === 'csv') {
     const anfrageId = slug[1];
+    const zugang = await anfrageFuerDownload(anfrageId, session);
+    if (!zugang.ok) return zugang.antwort;
     const daten = await ladeVorgang(anfrageId);
     if (!daten) return new NextResponse('Anfrage nicht gefunden.', { status: 404 });
     const [matrix, regeln] = await Promise.all([ladeMatrix(), ladeFoerderRegeln()]);
@@ -1192,12 +1309,9 @@ export async function GET(
     const anfrageId = slug[1];
     const dokumentId = slug[3];
     const db = await getDb();
-    const anfragen = await db.select().from(anfrageTabelle).where(eq(anfrageTabelle.id, anfrageId)).limit(1);
-    const v = anfragen[0];
-    if (!v) return new NextResponse('Anfrage nicht gefunden.', { status: 404 });
-    if (session.rolle === 'bauleiter' && v.bearbeiterId && v.bearbeiterId !== session.benutzerId) {
-      return new NextResponse('Keine Berechtigung.', { status: 403 });
-    }
+    const zugang = await anfrageFuerDownload(anfrageId, session);
+    if (!zugang.ok) return zugang.antwort;
+    const v = zugang.anfrage;
     const dokumente = await db.select().from(dokument)
       .where(and(eq(dokument.id, dokumentId), eq(dokument.anfrageId, anfrageId)))
       .limit(1);
@@ -1232,15 +1346,8 @@ export async function GET(
     const anhangId = slug[3];
     const db = await getDb();
 
-    const anfragen = await db.select().from(anfrageTabelle).where(eq(anfrageTabelle.id, anfrageId)).limit(1);
-    const v = anfragen[0];
-    if (!v) {
-      return new NextResponse('Anfrage nicht gefunden.', { status: 404 });
-    }
-
-    if (session.rolle === 'bauleiter' && v.bearbeiterId && v.bearbeiterId !== session.benutzerId) {
-      return new NextResponse('Keine Berechtigung.', { status: 403 });
-    }
+    const zugang = await anfrageFuerDownload(anfrageId, session);
+    if (!zugang.ok) return zugang.antwort;
 
     const anhaenge = await db.select().from(anhangTabelle)
       .where(and(eq(anhangTabelle.id, anhangId), eq(anhangTabelle.anfrageId, anfrageId)))
@@ -1251,24 +1358,35 @@ export async function GET(
     }
 
     const storage = getStorage();
-    const datei = await storage.get(a.blobPfad);
+    // Die Anhangsliste verweist mit ?vorschau=1 auf das Vorschaubild; ohne diesen Zweig
+    // lieferte der Handler dort das große Bild.
+    const vorschauGewuenscht = request.nextUrl.searchParams.get('vorschau') === '1';
+    const vorschau = vorschauGewuenscht && a.thumbBlobPfad ? await storage.get(a.thumbBlobPfad) : null;
+    const datei = vorschau ?? await storage.get(a.blobPfad);
     if (!datei) {
       return new NextResponse('Datei in der Ablage nicht gefunden.', { status: 404 });
     }
 
-    const encodedFilename = encodeURIComponent(a.dateiname).replace(/['()]/g, escape);
-    const istPdf = a.mime === 'application/pdf';
-    // PDFs werden heruntergeladen; mit ?inline=1 laufen sie in die Vorschau im Rahmen (Anfrage-Detail).
+    // Nur bekannte, im Browser harmlose Typen dürfen inline erscheinen; alles andere
+    // geht als undeutbarer Bytestrom in den Download, damit kein fremdes Dokument im
+    // Kontext von /intern ausgeführt wird.
+    const ANZEIGBAR = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    const mime = vorschau ? 'image/webp' : (a.mime || 'application/octet-stream');
+    const anzeigbar = ANZEIGBAR.includes(mime);
+    // Bilder gehören inline: die Anfrage-Detailansicht zeigt sie im Rahmen an.
+    // PDFs nur mit ?inline=1, sonst als Download.
     const inlineGewuenscht = request.nextUrl.searchParams.get('inline') === '1';
-    const alsAnhang = istPdf && !inlineGewuenscht;
-    const disposition = alsAnhang
-      ? `attachment; filename="${a.dateiname.replace(/"/g, '')}"; filename*=UTF-8''${encodedFilename}`
-      : `inline; filename="${a.dateiname.replace(/"/g, '')}"; filename*=UTF-8''${encodedFilename}`;
+    const inline = anzeigbar && (mime !== 'application/pdf' || inlineGewuenscht);
+    const dateiname = vorschau ? `vorschau-${a.dateiname.replace(/\.[^.]+$/, '')}.webp` : a.dateiname;
+    const encodedFilename = encodeURIComponent(dateiname).replace(/['()]/g, escape);
+    const disposition = inline
+      ? `inline; filename="${dateiname.replace(/"/g, '')}"; filename*=UTF-8''${encodedFilename}`
+      : `attachment; filename="${dateiname.replace(/"/g, '')}"; filename*=UTF-8''${encodedFilename}`;
 
     return new NextResponse(datei.daten as unknown as BodyInit, {
       status: 200,
       headers: {
-        'Content-Type': a.mime || 'application/octet-stream',
+        'Content-Type': anzeigbar ? mime : 'application/octet-stream',
         'Content-Disposition': disposition,
         'Cache-Control': 'private, no-store',
         'X-Content-Type-Options': 'nosniff',

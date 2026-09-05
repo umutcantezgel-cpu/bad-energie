@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { BETRIEBSKOSTEN_STANDARD, type GebaeudeDaten, type GroessenVariante } from '../types';
 import {
-  baujahrKlasseAus, betriebskosten, gebaeudeAusJourney, geraeteVorschlag, heizlastAusFlaeche, heizlastAusVerbrauch,
-  heizlastSchaetzen, kesseltypVermutet, leeresGebaeude, proMonat, speicherVorschlag, verbrauchKwh,
+  VERBRAUCH_MAX_KWH, baujahrKlasseAus, betriebskosten, gebaeudeAusJourney, geraeteVorschlag, heizkostenHeute,
+  heizlastAusFlaeche, heizlastAusVerbrauch, heizlastSchaetzen, kesseltypVermutet, leeresGebaeude, proMonat,
+  speicherVorschlag, verbrauchKwh, verbrauchPlausibel,
 } from './heizlast';
 
 const WP_VARIANTEN: GroessenVariante[] = [
@@ -60,7 +61,39 @@ describe('Heizlast nach dem Bogen des Chefs', () => {
     expect(w?.kwFlaeche).toBe(18.9);
     expect(w?.kwVerbrauch).toBe(9.2);
     expect(w?.kwEmpfohlen).toBe(9.2);
+    expect(w?.belastbar).toBe(true);
     expect(geraeteVorschlag(w?.kwEmpfohlen ?? 0, WP_VARIANTEN)?.matrixNr).toBe(2);
+  });
+
+  it('ohne Verbrauch und ohne Dämmungsangabe trägt die Schätzung keine Gerätewahl', () => {
+    const nurFlaeche = heizlastSchaetzen(gebaeude({ wohnflaeche: 150, baujahrKlasse: 'vor_1977', lage: 'freistehend' }));
+    expect(nurFlaeche?.kwBis).toBe(18.9);
+    expect(nurFlaeche?.belastbar).toBe(false);
+    // Eine einzige Angabe zu Dämmung oder Fenstern genügt, damit die Fläche belastbar rechnet.
+    expect(heizlastSchaetzen(gebaeude({ wohnflaeche: 150, baujahrKlasse: 'vor_1977', fenster: 'zweifach' }))?.belastbar).toBe(true);
+    expect(heizlastSchaetzen(gebaeude({ wohnflaeche: 150, baujahrKlasse: 'vor_1977', fenster: 'unbekannt' }))?.belastbar).toBe(false);
+    expect(heizlastSchaetzen(gebaeude({ wohnflaeche: 150, baujahrKlasse: 'vor_1977', aussenwandDaemmungCm: 0 }))?.belastbar).toBe(true);
+    expect(heizlastSchaetzen(gebaeude({ wohnflaeche: 150, baujahrKlasse: 'vor_1977', dachDaemmungCm: 20 }))?.belastbar).toBe(true);
+    // Der Verbrauch allein trägt immer.
+    expect(heizlastSchaetzen(gebaeude({ bestand: { energieart: 'gas', verbrauchJahr: 22000 } }))?.belastbar).toBe(true);
+  });
+
+  it('ein Verbrauch über der Grenze für Wohnhäuser bleibt außer Betracht und wird benannt', () => {
+    // Holz rechnet in Raummetern; wer dort Kilowattstunden einträgt, käme auf 34 Millionen kWh.
+    const holz = gebaeude({ wohnflaeche: 150, baujahrKlasse: 'vor_1977', bestand: { energieart: 'holz_hart', verbrauchJahr: 20000, verbrauchEinheit: 'm3' } });
+    expect(verbrauchPlausibel(holz.bestand)).toBe(false);
+    expect(verbrauchKwh(holz.bestand)).toBeNull();
+    expect(heizlastAusVerbrauch(holz.bestand)).toBeNull();
+    const e = heizlastSchaetzen(holz);
+    expect(e?.methode).toBe('flaeche');
+    expect(e?.hinweise.some((h) => h.includes('Einheit'))).toBe(true);
+    expect(betriebskosten(holz, BETRIEBSKOSTEN_STANDARD)?.heuteJahr).toBeNull();
+
+    // Zwölf Raummeter Hartholz sind ein plausibler Jahresverbrauch.
+    const normal = gebaeude({ bestand: { energieart: 'holz_hart', verbrauchJahr: 12, verbrauchEinheit: 'm3' } });
+    expect(verbrauchKwh(normal.bestand)).toBe(20400);
+    expect(verbrauchPlausibel(normal.bestand)).toBe(true);
+    expect(VERBRAUCH_MAX_KWH).toBe(200_000);
   });
 
   it('ohne Daten keine Schätzung, mit einem Weg ein Hinweis', () => {
@@ -77,19 +110,25 @@ describe('Heizlast nach dem Bogen des Chefs', () => {
 });
 
 describe('Gerät und Speicher', () => {
-  it('Beleg 3: 22.000 kWh Gas → 7 kW → Vorschlag Bosch 10 kW, Matrix 2', () => {
-    const g = gebaeude({ bestand: { energieart: 'gas', verbrauchJahr: 22000, heizungsalterJahre: 15 } });
-    const kw = heizlastAusVerbrauch(g.bestand);
-    expect(kw).toBe(10.4);
-    const alt = gebaeude({ bestand: { energieart: 'gas', verbrauchJahr: 22000, kesseltyp: 'standard' } });
-    expect(heizlastAusVerbrauch(alt.bestand)).toBe(9.2);
-    const v = geraeteVorschlag(7, WP_VARIANTEN);
-    expect(v?.matrixNr).toBe(1);
-    expect(v?.geraetKw).toBe(7);
-    const v10 = geraeteVorschlag(9.2, WP_VARIANTEN);
-    expect(v10?.matrixNr).toBe(2);
-    expect(v10?.geraetKw).toBe(10);
-    expect(v10?.kwLabel).toBe('10');
+  it('Beleg 3: 22.000 kWh Gas mit altem Kessel → 9,2 kW → Vorschlag Bosch 10 kW, Matrix 2', () => {
+    // Klärungspunkt für den Betrieb: der Chef notiert für diesen Fall „7 kW, max 10 kW“. Die Formel des
+    // Bogens (Verbrauch × Nutzungsgrad / 1.800 h) liefert 9,2 kW beim Standardkessel und 10,4 kW beim
+    // Niedertemperaturkessel. Beide Wege enden beim selben Gerät (10 kW, Matrix 2); die Faustregel des
+    // Chefs liegt darunter und ist vor der Vorführung mit ihm abzugleichen.
+    const niedertemperatur = gebaeude({ bestand: { energieart: 'gas', verbrauchJahr: 22000, heizungsalterJahre: 15 } });
+    expect(heizlastAusVerbrauch(niedertemperatur.bestand)).toBe(10.4);
+    const standard = gebaeude({ bestand: { energieart: 'gas', verbrauchJahr: 22000, kesseltyp: 'standard' } });
+    const kw = heizlastAusVerbrauch(standard.bestand);
+    expect(kw).toBe(9.2);
+    const v = geraeteVorschlag(kw as number, WP_VARIANTEN);
+    expect(v?.matrixNr).toBe(2);
+    expect(v?.geraetKw).toBe(10);
+    expect(v?.kwLabel).toBe('10');
+    expect(v?.ueberBaureihe).toBe(false);
+    // Buderus hat eine eigene Baureihe; Text und Baureihe müssen zusammenpassen.
+    expect(geraeteVorschlag(kw as number, WP_VARIANTEN, 'buderus')?.geraetKw).toBe(10);
+    expect(geraeteVorschlag(5.5, WP_VARIANTEN, 'buderus')?.geraetKw).toBe(6);
+    expect(geraeteVorschlag(5.5, WP_VARIANTEN, 'bosch')?.geraetKw).toBe(7);
   });
 
   it('Lücke zwischen den Varianten fällt nach oben, über der Baureihe Kennzeichen', () => {
@@ -136,6 +175,19 @@ describe('Betriebskosten nach den Zetteln des Chefs', () => {
     const b = betriebskosten(g, BETRIEBSKOSTEN_STANDARD);
     expect(b?.heuteJahr).toBe(1900);
     expect(b?.waermebedarfKwh).toBe(20000);
+  });
+
+  it('Energiearten ohne hinterlegten Preis liefern keinen Heute-Wert', () => {
+    const sonstiges = gebaeude({ bestand: { energieart: 'sonstiges', verbrauchJahr: 22000 } });
+    expect(heizkostenHeute(sonstiges.bestand, BETRIEBSKOSTEN_STANDARD)).toBeNull();
+    const b = betriebskosten(sonstiges, BETRIEBSKOSTEN_STANDARD);
+    expect(b?.heuteJahr).toBeNull();
+    expect(b?.ersparnisJahr).toBeNull();
+    expect(b?.wpJahr).toBeGreaterThan(0);
+    // Flüssiggas hat ebenfalls keinen eigenen Preis in den Einstellungen.
+    expect(heizkostenHeute(gebaeude({ bestand: { energieart: 'fluessiggas', verbrauchJahr: 2000, verbrauchEinheit: 'liter' } }).bestand, BETRIEBSKOSTEN_STANDARD)).toBeNull();
+    // Gas, Öl, Strom, Pellets und Holz haben einen Preis.
+    expect(heizkostenHeute(gebaeude({ bestand: { energieart: 'gas', verbrauchJahr: 22000 } }).bestand, BETRIEBSKOSTEN_STANDARD)).toBe(2420);
   });
 
   it('ohne Verbrauch aus der Heizlast, ohne Preis kein Heute-Wert', () => {

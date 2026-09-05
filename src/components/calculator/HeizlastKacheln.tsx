@@ -47,6 +47,9 @@ export default function HeizlastKacheln({
   );
   const variante = vorschlag ? (varianten.find((v) => v.matrixNr === vorschlag.matrixNr) ?? null) : null;
   const speicher = speicherVorschlag(gebaeude.personen, variante?.speicherLiterOptionen ?? [200, 300]);
+  // Uebernommen wird nur eine belastbare Schaetzung innerhalb der Baureihe; alles andere gehoert vor Ort geklaert.
+  const belastbar = heizlast?.belastbar === true;
+  const uebernehmbar = Boolean(vorschlag) && belastbar && !vorschlag?.ueberBaureihe;
 
   return (
     <section className="glass-tile rounded-3xl border border-white/70 p-4">
@@ -60,35 +63,43 @@ export default function HeizlastKacheln({
             Für die Schätzung fehlen Angaben: entweder Verbrauch und Energieart oder Wohnfläche und Baujahr.
           </p>
         ) : (
-          <>
-            <p aria-live="polite" className="text-2xl font-semibold tabular-nums text-slate-900">
-              {heizlast.kwVon === heizlast.kwBis
-                ? `${kwText(heizlast.kwBis)} kW`
-                : `${kwText(heizlast.kwVon)} bis ${kwText(heizlast.kwBis)} kW`}
-            </p>
-            <dl className="grid gap-2 sm:grid-cols-2">
-              <div>
-                <dt className="text-sm text-slate-600">Aus dem Verbrauch</dt>
-                <dd className="tabular-nums text-base text-slate-900">
-                  {heizlast.kwVerbrauch === null ? 'noch offen' : `${kwText(heizlast.kwVerbrauch)} kW`}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm text-slate-600">Aus den Gebäudedaten</dt>
-                <dd className="tabular-nums text-base text-slate-900">
-                  {heizlast.kwFlaeche === null ? 'noch offen' : `${kwText(heizlast.kwFlaeche)} kW`}
-                </dd>
-              </div>
-            </dl>
-            {heizlast.hinweise.length ? (
-              <ul className="space-y-1 rounded-2xl bg-[#FFFBEB] p-3 text-sm text-[#92400E]">
-                {heizlast.hinweise.map((h) => (
-                  <li key={h}>{h}</li>
-                ))}
-              </ul>
-            ) : null}
-          </>
+          <p aria-live="polite" className="text-2xl font-semibold tabular-nums text-slate-900">
+            {heizlast.kwVon === heizlast.kwBis
+              ? `${kwText(heizlast.kwBis)} kW`
+              : `${kwText(heizlast.kwVon)} bis ${kwText(heizlast.kwBis)} kW`}
+          </p>
         )}
+
+        {/* Der Chef gleicht immer beide Wege ab; deshalb stehen beide dauerhaft in der Kachel. */}
+        <dl className="grid gap-2 sm:grid-cols-2">
+          <div>
+            <dt className="text-sm text-slate-600">Aus dem Verbrauch</dt>
+            <dd className="tabular-nums text-base text-slate-900">
+              {heizlast?.kwVerbrauch == null ? 'noch offen' : `${kwText(heizlast.kwVerbrauch)} kW`}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-sm text-slate-600">Aus den Gebäudedaten</dt>
+            <dd className="tabular-nums text-base text-slate-900">
+              {heizlast?.kwFlaeche == null ? 'noch offen' : `${kwText(heizlast.kwFlaeche)} kW`}
+            </dd>
+          </div>
+        </dl>
+
+        {heizlast && !belastbar ? (
+          // Der reine Flaechenweg ohne Daemmungsangaben ueberschaetzt; die Abrechnung ist der belastbare Wert.
+          <p className="rounded-2xl bg-[#FFFBEB] p-3 text-sm font-medium text-[#92400E]">
+            Ohne Verbrauchsangabe ist die Heizlast nur grob. Verbrauch der letzten Abrechnung eintragen.
+          </p>
+        ) : null}
+
+        {heizlast?.hinweise.length ? (
+          <ul className="space-y-1 rounded-2xl bg-[#FFFBEB] p-3 text-sm text-[#92400E]">
+            {heizlast.hinweise.map((h) => (
+              <li key={h}>{h}</li>
+            ))}
+          </ul>
+        ) : null}
 
         <div role="radiogroup" aria-label="Hersteller">
           <span className="block text-sm font-medium text-slate-700">Hersteller</span>
@@ -125,18 +136,26 @@ export default function HeizlastKacheln({
             <p className="text-sm text-slate-600">Größe der Vorlage: {vorschlag.label}</p>
             {vorschlag.ueberBaureihe ? (
               <p className="mt-1 text-sm font-medium text-[#92400E]">
-                Über der größten Stufe der Baureihe. Bitte zwei Geräte oder eine Sonderlösung prüfen.
+                Heizlast über der Baureihe, Auslegung vor Ort klären. Bitte zwei Geräte oder eine Sonderlösung prüfen.
               </p>
             ) : null}
             <button
               type="button"
+              disabled={!uebernehmbar}
               onClick={() =>
                 onUebernehmen({ kw: vorschlag.geraetKw, matrixNr: vorschlag.matrixNr, liter: speicher.liter })
               }
-              className="fokus-ring mt-3 min-h-[56px] w-full rounded-2xl bg-[color:var(--modul-blau,#1B3A8C)] px-6 text-base font-semibold text-white sm:w-auto"
+              className="fokus-ring mt-3 min-h-[56px] w-full rounded-2xl bg-[color:var(--modul-blau,#1B3A8C)] px-6 text-base font-semibold text-white disabled:opacity-50 sm:w-auto"
             >
               Vorschlag übernehmen
             </button>
+            {!uebernehmbar ? (
+              <p className="mt-2 text-sm text-slate-600">
+                {vorschlag.ueberBaureihe
+                  ? 'Die Größe wird vor Ort festgelegt, nicht aus der Schätzung übernommen.'
+                  : 'Erst mit Verbrauch oder vollständigen Gebäudedaten lässt sich die Größe übernehmen. Die Größe bleibt bis dahin offen.'}
+              </p>
+            ) : null}
           </div>
         ) : (
           <p className="text-base text-slate-600">

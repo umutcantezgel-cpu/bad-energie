@@ -12,7 +12,7 @@ import type {
 } from '../types';
 import type { Betriebskosten, DokumentEingabe, DossierEingabe, DossierPosition } from '../dokumente/datenblatt';
 import { berechne, foerderBausteine, offenePlatzhalter } from './calculation';
-import { betriebskosten as berechneBetriebskosten, heizlastSchaetzen, leeresGebaeude } from './heizlast';
+import { betriebskosten as berechneBetriebskosten, geraetAusBaureihe, heizlastSchaetzen, leeresGebaeude } from './heizlast';
 import { FOERDER_STANDARD, ladeEinstellungen, ladeFoerderRegeln, ladeMatrix, type Einstellungen } from './kalkulationsdaten';
 import { pruefeVersandtexte } from './textregeln';
 import { datumDeutsch, plusTage } from './zeit';
@@ -124,6 +124,11 @@ export function terminvorschlagText(fenster: { beschriftung: string }[]): string
   return `${texte[0]}, oder ${texte[1]}`;
 }
 
+/** Mindestens eine Wärmepumpen-Vorlage im Vorgang (steuert Pflichtangaben und Gerätevorschlag). */
+export function istWaermepumpenVorlage(vorlageIds: string[]): boolean {
+  return vorlageIds.some((id) => id.toLowerCase().includes('waermepumpe'));
+}
+
 /** Fehlende Angaben nach Regel 3. */
 export function fehlendeAngaben(daten: VorgangDaten, ergebnis: KalkulationsErgebnis): string[] {
   const fehlt: string[] = [];
@@ -134,6 +139,24 @@ export function fehlendeAngaben(daten: VorgangDaten, ergebnis: KalkulationsErgeb
   if (!terminvorschlagText(daten.fenster)) fehlt.push('Terminvorschlag');
   if (!daten.anfrage.objektAdresse.trim()) fehlt.push('Objektadresse');
   if (!daten.anfrage.persoenlicherSatz.trim()) fehlt.push('Persönlicher Satz');
+  // Zugang und Bestand nach der Arbeitsweise des Chefs; derselbe Wortlaut wie im Meister-Client,
+  // damit ein aus dem Web oder aus dem Dispatch angelegter Vorgang dieselben Lücken zeigt.
+  const gebaeude = daten.anfrage.gebaeude;
+  const wp = istWaermepumpenVorlage(daten.vorlageIds);
+  if (gebaeude) {
+    const tuer = gebaeude.platz.tuerbreiteCm;
+    if (tuer !== null && tuer < 80) fehlt.push('Türbreite unter 80 cm, Transportweg klären');
+    if (wp && !gebaeude.bestand.energieart) fehlt.push('Bestehende Heizung');
+    if (wp) {
+      const heizlast = heizlastSchaetzen(gebaeude);
+      if (heizlast && !heizlast.belastbar) {
+        fehlt.push('Jahresverbrauch fehlt, die Heizlast aus der Wohnfläche allein trägt die Gerätewahl nicht');
+      }
+      if (heizlast && geraetAusBaureihe(heizlast.kwEmpfohlen, gebaeude.geraet.hersteller).ueberBaureihe) {
+        fehlt.push('Die errechnete Heizlast liegt über der Baureihe, die Auslegung klären wir vor Ort.');
+      }
+    }
+  }
   for (const p of ergebnis.positionen) {
     // Abgewählte Zuschläge stehen nicht im Dokument; ihre Platzhalter fehlen dem Kunden nicht.
     if (!p.aktiv) continue;
@@ -181,8 +204,14 @@ export const CSV_SPALTEN = [
   'spanne_von', 'spanne_bis', 'status', 'versendet_am', 'wiedervorlage', 'antwort_am', 'termin', 'bemerkung',
 ] as const;
 
-function csvFeld(wert: string): string {
-  const roh = (wert ?? '').replace(/\r?\n/g, ' ').trim();
+/**
+ * Ein Feld für die Übersichts-CSV. Namen und Bemerkungen kommen aus dem Web-Trichter und dem
+ * Dispatch; beginnt ein Wert mit einem Formelzeichen, führt die Tabellenkalkulation im Büro ihn
+ * sonst als Formel aus. Der führende Apostroph macht daraus wieder Text.
+ */
+export function csvFeld(wert: string): string {
+  let roh = (wert ?? '').replace(/\r?\n/g, ' ').trim();
+  if (/^[=+\-@\t\r]/.test(roh)) roh = `'${roh}`;
   return /[";]/.test(roh) ? `"${roh.replace(/"/g, '""')}"` : roh;
 }
 
@@ -314,7 +343,7 @@ export function baueDokumentEingabe(
     bruttoBis: ergebnis.bruttoBis,
     foerderung: ergebnis.foerderung,
     betriebskosten: a.gewerkHaupt === 'waermepumpe' || daten.vorlageIds.some((id) => id.startsWith('waermepumpe')) ? kundenBetriebskosten(daten, einst) : null,
-    foerderBausteine: ergebnis.foerderung ? foerderBausteine(ergebnis.foerderung.boni, optionen.foerderRegeln ?? FOERDER_STANDARD) : [],
+    foerderBausteine: ergebnis.foerderung ? foerderBausteine(ergebnis.foerderung, optionen.foerderRegeln ?? FOERDER_STANDARD) : [],
     annahmen: a.annahmen ?? [],
     vorbehalte: a.vorbehalte ?? [],
     terminvorschlag: terminvorschlagText(daten.fenster),

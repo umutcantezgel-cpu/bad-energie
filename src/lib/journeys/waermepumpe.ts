@@ -68,14 +68,14 @@ export const waermepumpeJourney: Journey = {
           art: 'zahl',
           frage: 'Was steht auf Ihrer letzten Abrechnung?',
           erklaerung:
-            'Bei Gas in Kilowattstunden, bei Öl in Litern. Wenn Sie es nicht wissen, lassen Sie das Feld frei.',
+            'Bei Gas und Strom in Kilowattstunden. Wenn Sie es nicht wissen, lassen Sie das Feld frei.',
           min: 0,
           max: 60_000,
           schritt: 100,
           einheit: 'kWh im Jahr',
           eingabe: 'feld',
           optional: true,
-          sichtbarWenn: { feld: 'heutig', werte: ['gas', 'strom', 'holz', 'sonstiges'] },
+          sichtbarWenn: { feld: 'heutig', werte: ['gas', 'strom', 'sonstiges'] },
         },
         {
           id: 'verbrauchJahrOel',
@@ -84,7 +84,7 @@ export const waermepumpeJourney: Journey = {
           art: 'zahl',
           frage: 'Was steht auf Ihrer letzten Abrechnung?',
           erklaerung:
-            'Bei Gas in Kilowattstunden, bei Öl in Litern. Wenn Sie es nicht wissen, lassen Sie das Feld frei.',
+            'Die Menge Heizöl, die Sie im Jahr tanken. Wenn Sie es nicht wissen, lassen Sie das Feld frei.',
           min: 0,
           max: 20_000,
           schritt: 100,
@@ -92,6 +92,25 @@ export const waermepumpeJourney: Journey = {
           eingabe: 'feld',
           optional: true,
           sichtbarWenn: { feld: 'heutig', werte: ['oel'] },
+        },
+        {
+          // Eigene Frage je Brennstoff: eine Kilowattstundenzahl im Holzfeld waere um den Faktor
+          // des Heizwerts falsch und wuerde Heizlast und Betriebskosten unbrauchbar machen.
+          id: 'verbrauchJahrHolz',
+          ziel: 'antworten',
+          feld: 'verbrauchJahr',
+          art: 'zahl',
+          frage: 'Wie viel Holz verbrauchen Sie im Jahr?',
+          erklaerung:
+            'In Raummetern. Wenn Sie mit Pellets heizen oder es nicht wissen, lassen Sie das Feld frei.',
+          min: 0,
+          max: 60,
+          schritt: 1,
+          einheit: 'Raummeter im Jahr',
+          einheitEinzahl: 'Raummeter im Jahr',
+          eingabe: 'feld',
+          optional: true,
+          sichtbarWenn: { feld: 'heutig', werte: ['holz'] },
         },
         {
           id: 'standortHeizung',

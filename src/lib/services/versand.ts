@@ -1,6 +1,6 @@
 import 'server-only';
 import { randomUUID } from 'node:crypto';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { getDb } from '@/db/client';
 import { anfrage as anfrageTabelle, dokument, versandauftrag } from '@/db/schema';
 import type { VersandArt, VersandStatus } from '../types';
@@ -12,21 +12,29 @@ import {
 import { renderPdf } from './pdf';
 import { getMailer, pdfDateiname, standardHeader, type MailAnhang } from './mail';
 import { dokumentPfad, getStorage, sha256Hex } from './storage';
-import { bestaetigungsUrl, csvKopfzeile, erzeugeBestaetigungsToken, ladeEingaben } from './dokument-eingabe';
+import { appUrl, bestaetigungsUrl, csvKopfzeile, erzeugeBestaetigungsToken, ladeEingaben } from './dokument-eingabe';
 import { schreibeEreignis, setzeVersandStatus, setzeVorgangsStatus } from './statusmaschine';
 import { ladeEinstellungen } from './kalkulationsdaten';
 import { ipHash, pruefeLimit } from './ratelimit';
 import { datumDeutsch, plusMinuten, plusTage } from './zeit';
 
 /**
- * Versand eines Versandauftrags (Plan 4.5). Der Auftrag wird zuerst beansprucht
- * (`UPDATE … WHERE status IN ('entwurf','freigegeben') RETURNING`), damit zwei Läufe nie doppelt senden.
+ * Versand eines Versandauftrags (Plan 4.5). Gesendet wird nur aus dem Status `freigegeben`
+ * (Fachregel 1). Der Auftrag wird zuerst beansprucht (`UPDATE … SET beansprucht_am = jetzt
+ * WHERE status = 'freigegeben' AND (beansprucht_am IS NULL OR beansprucht_am < jetzt − 10 min) RETURNING`),
+ * damit zwei Läufe nie doppelt senden. Auf `versendet` wechselt der Auftrag erst, wenn die Kundenmail
+ * draußen ist; bricht die Function vorher ab, verfällt die Beanspruchung und der nächste Lauf holt nach.
  * Kundenmail und Büro-Dossier laufen als eigene Aufträge parallel; ein Dossier-Fehler rollt den Kundenversand nie zurück.
  */
 
 /** Wartezeiten zwischen den Versuchen in Minuten. */
 export const BACKOFF_MINUTEN = [1, 5, 15, 60, 240];
 export const MAX_VERSUCHE = 5;
+/**
+ * Nach dieser Zeit gilt eine Beanspruchung als verfallen. Die Function läuft höchstens 120 Sekunden,
+ * zehn Minuten liegen sicher darüber und halten einen abgebrochenen Lauf nicht dauerhaft fest.
+ */
+export const BEANSPRUCHUNG_MINUTEN = 10;
 /** Obergrenze für Anhänge des Dossiers; der Rest wird als Link genannt. */
 export const DOSSIER_ANHANG_BYTES = 8 * 1024 * 1024;
 
@@ -76,14 +84,34 @@ export async function stelleAuftragBereit(
   return zeilen[0];
 }
 
-/** Beansprucht den Auftrag für diesen Lauf. Liefert null, wenn ein anderer Lauf schneller war. */
+/**
+ * Beansprucht den Auftrag für diesen Lauf. Liefert null, wenn ein anderer Lauf schneller war.
+ * Der Status bleibt `freigegeben`: Ein abgebrochener Lauf darf keinen Auftrag hinterlassen,
+ * der als versendet gilt, obwohl keine Mail hinausging.
+ */
 async function beanspruche(auftragId: string, jetzt: Date): Promise<Auftrag | null> {
   const db = await getDb();
+  const verfallen = plusMinuten(jetzt, -BEANSPRUCHUNG_MINUTEN);
   const zeilen = await db.update(versandauftrag)
-    .set({ status: 'versendet', versendetAm: jetzt })
-    .where(and(eq(versandauftrag.id, auftragId), inArray(versandauftrag.status, ['entwurf', 'freigegeben'])))
+    .set({ beanspruchtAm: jetzt })
+    .where(and(
+      eq(versandauftrag.id, auftragId),
+      eq(versandauftrag.status, 'freigegeben'),
+      or(isNull(versandauftrag.beanspruchtAm), lt(versandauftrag.beanspruchtAm, verfallen)),
+    ))
     .returning();
   return zeilen[0] ?? null;
+}
+
+/**
+ * Hebt einen Auftrag, der an einer bereits erteilten Freigabe hängt (Dossier, Eingangsbestätigung),
+ * vor dem Senden auf `freigegeben`. Damit gilt Fachregel 1 auch in diesen Pfaden.
+ */
+async function gebeAbgeleitetenAuftragFrei(auftrag: Auftrag, jetzt: Date): Promise<void> {
+  if (auftrag.status !== 'entwurf' && auftrag.status !== 'fehlgeschlagen') return;
+  await setzeVersandStatus(auftrag.id, ['entwurf', 'fehlgeschlagen'], 'freigegeben', {
+    freigegebenAm: auftrag.freigegebenAm ?? jetzt,
+  });
 }
 
 async function merkeFehler(auftrag: Auftrag, fehler: unknown, jetzt: Date): Promise<VersandStatus> {
@@ -96,6 +124,8 @@ async function merkeFehler(auftrag: Auftrag, fehler: unknown, jetzt: Date): Prom
     status: 'fehlgeschlagen',
     versuch,
     versendetAm: null,
+    // Die Beanspruchung fällt zurück, damit der nächste Lauf den Auftrag sofort wieder aufnehmen darf.
+    beanspruchtAm: null,
     fehler: text.slice(0, 500),
     naechsterVersuchAm: endgueltig ? null : plusMinuten(jetzt, wartezeit),
   }).where(eq(versandauftrag.id, auftrag.id));
@@ -107,9 +137,13 @@ async function merkeFehler(auftrag: Auftrag, fehler: unknown, jetzt: Date): Prom
   return 'fehlgeschlagen';
 }
 
-/** Ein fehlgeschlagener Auftrag wird für den nächsten Lauf wieder freigegeben. */
+/**
+ * Ein fehlgeschlagener Auftrag wird für den nächsten Lauf wieder freigegeben. Die Wartezeit ist
+ * abgelaufen, wenn der Job hier ankommt; sie wird gelöscht und bei einem erneuten Fehler neu gesetzt.
+ * Liefert false, wenn ein anderer Lauf den Auftrag schon aufgenommen hat.
+ */
 export async function bereiteWiederholungVor(auftragId: string): Promise<boolean> {
-  return setzeVersandStatus(auftragId, 'fehlgeschlagen', 'freigegeben');
+  return setzeVersandStatus(auftragId, 'fehlgeschlagen', 'freigegeben', { naechsterVersuchAm: null });
 }
 
 // ---------------------------------------------------------------------------
@@ -206,6 +240,8 @@ async function anhaengeFuerDossier(dossier: DossierEingabe, pdf: Buffer | null, 
 async function sendeDossier(auftrag: Auftrag, artefakte: Artefakte, jetzt: Date): Promise<VersandStatus> {
   const db = await getDb();
   const einst = await ladeEinstellungen();
+  // Das Dossier hängt an der Kundenfreigabe; es wird ausdrücklich freigegeben und dann wie jeder Auftrag beansprucht.
+  await gebeAbgeleitetenAuftragFrei(auftrag, jetzt);
   const beansprucht = await beanspruche(auftrag.id, jetzt);
   if (!beansprucht) return (await ladeAuftrag(auftrag.id))?.status ?? 'versendet';
   try {
@@ -225,7 +261,9 @@ async function sendeDossier(auftrag: Auftrag, artefakte: Artefakte, jetzt: Date)
       header: { 'Auto-Submitted': 'auto-generated' },
     });
     const dokumentId = await legeDokumentAb(auftrag.anfrageId, 'dossier_html', mail.html, 'html');
+    // Erst jetzt, nach dem tatsächlichen Versand, gilt der Auftrag als versendet.
     await db.update(versandauftrag).set({
+      status: 'versendet', versendetAm: jetzt,
       empfaenger: einst.bueroEmail, betreff: mail.betreff, messageId: ergebnis.id, resendId: ergebnis.id,
       fehler: null, dokumentIds: [dokumentId],
     }).where(eq(versandauftrag.id, auftrag.id));
@@ -236,7 +274,7 @@ async function sendeDossier(auftrag: Auftrag, artefakte: Artefakte, jetzt: Date)
   }
 }
 
-async function sendeKundenmail(auftrag: Auftrag, artefakte: Artefakte): Promise<VersandStatus> {
+async function sendeKundenmail(auftrag: Auftrag, artefakte: Artefakte, jetzt: Date): Promise<VersandStatus> {
   const db = await getDb();
   const einst = await ladeEinstellungen();
   const empfaenger = artefakte.dokument.kunde.email;
@@ -265,7 +303,9 @@ async function sendeKundenmail(auftrag: Auftrag, artefakte: Artefakte): Promise<
     idempotencyKey: auftrag.id,
     tag: auftrag.art,
   });
+  // Erst jetzt, nach dem tatsächlichen Versand, gilt der Auftrag als versendet.
   await db.update(versandauftrag).set({
+    status: 'versendet', versendetAm: jetzt,
     empfaenger, betreff: artefakte.mail.betreff, messageId: ergebnis.id, resendId: ergebnis.id,
     fehler: null, dokumentIds: artefakte.dokumentIds,
   }).where(eq(versandauftrag.id, auftrag.id));
@@ -339,7 +379,7 @@ export async function versendeAuftrag(auftragId: string, optionen: { jetzt?: Dat
     : null;
 
   const [kundeErgebnis, dossierErgebnis] = await Promise.allSettled([
-    sendeKundenmail(beansprucht, artefakte),
+    sendeKundenmail(beansprucht, artefakte, jetzt),
     dossierAuftrag ? sendeDossier(dossierAuftrag, artefakte, jetzt) : Promise.resolve<VersandStatus>('storniert'),
   ]);
 
@@ -349,7 +389,18 @@ export async function versendeAuftrag(auftragId: string, optionen: { jetzt?: Dat
     status = await merkeFehler(beansprucht, kundeErgebnis.reason, jetzt);
     fehlertext = kundeErgebnis.reason instanceof Error ? kundeErgebnis.reason.message : String(kundeErgebnis.reason);
   } else {
-    await schliesseVorgangAb(beansprucht, artefakte, jetzt);
+    // Die Mail ist beim Kunden. Ein Fehler in der Nachbereitung (Vorgangsstatus, Abschlussbericht)
+    // darf den Versand nicht nachträglich als gescheitert ausweisen; er wird nur als Ereignis vermerkt.
+    try {
+      await schliesseVorgangAb(beansprucht, artefakte, jetzt);
+    } catch (fehler) {
+      const text = fehler instanceof Error ? fehler.message : String(fehler);
+      await schreibeEreignis({
+        anfrageId: beansprucht.anfrageId,
+        typ: 'versand:nachbereitung_fehlgeschlagen',
+        payload: { art: beansprucht.art, fehler: text.slice(0, 300) },
+      });
+    }
   }
 
   const bericht: VersandBericht = { auftragId, art: auftrag.art, status, ...(fehlertext ? { fehler: fehlertext } : {}) };
@@ -377,6 +428,8 @@ async function sendeEingangsbestaetigungAuftrag(auftrag: Auftrag, jetzt: Date): 
   const geladen = await ladeEingaben(auftrag.anfrageId, { jetzt });
   if (!geladen) return 'fehlgeschlagen';
   const empfaenger = geladen.dokument.kunde.email;
+  // Die Bestätigung folgt der Anfrage des Kunden selbst; sie wird ausdrücklich freigegeben und dann beansprucht.
+  await gebeAbgeleitetenAuftragFrei(auftrag, jetzt);
   const beansprucht = await beanspruche(auftrag.id, jetzt);
   if (!beansprucht) return (await ladeAuftrag(auftrag.id))?.status ?? 'versendet';
   try {
@@ -396,8 +449,11 @@ async function sendeEingangsbestaetigungAuftrag(auftrag: Auftrag, jetzt: Date): 
       idempotencyKey: beansprucht.id,
       tag: 'eingangsbestaetigung',
     });
-    await db.update(versandauftrag).set({ empfaenger, betreff: mail.betreff, messageId: ergebnis.id, resendId: ergebnis.id, fehler: null })
-      .where(eq(versandauftrag.id, auftrag.id));
+    // Erst jetzt, nach dem tatsächlichen Versand, gilt der Auftrag als versendet.
+    await db.update(versandauftrag).set({
+      status: 'versendet', versendetAm: jetzt,
+      empfaenger, betreff: mail.betreff, messageId: ergebnis.id, resendId: ergebnis.id, fehler: null,
+    }).where(eq(versandauftrag.id, auftrag.id));
     return 'versendet';
   } catch (fehler) {
     return merkeFehler(beansprucht, fehler, jetzt);
@@ -437,7 +493,8 @@ export async function sendeBueroHinweis(anfrageId: string, jetzt: Date = new Dat
     `${a.ksNummer}, neue Anfrage über die Website.`,
     `Vorhaben: ${a.vorhabenKurz || 'noch offen'}.`,
     `Triage: ${a.triageVorschlag || 'ohne Vorschlag'}.`,
-    `Vorgang: ${einst.briefbogen.web}/intern/anfragen/${a.id}`,
+    // Der Link muss auf die laufende Anwendung zeigen, nicht auf die Webadresse des Briefbogens.
+    `Vorgang: ${appUrl()}/intern/anfragen/${a.id}`,
   ].join('\n');
   await getMailer().senden({
     an: einst.bueroEmail,
@@ -458,7 +515,8 @@ export async function sendeTerminMeldung(anfrageId: string, fensterBeschriftung:
   const zeilen = await db.select().from(anfrageTabelle).where(eq(anfrageTabelle.id, anfrageId)).limit(1);
   const a = zeilen[0];
   if (!a) return;
-  const text = `${a.ksNummer}: Der Kunde hat den Termin bestätigt.\nGewählt: ${fensterBeschriftung}\n${einst.briefbogen.web}/intern/anfragen/${a.id}`;
+  // Der Link muss auf die laufende Anwendung zeigen, nicht auf die Webadresse des Briefbogens.
+  const text = `${a.ksNummer}: Der Kunde hat den Termin bestätigt.\nGewählt: ${fensterBeschriftung}\n${appUrl()}/intern/anfragen/${a.id}`;
   await getMailer().senden({
     an: einst.bueroEmail,
     betreff: `Terminbestätigung ${a.ksNummer}`,

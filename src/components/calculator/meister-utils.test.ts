@@ -1,7 +1,14 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import type { InternAnfrage, InternAnfrageDTO, KalkulationsErgebnis, Position, PositionErgebnis } from '@/lib/types';
 import {
+  KOERPER_GRENZE_BYTE,
+  anhangKennung,
+  koerperBytes,
   lohntServerEntwurf,
+  neueAnhaenge,
+  nurKennungGeaendert,
+  varianteVorbelegung,
+  zuGrossMeldung,
   LEINWAND_BREITE,
   LEINWAND_HOEHE,
   UNDO_TIEFE,
@@ -487,5 +494,88 @@ describe('lohntServerEntwurf', () => {
     expect(lohntServerEntwurf({ ...leer, vorlageIds: ['waermepumpe_gas'], kontakt: { ...leer.kontakt, nachname: 'Diflo' } }, false)).toBe(true);
     expect(lohntServerEntwurf({ ...leer, vorlageIds: ['waermepumpe_gas'], kontakt: { ...leer.kontakt, telefon: '0641' } }, false)).toBe(true);
     expect(lohntServerEntwurf(leer, true)).toBe(true);
+  });
+});
+
+describe('lohntServerEntwurf mit Kennung aus dem Zustand', () => {
+  it('sendet an den bestehenden Vorgang, sobald die Kennung im Zustand steht', () => {
+    const leer = leereAnfrage();
+    // Ohne diese Regel legt jeder Speicherlauf einen neuen Vorgang mit eigener KS-Nummer an.
+    expect(lohntServerEntwurf({ ...leer, anfrageId: 'A-1' }, false)).toBe(true);
+    expect(lohntServerEntwurf({ ...leer, anfrageId: 'A-1', vorlageIds: [] }, false)).toBe(true);
+  });
+});
+
+describe('nurKennungGeaendert', () => {
+  const basis = leereAnfrage();
+
+  it('erkennt das Zurueckschreiben der Vorgangskennung', () => {
+    expect(nurKennungGeaendert(basis, { ...basis, anfrageId: 'A-1' })).toBe(true);
+  });
+
+  it('meldet echte Aenderungen des Meisters', () => {
+    expect(nurKennungGeaendert(basis, { ...basis, vorhabenKurz: 'Bad' })).toBe(false);
+    expect(nurKennungGeaendert(basis, { ...basis, anfrageId: 'A-1', vorhabenKurz: 'Bad' })).toBe(false);
+    expect(nurKennungGeaendert(basis, basis)).toBe(true);
+  });
+});
+
+describe('varianteVorbelegung', () => {
+  const baustein = {
+    groessenVarianten: [
+      { matrixNr: 1, label: '5 bis 7 kW', kwLabel: '7', heizlastKwVon: 0, heizlastKwBis: 7, speicherLiterOptionen: [200, 300], speicherLiterDefault: 200 },
+      { matrixNr: 2, label: '10 kW', kwLabel: '10', heizlastKwVon: 7, heizlastKwBis: 10, speicherLiterOptionen: [200, 300], speicherLiterDefault: 300 },
+    ],
+  };
+
+  it('uebernimmt nur den Vorschlag einer belastbaren Heizlast', () => {
+    expect(varianteVorbelegung(baustein, { belastbar: true }, { matrixNr: 2, ueberBaureihe: false })).toBe(2);
+  });
+
+  it('raet nie eine Groesse, wenn die Schaetzung nicht belastbar ist', () => {
+    expect(varianteVorbelegung(baustein, { belastbar: false }, { matrixNr: 2, ueberBaureihe: false })).toBeNull();
+    expect(varianteVorbelegung(baustein, null, { matrixNr: 2, ueberBaureihe: false })).toBeNull();
+    expect(varianteVorbelegung(baustein, { belastbar: true }, null)).toBeNull();
+  });
+
+  it('laesst die Groesse offen, wenn die Heizlast ueber der Baureihe liegt oder die Variante fehlt', () => {
+    expect(varianteVorbelegung(baustein, { belastbar: true }, { matrixNr: 3, ueberBaureihe: true })).toBeNull();
+    expect(varianteVorbelegung(baustein, { belastbar: true }, { matrixNr: 9, ueberBaureihe: false })).toBeNull();
+  });
+
+  it('gibt ohne Groessenvarianten nichts vor', () => {
+    expect(varianteVorbelegung({ groessenVarianten: null }, { belastbar: true }, { matrixNr: 2, ueberBaureihe: false })).toBeNull();
+  });
+});
+
+describe('Koerpergrenze und Anhaenge', () => {
+  it('meldet zu grosse Koerper im Klartext und laesst kleine durch', () => {
+    expect(zuGrossMeldung(1_000_000)).toBeNull();
+    expect(zuGrossMeldung(KOERPER_GRENZE_BYTE)).toBeNull();
+    const meldung = zuGrossMeldung(4_600_000);
+    expect(meldung).toContain('4,6 MB');
+    expect(meldung).toContain('erlaubt 4 MB');
+  });
+
+  it('zaehlt Umlaute als mehrere Byte', () => {
+    expect(koerperBytes('abc')).toBe(3);
+    expect(koerperBytes('grüß')).toBe(6);
+  });
+
+  it('sendet nur die neu hinzugekommenen Anhaenge', () => {
+    const anfrage = {
+      skizzen: [{ name: 'Skizze', dataUrl: 'data:image/png;base64,AAAA', breite: 10, hoehe: 10 }],
+      fotos: [
+        { name: 'Heizraum', dataUrl: 'data:image/jpeg;base64,BBBB', beschreibung: '' },
+        { name: 'Zaehler', dataUrl: 'data:image/jpeg;base64,CCCCCC', beschreibung: '' },
+      ],
+    };
+    const gesendet = new Set([anhangKennung(anfrage.skizzen[0]), anhangKennung(anfrage.fotos[0])]);
+
+    expect(neueAnhaenge(anfrage, null).fotos).toHaveLength(2);
+    const offen = neueAnhaenge(anfrage, gesendet);
+    expect(offen.skizzen).toHaveLength(0);
+    expect(offen.fotos).toHaveLength(1);
+    expect(offen.fotos[0].name).toBe('Zaehler');
   });
 });

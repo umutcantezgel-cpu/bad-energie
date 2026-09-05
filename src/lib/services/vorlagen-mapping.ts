@@ -1,6 +1,6 @@
 import 'server-only';
 import type {
-  Baustein, FoerderungEingabe, GebaeudeDaten, Gewerk, JourneyAntworten, Kalkulationsdaten, Position, Vorlage,
+  Baustein, FoerderungEingabe, GebaeudeDaten, Gewerk, Hersteller, JourneyAntworten, Kalkulationsdaten, Position, Vorlage,
 } from '../types';
 import { positionAusBaustein } from './calculation';
 import {
@@ -44,7 +44,10 @@ function bausteinMitVarianten(v: Vorlage): Baustein | null {
   return v.bausteine.find((b) => (b.groessenVarianten?.length ?? 0) > 0) ?? null;
 }
 
-/** Variante nach Wohnfläche; null, wenn keine Variante eine passende Spanne pflegt. */
+/**
+ * Variante nach Wohnfläche; null, wenn keine Variante eine passende Spanne pflegt.
+ * Nicht mehr als Rückfall für die Wärmepumpe: ohne belastbare Heizlast wird bewusst keine Größe gesetzt.
+ */
 export function variantenNrNachWohnflaeche(b: Baustein | null, wohnflaeche: number): number | null {
   if (!b?.groessenVarianten?.length) return null;
   for (const v of b.groessenVarianten) {
@@ -71,6 +74,8 @@ type Aufbau = {
   /** Gerätegröße und Speicher für den Baustein mit Größenvarianten ([kW], [Liter]). */
   kwFuerGroesse?: number | string;
   literFuerGroesse?: number;
+  /** Marke im Vorlagentext ([Hersteller]); ohne Angabe die Standardmarke. */
+  hersteller?: Hersteller;
 };
 
 function positionenAus(daten: Kalkulationsdaten, aufbau: Aufbau): Position[] {
@@ -87,6 +92,7 @@ function positionenAus(daten: Kalkulationsdaten, aufbau: Aufbau): Position[] {
       liter: istGroesse ? (aufbau.literFuerGroesse ?? opt.liter) : opt.liter,
       kW: istGroesse ? aufbau.kwFuerGroesse : undefined,
       aktiv: opt.aktiv,
+      hersteller: aufbau.hersteller,
       varianteMatrixNr: istGroesse ? (aufbau.varianteFuerGroesse ?? opt.varianteMatrixNr ?? null) : (opt.varianteMatrixNr ?? null),
     }));
   }
@@ -202,17 +208,21 @@ function mappeHeizung(a: HeizungsAntworten, daten: Kalkulationsdaten, wohneinhei
   const v = vorlageVon(daten, slug);
   if (!v) return { ...LEER, ...extras, vorhabenKurz: 'Wärmepumpe', gewerkHaupt: 'waermepumpe' };
   const groesse = bausteinMitVarianten(v);
-  // Größe nach Heizlast (Arbeitsweise des Chefs); Wohnflächenspannen nur als Rückfall, wenn sie gepflegt sind.
-  const vorschlag = heizlast ? geraeteVorschlag(heizlast.kwEmpfohlen, groesse?.groessenVarianten ?? null) : null;
-  const varianteNr = vorschlag?.matrixNr ?? variantenNrNachWohnflaeche(groesse, a.wohnflaeche);
+  const hersteller = gebaeude.geraet.hersteller;
+  // Größe nach Heizlast (Arbeitsweise des Chefs). Ohne Verbrauch oder Dämmungsangabe überschätzt die
+  // Fläche allein deutlich; dann bleibt die Größe offen und die Anfrage läuft in den Vorangebots-Pfad.
+  const vorschlag = heizlast ? geraeteVorschlag(heizlast.kwEmpfohlen, groesse?.groessenVarianten ?? null, hersteller) : null;
+  const groesseBelastbar = Boolean(heizlast?.belastbar && vorschlag && !vorschlag.ueberBaureihe);
+  const varianteNr = groesseBelastbar ? (vorschlag as NonNullable<typeof vorschlag>).matrixNr : null;
   const varianteGewaehlt = groesse?.groessenVarianten?.find((x) => x.matrixNr === varianteNr) ?? null;
   const speicher = speicherVorschlag(gebaeude.personen, varianteGewaehlt?.speicherLiterOptionen ?? [200, 300]);
   const heizkoerper = a.heizkoerperTausch ?? 0;
   const tanks = a.tanks ?? 0;
   const positionen = positionenAus(daten, {
     vorlage: v,
+    hersteller,
     varianteFuerGroesse: varianteNr,
-    kwFuerGroesse: vorschlag?.geraetKw,
+    kwFuerGroesse: groesseBelastbar ? vorschlag?.geraetKw : undefined,
     literFuerGroesse: varianteNr !== null ? speicher.liter : undefined,
     optionen: {
       // Öl: Demontage je Tank
@@ -223,10 +233,15 @@ function mappeHeizung(a: HeizungsAntworten, daten: Kalkulationsdaten, wohneinhei
     },
   });
   const annahmen: string[] = [];
-  if (varianteNr === null) annahmen.push('Die Größe der Wärmepumpe wird nach der Heizlastberechnung vor Ort festgelegt.');
-  else if (vorschlag) annahmen.push(heizlast?.methode === 'flaeche'
-    ? 'Die Größe der Wärmepumpe haben wir aus Wohnfläche und Baujahr abgeleitet, die genaue Auslegung folgt beim Termin vor Ort.'
-    : 'Die Größe der Wärmepumpe haben wir aus Ihrem Verbrauch abgeleitet, die genaue Auslegung folgt beim Termin vor Ort.');
+  if (varianteNr === null) {
+    annahmen.push('Für die Größe der Wärmepumpe brauchen wir Ihren Jahresverbrauch; die genaue Auslegung folgt beim Termin vor Ort.');
+    // Fachbegriffe bleiben aus Kundentexten heraus; der Wortlaut mit dem Fachbegriff steht im internen Dossier.
+    if (vorschlag?.ueberBaureihe) annahmen.push('Die berechnete Größe liegt über der größten Baureihe, die Auslegung klären wir vor Ort.');
+  } else {
+    annahmen.push(heizlast?.methode === 'flaeche'
+      ? 'Die Größe der Wärmepumpe haben wir aus Wohnfläche und Baujahr abgeleitet, die genaue Auslegung folgt beim Termin vor Ort.'
+      : 'Die Größe der Wärmepumpe haben wir aus Ihrem Verbrauch abgeleitet, die genaue Auslegung folgt beim Termin vor Ort.');
+  }
   if (a.heutig === 'oel' && tanks === 0) annahmen.push('Die Zahl der Öltanks wird beim Ortstermin aufgenommen.');
   return zusammen([v], positionen, foerderungAus([v], a, wohneinheiten), annahmen, extras);
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "versandauftrag" ADD COLUMN "beansprucht_am" timestamp with time zone;

@@ -56,8 +56,9 @@ export default function BausteinTile({
   const gewaehlteVariante = varianten.find((v) => v.matrixNr === position?.varianteMatrixNr) ?? null;
   const speicherOptionen = gewaehlteVariante?.speicherLiterOptionen ?? [];
   const blockiert = an && hinweise.length > 0;
-  const spanneVon = ergebnis?.einzelVon ?? baustein.spanne?.von ?? null;
-  const spanneBis = ergebnis?.einzelBis ?? baustein.spanne?.bis ?? null;
+  // Eine blockierte Zeile zeigt keine Spanne der Vorlage; sonst stuende dort ein Preis, den niemand gewaehlt hat.
+  const spanneVon = blockiert ? null : (ergebnis?.einzelVon ?? baustein.spanne?.von ?? null);
+  const spanneBis = blockiert ? null : (ergebnis?.einzelBis ?? baustein.spanne?.bis ?? null);
   const farbe = GEWERK_MODUL_FARBE[baustein.gewerk];
 
   return (
@@ -107,6 +108,10 @@ export default function BausteinTile({
 
       {varianten.length ? (
         <div className="mt-3" role="radiogroup" aria-label={`Groesse fuer ${baustein.titel}`}>
+          {position?.varianteMatrixNr === null || position?.varianteMatrixNr === undefined ? (
+            // Die Groesse wird nie geraten; ohne Wahl bleibt die Zeile ohne Spanne (Fachregel 2).
+            <p className="mb-2 text-sm font-medium text-[#B42318]">Größe nach Heizlast wählen</p>
+          ) : null}
           <div className="flex flex-wrap gap-2">
             {varianten.map((v) => {
               const gewaehlt = v.matrixNr === position?.varianteMatrixNr;

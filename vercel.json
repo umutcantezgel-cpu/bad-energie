@@ -6,7 +6,7 @@
   "crons": [
     {
       "path": "/api/jobs/versand",
-      "schedule": "0 16 * * *"
+      "schedule": "0 17 * * *"
     },
     {
       "path": "/api/jobs/wiedervorlage",

@@ -12,6 +12,7 @@ import type { OeffentlicheErgebnisDTO } from '@/lib/types';
 import type { Eignung } from '@/lib/journeys';
 import {
   AUSSTELLUNGSPREIS_LABEL,
+  UNVERBINDLICHKEITS_HINWEIS,
   VERTRAUEN_SIEGEL,
   foerderSatzText,
   heizkostenSatz,
@@ -121,6 +122,12 @@ export default function ErgebnisKarte({
               </p>
             </>
           )}
+
+          {/* Fachregel 4: wo Beträge stehen, steht der Unverbindlichkeitshinweis; auch ohne Spanne,
+              weil die Zusage denselben Vorbehalt trägt. */}
+          <p className="mt-4 text-slate-600" style={{ fontSize: 'var(--font-size-sm)', lineHeight: 1.5 }}>
+            {UNVERBINDLICHKEITS_HINWEIS}
+          </p>
 
           {heizkosten ? (
             <div className="mt-5 rounded-2xl border border-slate-200 p-4">

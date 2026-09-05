@@ -314,6 +314,10 @@ export const versandauftrag = pgTable('versandauftrag', {
   naechsterVersuchAm: ts('naechster_versuch_am'),
   freigegebenVon: text('freigegeben_von').references(() => benutzer.id, { onDelete: 'set null' }),
   freigegebenAm: ts('freigegeben_am'),
+  // Zeitpunkt, zu dem ein Lauf den Auftrag an sich genommen hat. Der Status wechselt erst nach
+  // erfolgreichem Mailversand auf 'versendet'; bricht die Function vorher ab, verfällt die
+  // Beanspruchung nach zehn Minuten und der Auftrag geht in den nächsten Lauf.
+  beanspruchtAm: ts('beansprucht_am'),
   versendetAm: ts('versendet_am'),
   zugestelltAm: ts('zugestellt_am'),
   empfaenger: text('empfaenger').notNull().default(''),

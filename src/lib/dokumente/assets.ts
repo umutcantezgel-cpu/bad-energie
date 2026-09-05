@@ -1,7 +1,10 @@
 /**
  * Zugriff auf die Dokumentvorlagen und Binärassets unter src/lib/dokumente/assets/.
  *
- * Die Dateien werden über next.config.ts (outputFileTracingIncludes) in die Function kopiert.
+ * Die Dateien werden über next.config.ts (outputFileTracingIncludes, Schlüssel
+ * '/api/intern/**' und '/intern/**') in die Function kopiert. Die Schlüssel sind Globs auf
+ * den Routennamen: Ein Schlüssel mit den Klammern eines dynamischen Segments trifft keine
+ * Route, weil die Klammern als Zeichenklasse gelesen werden.
  * Gelesen wird einmal je Prozess, danach aus dem Modulcache.
  */
 import 'server-only';

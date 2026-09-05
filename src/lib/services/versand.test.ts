@@ -20,10 +20,12 @@ import { anfrage as anfrageTabelle, einstellung, versandauftrag } from '@/db/sch
 import { ladeKalkulationsdaten } from './kalkulationsdaten';
 import { positionAusBaustein } from './calculation';
 import { geraeteVorschlag, heizlastSchaetzen, leeresGebaeude, speicherVorschlag } from './heizlast';
-import { ladeTerminfenster, speichereInternAnfrage } from './estimates';
+import { freigeben, ladeTerminfenster, speichereInternAnfrage } from './estimates';
 import { pdfDateiname } from './mail';
+import { plusMinuten } from './zeit';
 import {
-  BACKOFF_MINUTEN, sendeBueroHinweis, sendeEingangsbestaetigung, stelleAuftragBereit, versendeAuftrag,
+  BACKOFF_MINUTEN, BEANSPRUCHUNG_MINUTEN, bereiteWiederholungVor, sendeBueroHinweis,
+  sendeEingangsbestaetigung, stelleAuftragBereit, versendeAuftrag,
 } from './versand';
 import { fakeMailer, fakeStorage, frischeDb, type FakeMailer } from '../../../test/db';
 import type { InternAnfrage, SessionInfo } from '../types';
@@ -85,6 +87,26 @@ async function versandfertigerVorgang(): Promise<{ anfrageId: string; ksNummer: 
   return { anfrageId: anlage.anfrageId, ksNummer: anlage.ksNummer };
 }
 
+/**
+ * Gibt den Erstkontakt frei, ohne zu senden, und liefert den Auftrag im Status `freigegeben`.
+ * Gesendet wird nur aus der Freigabe (Fachregel 1), deshalb geht jeder Versandtest hier durch.
+ */
+async function freigegebenerAuftrag(anfrageId: string) {
+  const freigabe = await freigeben(anfrageId, session, { sofort: false });
+  expect(freigabe.ok).toBe(true);
+  const db = await getDb();
+  const zeilen = await db.select().from(versandauftrag).where(eq(versandauftrag.anfrageId, anfrageId));
+  const auftrag = zeilen.find((z) => z.art === 'erstkontakt');
+  if (!auftrag) throw new Error('Erstkontakt-Auftrag fehlt.');
+  expect(auftrag.status).toBe('freigegeben');
+  return auftrag;
+}
+
+async function ladeAuftragZeile(auftragId: string) {
+  const db = await getDb();
+  return (await db.select().from(versandauftrag).where(eq(versandauftrag.id, auftragId)))[0];
+}
+
 beforeEach(async () => {
   ({ session } = await frischeDb({ demoPreise: true }));
   post = fakeMailer();
@@ -106,11 +128,26 @@ describe('stelleAuftragBereit', () => {
 });
 
 describe('versendeAuftrag, Erstkontakt', () => {
-  it('sendet Kundenmail mit PDF und Dossier ans Büro und schließt den Vorgang ab', async () => {
-    const { anfrageId, ksNummer } = await versandfertigerVorgang();
+  it('sendet einen Entwurf nicht: gesendet wird nur aus der Freigabe', async () => {
+    const { anfrageId } = await versandfertigerVorgang();
     const auftrag = await stelleAuftragBereit(anfrageId, 'erstkontakt', { empfaenger: 'max.mustermann@example.de' });
 
     const bericht = await versendeAuftrag(auftrag.id, { jetzt: new Date() });
+
+    expect(bericht.status).toBe('entwurf');
+    expect(bericht.fehler).toMatch(/nicht versandbereit/);
+    expect(post.mails).toHaveLength(0);
+    const zeile = await ladeAuftragZeile(auftrag.id);
+    expect(zeile.status).toBe('entwurf');
+    expect(zeile.beanspruchtAm).toBeNull();
+  });
+
+  it('sendet Kundenmail mit PDF und Dossier ans Büro und schließt den Vorgang ab', async () => {
+    const { anfrageId, ksNummer } = await versandfertigerVorgang();
+    const auftrag = await freigegebenerAuftrag(anfrageId);
+
+    const jetzt = new Date();
+    const bericht = await versendeAuftrag(auftrag.id, { jetzt });
 
     expect(bericht.status).toBe('versendet');
     expect(bericht.dossier?.status).toBe('versendet');
@@ -129,15 +166,19 @@ describe('versendeAuftrag, Erstkontakt', () => {
     expect(a.status).toBe('versendet');
     expect(a.versendetAm).not.toBeNull();
     expect(a.wiedervorlageAm).not.toBeNull();
+
+    // Der Auftrag ist beansprucht und erst nach dem Versand auf `versendet` gewechselt.
+    const zeile = await ladeAuftragZeile(auftrag.id);
+    expect(zeile.status).toBe('versendet');
+    expect(zeile.beanspruchtAm).not.toBeNull();
+    expect(zeile.versendetAm).not.toBeNull();
   });
 
   it('beansprucht den Auftrag genau einmal: der zweite Lauf sendet nichts nach', async () => {
     const { anfrageId } = await versandfertigerVorgang();
-    const auftrag = await stelleAuftragBereit(anfrageId, 'erstkontakt', { empfaenger: 'max.mustermann@example.de' });
+    const auftrag = await freigegebenerAuftrag(anfrageId);
 
-    // Der erste Lauf verschickt beide Mails; der Abschluss des Vorgangs wirft heute
-    // (siehe Befund „Übergang eingang → versendet“), das ändert am Doppelversand-Schutz nichts.
-    await versendeAuftrag(auftrag.id, { jetzt: new Date() }).catch(() => undefined);
+    await versendeAuftrag(auftrag.id, { jetzt: new Date() });
     const nachErstem = post.mails.length;
     expect(nachErstem).toBe(2);
 
@@ -147,9 +188,9 @@ describe('versendeAuftrag, Erstkontakt', () => {
     expect(post.mails).toHaveLength(nachErstem);
   });
 
-  it('merkt einen Mailfehler mit Versuchszähler und nächstem Versuch vor', async () => {
+  it('merkt einen Mailfehler mit Versuchszähler und nächstem Versuch vor und gibt die Beanspruchung frei', async () => {
     const { anfrageId } = await versandfertigerVorgang();
-    const auftrag = await stelleAuftragBereit(anfrageId, 'erstkontakt', { empfaenger: 'max.mustermann@example.de' });
+    const auftrag = await freigegebenerAuftrag(anfrageId);
     post.scheitereImmer('Resend: Domain nicht verifiziert');
 
     const jetzt = new Date();
@@ -158,16 +199,57 @@ describe('versendeAuftrag, Erstkontakt', () => {
     expect(post.mails).toHaveLength(0);
 
     const db = await getDb();
-    const a = (await db.select().from(versandauftrag).where(eq(versandauftrag.id, auftrag.id)))[0];
+    const a = await ladeAuftragZeile(auftrag.id);
     expect(a.status).toBe('fehlgeschlagen');
     expect(a.versuch).toBe(1);
     expect(a.fehler).toContain('Domain nicht verifiziert');
     expect(a.naechsterVersuchAm).not.toBeNull();
     const wartezeitMinuten = ((a.naechsterVersuchAm as Date).getTime() - jetzt.getTime()) / 60_000;
     expect(Math.round(wartezeitMinuten)).toBe(BACKOFF_MINUTEN[0]);
+    // Ohne freie Beanspruchung käme der nächste Lauf nicht mehr an den Auftrag heran.
+    expect(a.beanspruchtAm).toBeNull();
+    expect(a.versendetAm).toBeNull();
 
     const vorgang = (await db.select().from(anfrageTabelle).where(eq(anfrageTabelle.id, anfrageId)))[0];
     expect(vorgang.status).toBe('geplant');
+  });
+
+  it('wiederholt nach einem Fehlversuch und sendet dann genau einmal', async () => {
+    const { anfrageId } = await versandfertigerVorgang();
+    const auftrag = await freigegebenerAuftrag(anfrageId);
+    post.scheitereImmer('Resend: Zeitüberschreitung');
+
+    const jetzt = new Date();
+    expect((await versendeAuftrag(auftrag.id, { jetzt })).status).toBe('fehlgeschlagen');
+
+    post.scheitereImmer(null);
+    expect(await bereiteWiederholungVor(auftrag.id)).toBe(true);
+    const spaeter = plusMinuten(jetzt, BACKOFF_MINUTEN[0] + 1);
+    const zweiter = await versendeAuftrag(auftrag.id, { jetzt: spaeter });
+
+    expect(zweiter.status).toBe('versendet');
+    expect(post.an('max.mustermann@example.de')).toHaveLength(1);
+    const zeile = await ladeAuftragZeile(auftrag.id);
+    expect(zeile.status).toBe('versendet');
+    expect(zeile.versuch).toBe(1);
+  });
+
+  it('lässt einen abgebrochenen Lauf nach Ablauf der Beanspruchung nachholen', async () => {
+    const { anfrageId } = await versandfertigerVorgang();
+    const auftrag = await freigegebenerAuftrag(anfrageId);
+
+    // Ein abgestürzter Lauf hinterlässt eine Beanspruchung, aber keinen Versand.
+    const db = await getDb();
+    const abbruch = new Date();
+    await db.update(versandauftrag).set({ beanspruchtAm: abbruch }).where(eq(versandauftrag.id, auftrag.id));
+
+    const zuFrueh = await versendeAuftrag(auftrag.id, { jetzt: plusMinuten(abbruch, BEANSPRUCHUNG_MINUTEN - 1) });
+    expect(zuFrueh.status).toBe('freigegeben');
+    expect(post.mails).toHaveLength(0);
+
+    const nachholen = await versendeAuftrag(auftrag.id, { jetzt: plusMinuten(abbruch, BEANSPRUCHUNG_MINUTEN + 1) });
+    expect(nachholen.status).toBe('versendet');
+    expect(post.an('max.mustermann@example.de')).toHaveLength(1);
   });
 });
 

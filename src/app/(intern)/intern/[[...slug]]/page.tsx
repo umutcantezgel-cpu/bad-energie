@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { asc, desc, eq } from 'drizzle-orm';
+import { asc, desc, eq, isNull, or } from 'drizzle-orm';
 import { getDb } from '@/db/client';
 import {
   anfrage as anfrageTabelle,
@@ -10,7 +10,7 @@ import {
   terminfenster,
   terminfensterReservierung,
 } from '@/db/schema';
-import { verifySession } from '@/lib/services/auth';
+import { darfSehen, verifySession } from '@/lib/services/auth';
 import {
   ladeEinstellungen,
   ladeFoerderRegeln,
@@ -93,11 +93,17 @@ export default async function InternCatchAllPage({
         erstelltAm: anfrageTabelle.erstelltAm,
       })
       .from(anfrageTabelle)
-      .innerJoin(kundeTabelle, eq(anfrageTabelle.kundeId, kundeTabelle.id))
+      // Ein Vorgang ohne Kundendatensatz (Dispatch ohne Namen) darf nicht aus dem Board fallen.
+      .leftJoin(kundeTabelle, eq(anfrageTabelle.kundeId, kundeTabelle.id))
+      // Rollenregel 3.3: der Bauleiter sieht seine eigenen und die noch nicht zugeteilten Vorgänge.
+      .where(session.rolle === 'bauleiter'
+        ? or(eq(anfrageTabelle.bearbeiterId, session.benutzerId), isNull(anfrageTabelle.bearbeiterId))
+        : undefined)
       .orderBy(desc(anfrageTabelle.erstelltAm));
 
     const karten: BoardKarte[] = anfragen.map((a) => ({
       ...a,
+      nachname: a.nachname ?? '',
       erstelltAm: a.erstelltAm ? a.erstelltAm.toISOString() : '',
     })) as BoardKarte[];
 
@@ -234,6 +240,11 @@ export default async function InternCatchAllPage({
       return <MeisterModus />;
     }
     const anfrageId = slug[1];
+    // Der Konfigurator lädt den vollen Vorgang; die Zuständigkeit hängt an der
+    // Anfragezeile, nicht am Anzeigenamen (Namen sind nicht eindeutig).
+    const kopf = await db.select({ bearbeiterId: anfrageTabelle.bearbeiterId })
+      .from(anfrageTabelle).where(eq(anfrageTabelle.id, anfrageId)).limit(1);
+    if (!kopf[0] || !darfSehen(session, kopf[0])) notFound();
     const initial = await ladeInternAnfrage(anfrageId);
     if (!initial) notFound();
     return <MeisterModus anfrageId={anfrageId} initial={initial} />;
@@ -241,13 +252,14 @@ export default async function InternCatchAllPage({
 
   if (bereich === 'anfragen' && slug.length >= 2) {
     const id = slug[1];
-    const dto = await ladeInternAnfrage(id);
-
-    if (!dto) {
+    const kopf = await db.select({ bearbeiterId: anfrageTabelle.bearbeiterId })
+      .from(anfrageTabelle).where(eq(anfrageTabelle.id, id)).limit(1);
+    if (!kopf[0] || !darfSehen(session, kopf[0])) {
       notFound();
     }
 
-    if (session.rolle === 'bauleiter' && dto.bearbeiter && dto.bearbeiter !== session.name) {
+    const dto = await ladeInternAnfrage(id);
+    if (!dto) {
       notFound();
     }
 

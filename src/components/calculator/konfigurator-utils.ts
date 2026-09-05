@@ -163,6 +163,18 @@ export function foerderSatzText(dto: OeffentlicheErgebnisDTO): string {
 /** Auszeichnung des Herstellers, als Textzeile im Vertrauensblock. */
 export const VERTRAUEN_SIEGEL = 'Bosch Premium Partner 2026';
 
+/**
+ * Rechtlicher Unverbindlichkeitshinweis (Fachregel 4), wörtlich wie im Kostenschätzungs-Template.
+ * Er steht überall dort, wo dem Kunden Beträge gezeigt werden, also auch auf der Ergebnisseite.
+ *
+ * Rechtstext: von der Bindestrich- und Fachbegriffsregel für Kundentexte ausgenommen; er wird
+ * nicht umformuliert, weil beide Fassungen wortgleich sein müssen (Test in konfigurator-utils.test.ts).
+ */
+export const UNVERBINDLICHKEITS_HINWEIS =
+  'Diese Kostenschätzung ist unverbindlich und kein Angebot im Sinne des § 145 BGB. '
+  + 'Verbindlich sind allein die Preise des schriftlichen Angebots nach dem Termin vor Ort. '
+  + 'Materialpreise mit Rohstoffbindung können sich bis dahin ändern.';
+
 // ---------------------------------------------------------------------------
 // Persistenz: nur anonyme Antworten, nie der Kontaktschritt
 // ---------------------------------------------------------------------------

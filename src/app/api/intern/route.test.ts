@@ -13,7 +13,7 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionInfo } from '@/lib/types';
 
-const zustand = vi.hoisted(() => ({ session: null as SessionInfo | null }));
+const zustand = vi.hoisted(() => ({ session: null as SessionInfo | null, nachlauf: [] as Promise<unknown>[] }));
 
 vi.mock('@/lib/services/auth', async (importOriginal) => {
   const echt = await importOriginal<typeof import('@/lib/services/auth')>();
@@ -32,16 +32,24 @@ vi.mock('@/lib/services/pdf', () => ({
   PDF_TIMEOUT_MS: 20_000,
 }));
 
+// `after()` sammelt den Nachlauf, statt ihn zu verwerfen: Tests, die eine Mail aus dem
+// Nachlauf prüfen, warten mit `nachlaufAbwarten()` darauf.
 vi.mock('next/server', async (importOriginal) => {
   const echt = await importOriginal<typeof import('next/server')>();
-  return { ...echt, after: (arbeit: unknown) => { void arbeit; } };
+  return {
+    ...echt,
+    after: (arbeit: unknown) => {
+      const wert = typeof arbeit === 'function' ? (arbeit as () => unknown)() : arbeit;
+      if (wert && typeof (wert as Promise<unknown>).then === 'function') zustand.nachlauf.push(wert as Promise<unknown>);
+    },
+  };
 });
 
 import { NextRequest } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { GET, POST } from '@/app/api/intern/[...slug]/route';
 import { getDb } from '@/db/client';
-import { anfrage as anfrageTabelle, kunde as kundeTabelle, richtpreis } from '@/db/schema';
+import { anfrage as anfrageTabelle, benutzer, kunde as kundeTabelle, rateLimit, richtpreis, terminfensterReservierung } from '@/db/schema';
 import { ladeEinstellungen, ladeFoerderRegeln, ladeKalkulationsdaten } from '@/lib/services/kalkulationsdaten';
 import { enthaeltVerboteneFelder, positionAusBaustein } from '@/lib/services/calculation';
 import { geraeteVorschlag, heizlastSchaetzen, leeresGebaeude, speicherVorschlag } from '@/lib/services/heizlast';
@@ -197,8 +205,17 @@ const EINSTELLUNGEN_VOLL = {
 
 let post: FakeMailer;
 
+/** Wartet auf alle über `after()` angemeldeten Nachlaufarbeiten. */
+async function nachlaufAbwarten(): Promise<void> {
+  for (let runde = 0; runde < 5 && zustand.nachlauf.length; runde += 1) {
+    const offen = zustand.nachlauf.splice(0);
+    await Promise.allSettled(offen);
+  }
+}
+
 beforeEach(() => {
   zustand.session = null;
+  zustand.nachlauf.length = 0;
   post = fakeMailer();
   fakeStorage();
   delete process.env.RESEND_WEBHOOK_SECRET;
@@ -726,5 +743,246 @@ describe('POST freigeben und GET jobs', () => {
     process.env.CRON_SECRET = 'geheimes-cron-wort';
     const antwort = await lesen(['jobs', 'versand'], { authorization: 'Bearer falsches-wort-mit-laenge' });
     expect(antwort.status).toBe(401);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 9. Zuständigkeit: fremde Vorgänge bleiben verschlossen (Rollenregel 3.3)
+// ---------------------------------------------------------------------------
+
+/** Legt einen Vorgang unter der übergebenen Sitzung an und liefert dessen Kennung. */
+async function vorgangVon(sitzung: SessionInfo): Promise<{ anfrageId: string; ksNummer: string }> {
+  const vorher = zustand.session;
+  zustand.session = sitzung;
+  const body = await json(await anfrage(['estimate'], internAnfrage({ positionen: await wpPositionen(vorfuehrGebaeude()) })));
+  expect(body.ok).toBe(true);
+  zustand.session = vorher;
+  return { anfrageId: body.anfrageId, ksNummer: body.ksNummer };
+}
+
+describe('Zuständigkeit für fremde Vorgänge', () => {
+  it('lässt einen fremden Bauleiter den Vorgang weder lesen noch überschreiben', async () => {
+    await frischeDb({ demoPreise: true });
+    const einer = await legeBenutzerAn('bauleiter', 'Bauleiter Eins');
+    const anderer = await legeBenutzerAn('bauleiter', 'Bauleiter Zwei');
+    const { anfrageId } = await vorgangVon(einer);
+
+    zustand.session = anderer;
+
+    const gelesen = await lesen(['anfragen', anfrageId]);
+    expect(gelesen.status).toBe(403);
+
+    const csv = await lesen(['anfragen', anfrageId, 'csv']);
+    expect(csv.status).toBe(403);
+
+    const auskunft = await lesen(['anfragen', anfrageId, 'auskunft']);
+    expect(auskunft.status).toBe(403);
+
+    const gespeichert = await anfrage(['estimate'], internAnfrage({ anfrageId, vorhabenKurz: 'Fremdzugriff' }));
+    expect(gespeichert.status).toBe(403);
+
+    const entwurf = await anfrage(['entwurf'], internAnfrage({ anfrageId, vorhabenKurz: 'Fremdzugriff' }));
+    expect(entwurf.status).toBe(403);
+
+    const db = await getDb();
+    const a = (await db.select().from(anfrageTabelle).where(eq(anfrageTabelle.id, anfrageId)))[0];
+    expect(a.vorhabenKurz).toBe('Luft/Wasser Wärmepumpe statt Gasheizung');
+  });
+
+  it('lässt den Chef denselben Vorgang lesen und speichern', async () => {
+    const { session } = await frischeDb({ demoPreise: true });
+    const bauleiter = await legeBenutzerAn('bauleiter', 'Bauleiter Eins');
+    const { anfrageId } = await vorgangVon(bauleiter);
+
+    zustand.session = session;
+
+    const gelesen = await lesen(['anfragen', anfrageId]);
+    expect(gelesen.status).toBe(200);
+
+    const gespeichert = await anfrage(['estimate'], internAnfrage({
+      anfrageId, vorhabenKurz: 'Vom Chef geprüft', positionen: await wpPositionen(vorfuehrGebaeude()),
+    }));
+    expect(gespeichert.status).toBe(200);
+
+    const db = await getDb();
+    const a = (await db.select().from(anfrageTabelle).where(eq(anfrageTabelle.id, anfrageId)))[0];
+    expect(a.vorhabenKurz).toBe('Vom Chef geprüft');
+  });
+
+  it('antwortet auf eine unbekannte Anfrage mit 404 statt mit 403', async () => {
+    const { session } = await frischeDb({ demoPreise: true });
+    zustand.session = session;
+    expect((await lesen(['anfragen', 'gibt-es-nicht'])).status).toBe(404);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10. Entwurfs-Endpunkt, Anhänge und Anmeldung
+// ---------------------------------------------------------------------------
+
+describe('POST entwurf', () => {
+  it('weist einen leeren Body mit 400 und benannten Feldern ab', async () => {
+    const { session } = await frischeDb({ demoPreise: true });
+    zustand.session = session;
+
+    const antwort = await anfrage(['entwurf'], {});
+    expect(antwort.status).toBe(400);
+    const body = await json(antwort);
+    expect(body.fehler).toMatch(/Validierungsfehler/);
+    expect(body.fehler).toMatch(/kontakt/);
+
+    const db = await getDb();
+    expect(await db.select().from(anfrageTabelle)).toHaveLength(0);
+  });
+
+  it('erzwingt die Aktion entwurf, auch wenn der Body sofort verlangt', async () => {
+    const { session } = await frischeDb({ demoPreise: true });
+    zustand.session = session;
+
+    const antwort = await anfrage(['entwurf'], internAnfrage({
+      aktion: 'sofort',
+      positionen: await wpPositionen(vorfuehrGebaeude()),
+      terminfensterIds: await zweiTerminfenster(),
+      persoenlicherSatz: 'Nach unserem Telefonat haben wir Ihnen die Zahlen zusammengestellt.',
+    }));
+    expect(antwort.status).toBe(200);
+    expect((await json(antwort)).aktion).toBe('entwurf');
+    // Der Entwurfs-Endpunkt sendet nie; gesendet wird nur aus einer Freigabe (Fachregel 1).
+    expect(post.mails).toHaveLength(0);
+  });
+});
+
+describe('POST anhaenge', () => {
+  /** Multipart-Aufruf des Upload-Endpunkts. */
+  function hochladen(felder: Record<string, string>, datei = new File([Buffer.from('nicht-wirklich-ein-bild')], 'foto.jpg', { type: 'image/jpeg' })): Promise<Response> {
+    const daten = new FormData();
+    for (const [k, v] of Object.entries(felder)) daten.set(k, v);
+    daten.set('datei', datei);
+    const request = new NextRequest('http://localhost/api/intern/anhaenge', {
+      method: 'POST',
+      headers: { 'sec-fetch-site': 'same-origin' },
+      body: daten,
+    });
+    return POST(request, { params: Promise.resolve({ slug: ['anhaenge'] }) });
+  }
+
+  it('antwortet auf eine unbekannte Anfrage mit 404', async () => {
+    const { session } = await frischeDb({ demoPreise: true });
+    zustand.session = session;
+
+    const antwort = await hochladen({ anfrageId: 'gibt-es-nicht', art: 'foto' });
+    expect(antwort.status).toBe(404);
+  });
+
+  it('weist eine unbekannte Anhangsart mit 400 ab', async () => {
+    const { session } = await frischeDb({ demoPreise: true });
+    zustand.session = session;
+
+    const antwort = await hochladen({ anfrageId: 'gibt-es-nicht', art: 'dokument' });
+    expect(antwort.status).toBe(400);
+    expect((await json(antwort)).fehler).toMatch(/Anhangsart/);
+  });
+
+  it('weist einen fremden Bauleiter mit 403 ab', async () => {
+    await frischeDb({ demoPreise: true });
+    const einer = await legeBenutzerAn('bauleiter', 'Bauleiter Eins');
+    const anderer = await legeBenutzerAn('bauleiter', 'Bauleiter Zwei');
+    const { anfrageId } = await vorgangVon(einer);
+
+    zustand.session = anderer;
+    const antwort = await hochladen({ anfrageId, art: 'foto' });
+    expect(antwort.status).toBe(403);
+  });
+});
+
+describe('POST anmelden', () => {
+  it('zählt einen Fehlversuch und speichert nur Hashes im Zähler', async () => {
+    await frischeDb({ demoPreise: true });
+    const db = await getDb();
+    const person = (await db.select().from(benutzer))[0];
+
+    const antwort = await anfrage(['anmelden'], { email: person.email, pin: '999999' }, { 'x-real-ip': '203.0.113.77' });
+    expect(antwort.status).toBe(200);
+    expect((await json(antwort)).ok).toBe(false);
+
+    const nachher = (await db.select().from(benutzer).where(eq(benutzer.id, person.id)))[0];
+    expect(nachher.fehlversuche).toBe(1);
+
+    // Ohne IP-Hash und Adresszähler bliebe die Zählertabelle leer und das IP-Limit wirkungslos.
+    const zaehler = await db.select().from(rateLimit);
+    expect(zaehler.some((z) => z.schluessel.startsWith('anmeldung:ip:'))).toBe(true);
+    expect(zaehler.some((z) => z.schluessel.startsWith('anmeldung:mail:'))).toBe(true);
+    for (const z of zaehler) {
+      expect(z.schluessel).not.toContain('203.0.113.77');
+      expect(z.schluessel).not.toContain(person.email);
+    }
+  });
+});
+
+describe('Zähler der Kundenstrecke', () => {
+  it('speichert nur den gesalzenen IP-Hash, nie die Adresse selbst', async () => {
+    await frischeDb({ demoPreise: true });
+    const antwort = await anfrage(['estimate'], kundenAnfrage(), { 'x-real-ip': '198.51.100.9' });
+    expect(antwort.status).toBe(200);
+
+    const db = await getDb();
+    const zaehler = await db.select().from(rateLimit);
+    const eintrag = zaehler.find((z) => z.schluessel.startsWith('estimate:kunde:ip:'));
+    expect(eintrag).toBeDefined();
+    expect(eintrag?.schluessel).not.toContain('198.51.100.9');
+    expect(eintrag?.schluessel).toMatch(/^estimate:kunde:ip:[0-9a-f]{32}$/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 11. Terminbestätigung: gewähltes Fenster bleibt, das Büro erfährt davon
+// ---------------------------------------------------------------------------
+
+describe('POST termin-bestaetigen, Fenster und Büro-Meldung', () => {
+  it('behält das gewählte Fenster, gibt das andere frei und meldet dem Büro', async () => {
+    const { session } = await frischeDb({ demoPreise: true });
+    zustand.session = session;
+    const fensterIds = await zweiTerminfenster();
+
+    const entwurf = await json(await anfrage(['estimate'], internAnfrage({ positionen: await wpPositionen(vorfuehrGebaeude()) })));
+    await sofortSenden({ anfrageId: entwurf.anfrageId });
+    const kundenmail = post.an('max.mustermann@example.de')[0];
+    const token = /\/termin\/bestaetigen\/([A-Za-z0-9_-]+)/.exec(kundenmail.text)?.[1] ?? '';
+    expect(token).not.toBe('');
+
+    post.leeren();
+    zustand.session = null;
+    const antwort = await anfrage(['termin-bestaetigen'], { token, fensterId: fensterIds[0] });
+    expect(antwort.status).toBe(200);
+    await nachlaufAbwarten();
+
+    const db = await getDb();
+    const reservierungen = await db.select().from(terminfensterReservierung)
+      .where(eq(terminfensterReservierung.anfrageId, entwurf.anfrageId));
+    expect(reservierungen.map((r) => r.terminfensterId)).toEqual([fensterIds[0]]);
+
+    const meldung = post.an('info@bad-energie.de')[0];
+    expect(meldung).toBeDefined();
+    expect(meldung.betreff).toContain('Terminbestätigung');
+    expect(meldung.tag).toBe('termin');
+  });
+
+  it('gibt bei einem fremden Fenster alle Reservierungen frei', async () => {
+    const { session } = await frischeDb({ demoPreise: true });
+    zustand.session = session;
+
+    const entwurf = await json(await anfrage(['estimate'], internAnfrage({ positionen: await wpPositionen(vorfuehrGebaeude()) })));
+    await sofortSenden({ anfrageId: entwurf.anfrageId });
+    const kundenmail = post.an('max.mustermann@example.de')[0];
+    const token = /\/termin\/bestaetigen\/([A-Za-z0-9_-]+)/.exec(kundenmail.text)?.[1] ?? '';
+
+    zustand.session = null;
+    await anfrage(['termin-bestaetigen'], { token, fensterId: 'fremdes-fenster' });
+    await nachlaufAbwarten();
+
+    const db = await getDb();
+    const reservierungen = await db.select().from(terminfensterReservierung)
+      .where(eq(terminfensterReservierung.anfrageId, entwurf.anfrageId));
+    expect(reservierungen).toHaveLength(0);
   });
 });

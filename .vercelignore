@@ -1,0 +1,21 @@
+# Was nicht in die Bereitstellung hochgeladen wird (greift bei Deployments über die Vercel CLI).
+# Aufgenommen ist nur, was der Build nie liest: lokale Laufzeitdaten, Testartefakte und
+# Material, das ohnehin nicht im Repository liegt. Alles, was die Anwendung braucht
+# (src, public, drizzle, scripts, Konfiguration), bleibt bewusst außerhalb dieser Liste.
+
+# Lokale Laufzeitdaten: PGlite-Datenbank, Outbox, Blob-Ablage
+data
+
+# Testartefakte
+test-results
+playwright-report
+
+# Belege des Chefs und Migrationsmaterial, nur lokal vorhanden
+Arbeitsweise Chef
+Pipeline Kopie 5
+Angebote Bad und energie GmbH Kopie
+01a05849-*
+01a0584a-*
+
+# Build-Ausgabe entsteht auf Vercel neu
+.next

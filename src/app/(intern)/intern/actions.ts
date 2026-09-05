@@ -60,8 +60,15 @@ export async function speichereEntwurf(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...input, auftragAnlegen: optionen.auftragAnlegen === true }),
   });
-  if (!res.ok) throw new Error('Fehler beim Speichern des Entwurfs.');
-  return await res.json();
+  const antwort = (await res.json().catch(() => null)) as EstimateResponse | null;
+  // Der Endpunkt prüft Body und Zuständigkeit; seine Meldung ist brauchbarer als ein Sammeltext.
+  if (!res.ok || !antwort) {
+    const fehler = antwort && !antwort.ok ? antwort.fehler : '';
+    const e = new Error(fehler || `Fehler beim Speichern des Entwurfs (Status ${res.status}).`) as Error & { status?: number };
+    e.status = res.status;
+    throw e;
+  }
+  return antwort;
 }
 
 /** Anfrage für den Meister-Modus laden. */

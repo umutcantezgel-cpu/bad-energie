@@ -8,7 +8,7 @@
     {
       "titel": "Wärmepumpe und Speicher",
       "gewerk": "waermepumpe",
-      "text": "Buderus Luft/Wasser Wärmepumpe [kW] kW mit Inneneinheit, Regelung und [Liter] Liter Trinkwasserspeicher, Montagesockel, Verbindungsleitungen",
+      "text": "[Hersteller] Luft/Wasser Wärmepumpe [kW] kW mit Inneneinheit, Regelung und [Liter] Liter Trinkwasserspeicher, Montagesockel, Verbindungsleitungen",
       "von": null,
       "bis": null,
       "_matrix": "Matrix 1 bis 3"
@@ -65,7 +65,7 @@
     }
   ],
   "annahmen_standard": [
-    "Die vorhandenen Heizkörper bleiben und reichen bei der bisherigen Vorlauftemperatur aus.",
+    "Die vorhandenen Heizkörper bleiben und reichen bei der bisherigen Betriebsweise aus.",
     "Der Zählerschrank muss nicht erneuert werden.",
     "Die Außeneinheit steht nicht weiter als 3 m von der Hauswand entfernt."
   ]

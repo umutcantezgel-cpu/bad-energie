@@ -485,24 +485,10 @@ export default function MatrixClient({
               className="glass-input h-12 w-full rounded-xl border border-slate-200 px-3 text-base font-semibold tabular-nums"
             />
           </div>
-          <div>
-            <label htmlFor="fr-standard" className="mb-1 block text-sm font-bold text-slate-700">Standardfördersatz (%)</label>
-            <input
-              id="fr-standard"
-              type="number"
-              inputMode="numeric"
-              disabled={!istChef}
-              placeholder="leer: aus den Boni rechnen"
-              value={foerderRegeln.standardsatz === null ? '' : foerderRegeln.standardsatz}
-              onChange={(e) =>
-                setFoerderRegeln({
-                  ...foerderRegeln,
-                  standardsatz: e.target.value.trim() === '' ? null : zahlAus(e.target.value, 0),
-                })
-              }
-              className="glass-input h-12 w-full rounded-xl border border-slate-200 px-3 text-base font-semibold tabular-nums"
-            />
-          </div>
+          {/* Kein Feld für einen Standardfördersatz: den Satz rechnen ausschließlich die Boni oben
+              (30 + 5 + 20 + 30, Deckel 70). Ein pauschaler Satz je Betrieb wurde von keiner
+              Rechenfunktion gelesen und hätte im Dokument falsche Förderbausteine erzeugt.
+              Ein abweichender Satz im Einzelfall bleibt die Handeingabe des Meisters. */}
           <div>
             <label htmlFor="fr-kosten1" className="mb-1 block text-sm font-bold text-slate-700">
               Förderfähige Kosten 1. Wohneinheit (Euro)
