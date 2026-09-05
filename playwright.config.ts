@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
+import { SPIEGEL_PFAD, fremderEntwicklungsserverLaeuft } from './e2e/spiegel';
 
 /**
  * E2E-Tests laufen gegen den Entwicklungsserver mit einer eigenen PGlite-Datenbank
@@ -33,10 +34,16 @@ const CHROME_PFAD = CHROME_KANDIDATEN.find((p) => existsSync(p));
  * `<distDir>/lock`, siehe `node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js`).
  * Läuft auf dem Rechner bereits ein Entwicklungsserver für dieses Verzeichnis, bricht der
  * zweite mit „Another next dev server is already running“ ab. `E2E_APP_DIR` zeigt dann auf
- * ein zweites Projektverzeichnis (Kopie von `src` und den Konfigurationsdateien, Verweise
- * auf `node_modules`, `public`, `data`, `drizzle`, `legacy`), das eine eigene Sperrdatei hat.
+ * ein zweites Projektverzeichnis mit eigener Sperrdatei.
+ *
+ * Ist `E2E_APP_DIR` nicht gesetzt und hält ein fremder, lebender Prozess die Sperre, legt
+ * `e2e/global-setup.ts` das zweite Verzeichnis selbst an (siehe `e2e/spiegel.ts`; Turbopack
+ * verträgt keine Symlinks aus dem Projektstamm heraus, deshalb echte Kopien). `E2E_SPIEGEL_BAUEN`
+ * unterscheidet die Fälle: ein vom Benutzer vorgegebenes Verzeichnis wird nicht überschrieben.
  */
-const APP_DIR = process.env.E2E_APP_DIR?.trim();
+const EIGENES_APP_DIR = process.env.E2E_APP_DIR?.trim();
+const SPIEGEL_NOETIG = !EIGENES_APP_DIR && fremderEntwicklungsserverLaeuft();
+const APP_DIR = EIGENES_APP_DIR ?? (SPIEGEL_NOETIG ? SPIEGEL_PFAD : undefined);
 const DEV_BEFEHL = APP_DIR
   ? `npx next dev "${APP_DIR}" --port ${PORT}`
   : `npm run dev -- --port ${PORT}`;
@@ -82,6 +89,8 @@ export default defineConfig({
       APP_URL: BASE_URL,
       SESSION_SECRET: 'e2e-entwicklungspfeffer-mindestens-32-zeichen',
       CRON_SECRET: 'e2e-cron-geheimnis-mindestens-32-zeichen-lang',
+      // Nur wenn die Konfiguration den Spiegel selbst gewählt hat, darf das Setup ihn anlegen.
+      ...(SPIEGEL_NOETIG ? { E2E_APP_DIR: SPIEGEL_PFAD, E2E_SPIEGEL_BAUEN: '1' } : {}),
       // PDF-Erzeugung im Sofortversand: lokales Chrome statt @sparticuz/chromium.
       ...(CHROME_PFAD ? { CHROME_EXECUTABLE_PATH: CHROME_PFAD } : {}),
     },

@@ -21,6 +21,7 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readdir, rm, unlink } from 'node:fs/promises';
 import path from 'node:path';
+import { SPIEGEL_PFAD, spiegelAufbauen } from './spiegel';
 
 export const E2E_DATENBANK = 'pglite://./data/e2e';
 export const E2E_CHEF_EMAIL = 'chef@bad-energie.de';
@@ -38,6 +39,15 @@ export async function leereOutbox(): Promise<void> {
 }
 
 export default async function vorbereiten(): Promise<void> {
+  // Zweites Projektverzeichnis, wenn die Konfiguration es angefordert hat (fremder
+  // Entwicklungsserver hält die Sperre des Projektstamms). Siehe e2e/spiegel.ts.
+  if (process.env.E2E_SPIEGEL_BAUEN === '1') {
+    const ziel = process.env.E2E_APP_DIR?.trim() || SPIEGEL_PFAD;
+    const begonnen = Date.now();
+    spiegelAufbauen(ziel);
+    console.log(`E2E-Spiegelverzeichnis bereit: ${ziel} (${Math.round((Date.now() - begonnen) / 1000)} s)`);
+  }
+
   // Muss vor dem ersten Datenbankzugriff stehen: `getDb()` liest DATABASE_URL beim Verbinden.
   process.env.DATABASE_URL = E2E_DATENBANK;
   process.env.MAIL_TRANSPORT = 'file';
