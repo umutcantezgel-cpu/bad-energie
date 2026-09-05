@@ -165,6 +165,7 @@ describe('ausDTO', () => {
       konfiguratorAntworten: {},
       triageVorschlag: '',
       anhaenge: [],
+    dokumente: [],
       versandauftraege: [],
       ereignisse: [],
       bearbeiter: 'Sabri',

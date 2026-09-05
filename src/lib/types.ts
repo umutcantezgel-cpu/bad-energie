@@ -609,6 +609,9 @@ export type EntwurfKarte = {
   darfFreigeben: boolean;
 };
 
+/** Erzeugtes Dokument eines Vorgangs (Kostenschätzung als PDF und HTML, Mails, Freigabeblatt, Abschlussbericht). */
+export type DokumentMeta = { id: string; art: string; version: number; groesse: number; erstelltAm: string; dateiname: string; url: string };
+
 export type AnhangMeta = { id: string; art: AnhangArt; dateiname: string; mime: string; groesse: number; beschreibung: string; erstelltAm: string; url: string; thumbUrl: string | null };
 
 /** Vollständige Anfrage für den Meister-Modus (nur nach verifySession). */
@@ -637,6 +640,7 @@ export type InternAnfrageDTO = {
   konfiguratorAntworten: Record<string, unknown>;
   triageVorschlag: string;
   anhaenge: AnhangMeta[];
+  dokumente: DokumentMeta[];
   versandauftraege: { id: string; art: VersandArt; status: VersandStatus; faelligAm: string | null; versendetAm: string | null; fehler: string | null }[];
   ereignisse: { typ: string; erstelltAm: string; benutzer: string | null }[];
   bearbeiter: string;

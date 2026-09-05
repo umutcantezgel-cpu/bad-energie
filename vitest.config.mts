@@ -8,6 +8,9 @@ export default defineConfig({
     globals: false,
     setupFiles: ['test/setup.ts'],
     testTimeout: 30000,
+    // Migration und Seed einer frischen PGlite-Datenbank laufen in Hooks; unter paralleler Last
+    // reichen die 10 Sekunden der Vorgabe nicht.
+    hookTimeout: 30000,
   },
   resolve: {
     alias: {

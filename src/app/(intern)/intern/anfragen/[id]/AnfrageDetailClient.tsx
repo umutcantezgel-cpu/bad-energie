@@ -228,7 +228,11 @@ export default function AnfrageDetailClient({
   const pdfAnhaenge = dto.anhaenge
     .filter((a) => a.mime === 'application/pdf' || a.art === 'pdf')
     .sort((a, b) => (a.erstelltAm < b.erstelltAm ? 1 : -1));
-  const neuestesPdf = pdfAnhaenge[0] ?? null;
+  // Die erzeugte Kostenschätzung (Tabelle dokument) hat Vorrang vor hochgeladenen PDFs.
+  const dokumente = dto.dokumente ?? [];
+  const neuestesDokumentPdf = dokumente.filter((d) => d.art === 'kostenschaetzung_pdf').sort((a, b) => (a.erstelltAm < b.erstelltAm ? 1 : -1))[0] ?? null;
+  const neuestesPdf = neuestesDokumentPdf ?? pdfAnhaenge[0] ?? null;
+  const dokumenteAnzahl = dto.anhaenge.length + dokumente.length;
 
   async function handleFreigabe(sofort: boolean) {
     setLaeuft(true);
@@ -443,7 +447,7 @@ export default function AnfrageDetailClient({
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          Dokumente ({dto.anhaenge.length})
+          Dokumente ({dokumenteAnzahl})
         </button>
         <button
           type="button"
@@ -636,11 +640,37 @@ export default function AnfrageDetailClient({
             </section>
           ) : null}
 
-          {dto.anhaenge.length === 0 ? (
+          {dokumente.length > 0 ? (
+            <section className="space-y-3">
+              <h3 className="text-base font-bold text-slate-900">Erzeugte Dokumente</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {dokumente.map((d) => (
+                  <div key={d.id} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-2">
+                    <div className="flex items-center justify-between text-sm text-slate-500">
+                      <span className="font-bold uppercase">{d.art.replace(/_/g, ' ')}</span>
+                      <span>{Math.round(d.groesse / 1024)} KB</span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900 truncate">{d.dateiname}</p>
+                    <p className="text-sm text-slate-500">{new Date(d.erstelltAm).toLocaleString('de-DE')}</p>
+                    <a
+                      href={d.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="fokus-ring inline-flex min-h-[44px] items-center text-sm font-bold text-[color:var(--modul-blau,#1B3A8C)] hover:underline"
+                    >
+                      Herunterladen
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {dokumenteAnzahl === 0 ? (
             <div className="rounded-3xl border border-dashed border-slate-300 p-12 text-center text-sm text-slate-500">
               Für diese Anfrage liegen noch keine Dokumente, Fotos oder Skizzen vor.
             </div>
-          ) : (
+          ) : dto.anhaenge.length === 0 ? null : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {dto.anhaenge.map((anhang) => (
                 <div key={anhang.id} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-2">

@@ -45,6 +45,7 @@ import {
   speichereInternAnfrage,
   stornieren as stornierenService,
   triageFuerAnfrage,
+  dokumentDateiname,
 } from '@/lib/services/estimates';
 import {
   ladeFoerderRegeln,
@@ -1181,6 +1182,46 @@ export async function GET(
   }
 
   // Datei-Download Anhang
+  // Erzeugte Dokumente (PDF, HTML, Text, Markdown) eines Vorgangs; PDF und HTML mit ?inline=1 in der Vorschau.
+  if (slug.length === 4 && slug[0] === 'anfragen' && slug[2] === 'dokumente') {
+    const anfrageId = slug[1];
+    const dokumentId = slug[3];
+    const db = await getDb();
+    const anfragen = await db.select().from(anfrageTabelle).where(eq(anfrageTabelle.id, anfrageId)).limit(1);
+    const v = anfragen[0];
+    if (!v) return new NextResponse('Anfrage nicht gefunden.', { status: 404 });
+    if (session.rolle === 'bauleiter' && v.bearbeiterId && v.bearbeiterId !== session.benutzerId) {
+      return new NextResponse('Keine Berechtigung.', { status: 403 });
+    }
+    const dokumente = await db.select().from(dokument)
+      .where(and(eq(dokument.id, dokumentId), eq(dokument.anfrageId, anfrageId)))
+      .limit(1);
+    const d = dokumente[0];
+    if (!d) return new NextResponse('Dokument nicht gefunden.', { status: 404 });
+    const storage = getStorage();
+    const datei = await storage.get(d.blobPfad);
+    if (!datei) return new NextResponse('Datei in der Ablage nicht gefunden.', { status: 404 });
+    const dateiname = dokumentDateiname(d.art, v.ksNummer, d.version);
+    const mime = d.art.endsWith('_pdf') ? 'application/pdf'
+      : d.art.endsWith('_html') ? 'text/html; charset=utf-8'
+        : d.art.endsWith('_txt') ? 'text/plain; charset=utf-8'
+          : 'text/markdown; charset=utf-8';
+    const inlineGewuenscht = request.nextUrl.searchParams.get('inline') === '1';
+    const encodedFilename = encodeURIComponent(dateiname).replace(/['()]/g, escape);
+    const disposition = `${inlineGewuenscht ? 'inline' : 'attachment'}; filename="${dateiname.replace(/"/g, '')}"; filename*=UTF-8''${encodedFilename}`;
+    return new NextResponse(datei.daten as unknown as BodyInit, {
+      status: 200,
+      headers: {
+        'Content-Type': mime,
+        'Content-Disposition': disposition,
+        'Cache-Control': 'private, no-store',
+        'X-Content-Type-Options': 'nosniff',
+        // HTML-Dokumente nur passiv anzeigen: keine Skripte, keine Nachlade-Quellen.
+        ...(mime.startsWith('text/html') ? { 'Content-Security-Policy': "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:" } : {}),
+      },
+    });
+  }
+
   if (slug.length === 4 && slug[0] === 'anfragen' && slug[2] === 'anhaenge') {
     const anfrageId = slug[1];
     const anhangId = slug[3];

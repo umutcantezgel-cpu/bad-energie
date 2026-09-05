@@ -5,6 +5,7 @@ import { getDb } from '@/db/client';
 import {
   anfrage as anfrageTabelle, anfrageVorlage, anfrageZeile, kunde as kundeTabelle, terminfenster,
   terminfensterReservierung, versandauftrag, ereignis as ereignisTabelle, benutzer, anhang as anhangTabelle,
+  dokument,
 } from '@/db/schema';
 import type {
   AnfrageStatus, EntwurfKarte, FoerderungEingabe, FreigabeErgebnis, Gewerk, Hinweis, InternAnfrage,
@@ -12,6 +13,7 @@ import type {
   SessionInfo, TerminfensterOption, VersandArt, VersandStatus,
 } from '../types';
 import { berechne, euro, oeffentlicheSpanne } from './calculation';
+import { pdfDateiname } from './mail';
 import { gebaeudeAusJourney } from './heizlast';
 import { darfFreigeben } from './auth';
 import { ladeEinstellungen, ladeKalkulationsdaten, ladeFoerderRegeln, ladeMatrix } from './kalkulationsdaten';
@@ -478,7 +480,7 @@ export async function ladeInternAnfrage(anfrageId: string): Promise<InternAnfrag
   const db = await getDb();
   const daten = await ladeVorgang(anfrageId);
   if (!daten) return null;
-  const [auftraege, ereignisse] = await Promise.all([
+  const [auftraege, ereignisse, dokumente] = await Promise.all([
     db.select().from(versandauftrag).where(eq(versandauftrag.anfrageId, anfrageId)).orderBy(desc(versandauftrag.erstelltAm)),
     db.select({ typ: ereignisTabelle.typ, erstelltAm: ereignisTabelle.erstelltAm, name: benutzer.name })
       .from(ereignisTabelle)
@@ -486,6 +488,7 @@ export async function ladeInternAnfrage(anfrageId: string): Promise<InternAnfrag
       .where(eq(ereignisTabelle.anfrageId, anfrageId))
       .orderBy(desc(ereignisTabelle.erstelltAm))
       .limit(50),
+    db.select().from(dokument).where(eq(dokument.anfrageId, anfrageId)).orderBy(desc(dokument.erstelltAm)),
   ]);
   const a = daten.anfrage;
   const k = daten.kunde;
@@ -532,6 +535,11 @@ export async function ladeInternAnfrage(anfrageId: string): Promise<InternAnfrag
     },
     konfiguratorAntworten: a.konfiguratorAntworten ?? {},
     triageVorschlag: a.triageVorschlag,
+    dokumente: dokumente.map((d) => ({
+      id: d.id, art: d.art, version: d.version, groesse: d.groesse, erstelltAm: d.erstelltAm.toISOString(),
+      dateiname: dokumentDateiname(d.art, a.ksNummer, d.version),
+      url: `/api/intern/anfragen/${anfrageId}/dokumente/${d.id}`,
+    })),
     anhaenge: daten.anhaenge.map((h) => ({
       id: h.id, art: h.art, dateiname: h.dateiname, mime: h.mime, groesse: h.groesse,
       beschreibung: h.beschreibung, erstelltAm: h.erstelltAm.toISOString(),
@@ -611,4 +619,23 @@ export async function ladeAnhang(anhangId: string): Promise<typeof anhangTabelle
   const db = await getDb();
   const zeilen = await db.select().from(anhangTabelle).where(eq(anhangTabelle.id, anhangId)).limit(1);
   return zeilen[0] ?? null;
+}
+
+/** Anzeigename eines erzeugten Dokuments (Kunden-PDF trägt den Pflichtnamen nach Regel 8). */
+export function dokumentDateiname(art: string, ksNummer: string, version: number): string {
+  const v = version > 1 ? ` v${version}` : '';
+  switch (art) {
+    case 'kostenschaetzung_pdf': return pdfDateiname(ksNummer);
+    case 'kostenschaetzung_html': return `Kostenschaetzung ${ksNummer}${v}.html`;
+    case 'mail_html': return `Erstkontakt ${ksNummer}${v}.html`;
+    case 'mail_txt': return `Erstkontakt ${ksNummer}${v}.txt`;
+    case 'erinnerung_html': return `Erinnerung ${ksNummer}${v}.html`;
+    case 'erinnerung_txt': return `Erinnerung ${ksNummer}${v}.txt`;
+    case 'terminmail_html': return `Terminmail ${ksNummer}${v}.html`;
+    case 'terminmail_txt': return `Terminmail ${ksNummer}${v}.txt`;
+    case 'annahmen_md': return `Freigabeblatt ${ksNummer}${v}.md`;
+    case 'abschlussbericht_md': return `Abschlussbericht ${ksNummer}${v}.md`;
+    case 'dossier_html': return `Dossier ${ksNummer}${v}.html`;
+    default: return `${art} ${ksNummer}${v}`;
+  }
 }
