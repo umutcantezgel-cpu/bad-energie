@@ -1,8 +1,12 @@
 import 'server-only';
 import type {
-  Baustein, FoerderungEingabe, Gewerk, JourneyAntworten, Kalkulationsdaten, Position, Vorlage,
+  Baustein, FoerderungEingabe, GebaeudeDaten, Gewerk, JourneyAntworten, Kalkulationsdaten, Position, Vorlage,
 } from '../types';
 import { positionAusBaustein } from './calculation';
+import {
+  betriebskosten as berechneBetriebskosten, gebaeudeAusJourney, geraeteVorschlag, heizlastSchaetzen, speicherVorschlag,
+  type BetriebskostenErgebnis, type HeizlastErgebnis,
+} from './heizlast';
 
 /**
  * Übersetzt die Antworten des öffentlichen Trichters in Vorlagen und vorbelegte Positionen (Plan 4.7).
@@ -17,10 +21,15 @@ export type MappingErgebnis = {
   vorhabenKurz: string;
   gewerkHaupt: Gewerk | null;
   annahmen: string[];
+  /** Gebäude und bestehende Heizung aus den Antworten (Vorbelegung für den Meister-Modus). */
+  gebaeude: GebaeudeDaten | null;
+  heizlast: HeizlastErgebnis | null;
+  betriebskosten: BetriebskostenErgebnis | null;
 };
 
 const LEER: MappingErgebnis = {
   vorlageIds: [], positionen: [], foerderung: null, vorhabenKurz: '', gewerkHaupt: null, annahmen: [],
+  gebaeude: null, heizlast: null, betriebskosten: null,
 };
 
 function vorlageVon(daten: Kalkulationsdaten, id: string): Vorlage | null {
@@ -59,6 +68,9 @@ type Aufbau = {
   /** Optionen je Matrixnummer (Menge, Platzhalter, aktiv). */
   optionen?: Partial<Record<number, { menge?: number; anzahl?: number; lfm?: number; liter?: number; aktiv?: boolean; varianteMatrixNr?: number | null }>>;
   varianteFuerGroesse?: number | null;
+  /** Gerätegröße und Speicher für den Baustein mit Größenvarianten ([kW], [Liter]). */
+  kwFuerGroesse?: number | string;
+  literFuerGroesse?: number;
 };
 
 function positionenAus(daten: Kalkulationsdaten, aufbau: Aufbau): Position[] {
@@ -72,7 +84,8 @@ function positionenAus(daten: Kalkulationsdaten, aufbau: Aufbau): Position[] {
       menge: opt.menge,
       anzahl: opt.anzahl,
       lfm: opt.lfm,
-      liter: opt.liter,
+      liter: istGroesse ? (aufbau.literFuerGroesse ?? opt.liter) : opt.liter,
+      kW: istGroesse ? aufbau.kwFuerGroesse : undefined,
       aktiv: opt.aktiv,
       varianteMatrixNr: istGroesse ? (aufbau.varianteFuerGroesse ?? opt.varianteMatrixNr ?? null) : (opt.varianteMatrixNr ?? null),
     }));
@@ -93,7 +106,13 @@ function foerderungAus(vorlagen: Vorlage[], antworten: { selbstBewohnt?: boolean
   };
 }
 
-function zusammen(vorlagen: Vorlage[], positionen: Position[], foerderung: FoerderungEingabe | null, annahmenExtra: string[]): MappingErgebnis {
+function zusammen(
+  vorlagen: Vorlage[],
+  positionen: Position[],
+  foerderung: FoerderungEingabe | null,
+  annahmenExtra: string[],
+  extras: Partial<Pick<MappingErgebnis, 'gebaeude' | 'heizlast' | 'betriebskosten'>> = {},
+): MappingErgebnis {
   return {
     vorlageIds: vorlagen.map((v) => v.id),
     positionen,
@@ -101,6 +120,9 @@ function zusammen(vorlagen: Vorlage[], positionen: Position[], foerderung: Foerd
     vorhabenKurz: vorlagen.map((v) => v.vorhabenKurz).join(' plus '),
     gewerkHaupt: vorlagen[0]?.gewerkHaupt ?? null,
     annahmen: [...new Set([...vorlagen.flatMap((v) => v.annahmenStandard), ...annahmenExtra])],
+    gebaeude: extras.gebaeude ?? null,
+    heizlast: extras.heizlast ?? null,
+    betriebskosten: extras.betriebskosten ?? null,
   };
 }
 
@@ -140,11 +162,17 @@ type HeizungsAntworten = {
   raeume?: number;
   selbstBewohnt?: boolean;
   einkommenUnterGrenze?: boolean;
+  /** Weitere Antworten (Baujahr, Alter, Personen, Verbrauch, Standort) für die Gebäudedaten. */
+  roh?: Record<string, unknown>;
 };
 
 function mappeHeizung(a: HeizungsAntworten, daten: Kalkulationsdaten, wohneinheiten: number): MappingErgebnis {
+  const gebaeude = gebaeudeAusJourney({ ...(a.roh ?? {}), heutig: a.heutig, wohnflaeche: a.wohnflaeche }, wohneinheiten);
+  const heizlast = heizlastSchaetzen(gebaeude);
+  const betriebskosten = berechneBetriebskosten(gebaeude, daten.betriebskosten, heizlast);
+  const extras = { gebaeude, heizlast, betriebskosten };
   if (a.ziel === 'gas_neu' || a.ziel === 'unklar') {
-    return { ...LEER, vorhabenKurz: a.ziel === 'gas_neu' ? 'Neue Gasheizung' : 'Heizungstausch', gewerkHaupt: 'heizung' };
+    return { ...LEER, ...extras, vorhabenKurz: a.ziel === 'gas_neu' ? 'Neue Gasheizung' : 'Heizungstausch', gewerkHaupt: 'heizung' };
   }
 
   if (a.ziel === 'klima') {
@@ -167,19 +195,25 @@ function mappeHeizung(a: HeizungsAntworten, daten: Kalkulationsdaten, wohneinhei
       },
     });
     const annahmen = varianteNr === null ? ['Die Zahl der Innengeräte wird beim Ortstermin festgelegt.'] : [];
-    return zusammen([v], positionen, null, annahmen);
+    return zusammen([v], positionen, null, annahmen, extras);
   }
 
   const slug = a.heutig === 'oel' ? 'waermepumpe_oel' : 'waermepumpe_gas';
   const v = vorlageVon(daten, slug);
-  if (!v) return { ...LEER, vorhabenKurz: 'Wärmepumpe', gewerkHaupt: 'waermepumpe' };
+  if (!v) return { ...LEER, ...extras, vorhabenKurz: 'Wärmepumpe', gewerkHaupt: 'waermepumpe' };
   const groesse = bausteinMitVarianten(v);
-  const varianteNr = variantenNrNachWohnflaeche(groesse, a.wohnflaeche);
+  // Größe nach Heizlast (Arbeitsweise des Chefs); Wohnflächenspannen nur als Rückfall, wenn sie gepflegt sind.
+  const vorschlag = heizlast ? geraeteVorschlag(heizlast.kwBis, groesse?.groessenVarianten ?? null) : null;
+  const varianteNr = vorschlag?.matrixNr ?? variantenNrNachWohnflaeche(groesse, a.wohnflaeche);
+  const varianteGewaehlt = groesse?.groessenVarianten?.find((x) => x.matrixNr === varianteNr) ?? null;
+  const speicher = speicherVorschlag(gebaeude.personen, varianteGewaehlt?.speicherLiterOptionen ?? [200, 300]);
   const heizkoerper = a.heizkoerperTausch ?? 0;
   const tanks = a.tanks ?? 0;
   const positionen = positionenAus(daten, {
     vorlage: v,
     varianteFuerGroesse: varianteNr,
+    kwFuerGroesse: vorschlag?.geraetKw,
+    literFuerGroesse: varianteNr !== null ? speicher.liter : undefined,
     optionen: {
       // Öl: Demontage je Tank
       5: { menge: tanks > 0 ? tanks : 1 },
@@ -190,8 +224,11 @@ function mappeHeizung(a: HeizungsAntworten, daten: Kalkulationsdaten, wohneinhei
   });
   const annahmen: string[] = [];
   if (varianteNr === null) annahmen.push('Die Größe der Wärmepumpe wird nach der Heizlastberechnung vor Ort festgelegt.');
+  else if (vorschlag) annahmen.push(heizlast?.methode === 'flaeche'
+    ? 'Die Größe der Wärmepumpe haben wir aus Wohnfläche und Baujahr abgeleitet, die genaue Auslegung folgt beim Termin vor Ort.'
+    : 'Die Größe der Wärmepumpe haben wir aus Ihrem Verbrauch abgeleitet, die genaue Auslegung folgt beim Termin vor Ort.');
   if (a.heutig === 'oel' && tanks === 0) annahmen.push('Die Zahl der Öltanks wird beim Ortstermin aufgenommen.');
-  return zusammen([v], positionen, foerderungAus([v], a, wohneinheiten), annahmen);
+  return zusammen([v], positionen, foerderungAus([v], a, wohneinheiten), annahmen, extras);
 }
 
 /**
@@ -201,7 +238,7 @@ function mappeHeizung(a: HeizungsAntworten, daten: Kalkulationsdaten, wohneinhei
 export function mappeJourney(antworten: JourneyAntworten | null | undefined, daten: Kalkulationsdaten, wohneinheiten = 1): MappingErgebnis {
   if (!antworten) return { ...LEER };
   if (antworten.journey === 'bad') return mappeBad(antworten, daten);
-  if (antworten.journey === 'heizung') return mappeHeizung(antworten, daten, wohneinheiten);
+  if (antworten.journey === 'heizung') return mappeHeizung({ ...antworten, roh: antworten as unknown as Record<string, unknown> }, daten, wohneinheiten);
   // Wärmepumpen-Check: wie Heizung mit dem Ziel Wärmepumpe.
   return mappeHeizung(
     {
@@ -210,6 +247,7 @@ export function mappeJourney(antworten: JourneyAntworten | null | undefined, dat
       ziel: 'waermepumpe',
       selbstBewohnt: antworten.selbstBewohnt,
       einkommenUnterGrenze: antworten.einkommenUnterGrenze,
+      roh: antworten as unknown as Record<string, unknown>,
     },
     daten,
     wohneinheiten,

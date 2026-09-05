@@ -395,17 +395,25 @@ export const heizungAntwortenSchema = z.object({
   raeume: z.number().int().min(1).max(8).default(3),
   selbstBewohnt: z.boolean().default(true),
   einkommenUnterGrenze: z.boolean().default(false),
+  // Felder der Portal-Leads und des Erfassungsbogens (Personen, Verbrauch, Standort)
+  personen: z.number().int().min(1).max(12).default(2),
+  verbrauchJahr: z.number().min(0).max(100_000).nullable().default(null),
+  standortHeizung: z.enum(HEIZUNGS_STANDORTE).default('unbekannt'),
 });
 
 export const wpAntwortenSchema = z.object({
   journey: z.literal('waermepumpe'),
   heutig: z.enum(['gas', 'oel', 'strom', 'holz', 'sonstiges']),
+  alter: z.enum(['unter_10', '10_bis_20', 'ueber_20', 'unbekannt']).default('unbekannt'),
   baujahr: z.enum(['vor_1978', '1978_1995', '1996_2015', 'ab_2016']),
   wohnflaeche: z.number().min(30).max(600),
   verteilung: z.enum(['heizkoerper', 'fussboden', 'gemischt']),
   komfort: z.enum(['heizen', 'heizen_kuehlen', 'heizen_kuehlen_warmwasser']).default('heizen'),
   selbstBewohnt: z.boolean().default(true),
   einkommenUnterGrenze: z.boolean().default(false),
+  personen: z.number().int().min(1).max(12).default(2),
+  verbrauchJahr: z.number().min(0).max(100_000).nullable().default(null),
+  standortHeizung: z.enum(HEIZUNGS_STANDORTE).default('unbekannt'),
 });
 
 export const journeyAntwortenSchema = z.discriminatedUnion('journey', [badAntwortenSchema, heizungAntwortenSchema, wpAntwortenSchema]);
@@ -509,6 +517,62 @@ export const internAnfrageSchema = z.object({
   fotos: z.array(fotoSchema).max(10).default([]),
 });
 export type InternAnfrage = z.infer<typeof internAnfrageSchema>;
+
+// ---------------------------------------------------------------------------
+// Zod-Schemata der Intern-Endpunkte (POST /api/intern/*)
+// ---------------------------------------------------------------------------
+const prozent = z.number().min(0).max(100);
+const id64 = z.string().min(1).max(64);
+export const matrixZeileSchema = z.object({
+  nr: z.number().int().min(1).max(999),
+  von: z.number().int().min(0).max(9_999_999).nullable(),
+  bis: z.number().int().min(0).max(9_999_999).nullable(),
+  einheit: z.enum(EINHEITEN),
+  hinweis: z.string().trim().max(300).default(''),
+}).refine((z) => z.von === null || z.bis === null || z.von <= z.bis, { message: 'von ist größer als bis', path: ['bis'] });
+export const foerderRegelnSchema = z.object({
+  grund: prozent, effizienz: prozent, klimageschwindigkeit: prozent, einkommen: prozent,
+  einkommenGrenze: z.number().int().min(0).max(1_000_000), deckel: prozent,
+  kostenWe1: z.number().int().min(0).max(1_000_000), kostenJeWeitere: z.number().int().min(0).max(1_000_000),
+  maxWe: z.number().int().min(1).max(12), standardsatz: prozent.nullable(), eigenanteilRundung: z.number().int().min(1).max(10_000),
+});
+export const einstellungenSchema = z.object({
+  versandzeit: z.string().regex(/^([01]?\d|2[0-3]):[0-5]\d$/),
+  wiedervorlageTage: z.number().int().min(1).max(60),
+  erinnerungTage: z.number().int().min(1).max(60),
+  radiusKm: z.number().int().min(1).max(300),
+  minQm: z.number().int().min(0).max(500),
+  speicherfristMonate: z.number().int().min(1).max(120),
+  eingangsbestaetigung: z.boolean(),
+  bueroEmail: emailSchema,
+  absender: z.object({ name: z.string().trim().min(1).max(80), email: emailSchema }),
+  briefbogen: z.object({
+    firma: z.string().trim().min(1).max(120), strasse: z.string().trim().max(120), plzOrt: z.string().trim().max(120),
+    telefon: z.string().trim().max(40), telefonLink: z.string().trim().regex(/^\+?[0-9]{4,20}$/).or(z.literal('')),
+    email: emailSchema, web: z.string().trim().max(120), geschaeftsfuehrer: z.string().trim().max(120),
+    register: z.string().trim().max(120), ustId: z.string().trim().max(40),
+  }),
+  betriebskosten: betriebskostenSchema.optional(),
+});
+export const terminfensterNeuSchema = z.object({
+  beschriftung: z.string().trim().min(1).max(120),
+  beginnIso: z.string().datetime({ offset: true }).nullable().optional(),
+  endeIso: z.string().datetime({ offset: true }).nullable().optional(),
+});
+export const terminfensterLoeschenSchema = z.object({ id: id64 });
+const pinSchema = z.string().regex(/^\d{6,8}$/);
+export const benutzerNeuSchema = z.object({
+  name: z.string().trim().min(2).max(80), email: emailSchema, pin: pinSchema, rolle: z.enum(ROLLEN),
+  funktion: z.string().trim().max(80).default('Mitarbeiter'),
+});
+export const benutzerPinSchema = z.object({ benutzerId: id64, neuePin: pinSchema });
+export const benutzerToggleSchema = z.object({ benutzerId: id64, aktiv: z.boolean() });
+export const freigebenSchema = z.object({ anfrageId: id64, sofort: z.boolean().default(false), art: z.enum(VERSAND_ARTEN).optional() });
+export const stornierenSchema = z.object({ anfrageId: id64 });
+export const statusWechselSchema = z.object({ status: z.enum(ANFRAGE_STATUS), grund: z.string().trim().max(300).default('') });
+export const vorbehaltToggleSchema = z.object({ id: z.number().int().positive(), aktiv: z.boolean() });
+export const vorbehaltNeuSchema = z.object({ text: z.string().trim().min(3).max(300), gewerk: z.enum(GEWERKE).nullable().default(null) });
+export const matrixDemoSchema = z.object({ an: z.boolean() });
 
 export const estimateRequestSchema = z.discriminatedUnion('modus', [kundenAnfrageSchema, internAnfrageSchema]);
 export type EstimateRequest = z.infer<typeof estimateRequestSchema>;

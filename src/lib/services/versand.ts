@@ -156,7 +156,7 @@ async function baueArtefakte(auftrag: Auftrag, jetzt: Date): Promise<Artefakte> 
   let pdf: Buffer | null = null;
   if (braucht) {
     const html = renderKostenschaetzungHtml(geladen.dokument);
-    pdf = await renderPdf(html);
+    pdf = await renderPdf(html, { ksNummer: geladen.dokument.ksNummer });
     dokumentIds.push(await legeDokumentAb(auftrag.anfrageId, 'kostenschaetzung_html', html, 'html'));
     dokumentIds.push(await legeDokumentAb(auftrag.anfrageId, 'kostenschaetzung_pdf', pdf, 'pdf'));
   }

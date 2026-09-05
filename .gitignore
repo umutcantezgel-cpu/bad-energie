@@ -56,3 +56,5 @@ dist/
 
 # Beispielkonfiguration darf ins Repo
 !.env.example
+# Belege des Chefs mit Kundendaten, nur lokal
+/Arbeitsweise Chef/

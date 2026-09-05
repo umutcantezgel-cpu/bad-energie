@@ -46,7 +46,8 @@ export type KontaktDaten = {
 export async function findeOderLegeKundeAn(kontakt: KontaktDaten): Promise<string> {
   const db = await getDb();
   const email = kontakt.email.trim().toLowerCase();
-  const vorhanden = await db.select().from(kundeTabelle).where(eq(sql`lower(${kundeTabelle.email})`, email)).limit(1);
+  // Ohne E-Mail (Dispatch, Portal-Lead) entsteht immer ein eigener Kunde; leere Adressen fallen nie zusammen.
+  const vorhanden = email ? await db.select().from(kundeTabelle).where(eq(sql`lower(${kundeTabelle.email})`, email)).limit(1) : [];
   if (vorhanden[0]) {
     await db.update(kundeTabelle).set({
       anrede: kontakt.anrede?.trim() || vorhanden[0].anrede,
@@ -194,7 +195,7 @@ export async function legeAusKundenAnfrage(eingabe: KundenAnfrage, jetzt: Date =
         freitext: eingabe.freitext,
         wunschtermine: eingabe.wunschtermine,
       },
-      gebaeude: gebaeudeAusJourney((eingabe.antworten ?? null) as Record<string, unknown> | null, eingabe.objekt.wohneinheiten),
+      gebaeude: mapping.gebaeude ?? gebaeudeAusJourney((eingabe.antworten ?? null) as Record<string, unknown> | null, eingabe.objekt.wohneinheiten),
       triageVorschlag: vorschlag.text,
       wohneinheiten: eingabe.objekt.wohneinheiten,
       foerderung: foerderungSpeicherwert(mapping.foerderung, ergebnis),
@@ -209,7 +210,7 @@ export async function legeAusKundenAnfrage(eingabe: KundenAnfrage, jetzt: Date =
   });
 
   await schreibeEreignis({ anfrageId: anlage.anfrageId, typ: 'anfrage:eingang', payload: { quelle: eingabe.quelle, triage: vorschlag.vorschlag } });
-  return { ...anlage, ergebnis: oeffentlicheSpanne(ergebnis) };
+  return { ...anlage, ergebnis: oeffentlicheSpanne(ergebnis, { betriebskosten: mapping.betriebskosten, foerderRegeln: daten.foerderRegeln }) };
 }
 
 // ---------------------------------------------------------------------------
@@ -349,9 +350,9 @@ export async function freigeben(anfrageId: string, session: SessionInfo, optione
   const jetzt = optionen.jetzt ?? new Date();
   const art: VersandArt = optionen.art ?? 'erstkontakt';
   const daten = await ladeVorgang(anfrageId);
-  if (!daten) return { ok: false, fehler: 'Anfrage nicht gefunden.' };
+  if (!daten) return { ok: false, fehler: 'Anfrage nicht gefunden.', grund: 'nicht_gefunden' };
   if (!darfFreigeben(session, { bearbeiterId: daten.anfrage.bearbeiterId })) {
-    return { ok: false, fehler: 'Für diese Anfrage fehlt die Freigabeberechtigung.' };
+    return { ok: false, fehler: 'Für diese Anfrage fehlt die Freigabeberechtigung.', grund: 'berechtigung' };
   }
   const [matrix, regeln, einst] = await Promise.all([ladeMatrix(), ladeFoerderRegeln(), ladeEinstellungen()]);
   const ergebnis = rechneVorgang(daten, matrix, regeln);
@@ -372,6 +373,7 @@ export async function freigeben(anfrageId: string, session: SessionInfo, optione
       ok: false,
       fehler: [...pruefung.sperren, ...blockiert.map((h) => h.text)].join(' '),
       hinweise: blockiert,
+      grund: 'blockiert',
     };
   }
 
@@ -381,7 +383,7 @@ export async function freigeben(anfrageId: string, session: SessionInfo, optione
     faelligAm, freigegebenVon: session.benutzerId, freigegebenAm: jetzt, naechsterVersuchAm: null, fehler: null,
   });
   if (!freigegeben && auftrag.status !== 'freigegeben') {
-    return { ok: false, fehler: `Der Auftrag steht bereits auf ${auftrag.status}.` };
+    return { ok: false, fehler: `Der Auftrag steht bereits auf ${auftrag.status}.`, grund: 'status' };
   }
   await db.update(versandauftrag).set({ faelligAm }).where(eq(versandauftrag.id, auftrag.id));
   await schreibeEreignis({

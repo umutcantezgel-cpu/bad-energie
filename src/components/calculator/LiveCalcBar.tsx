@@ -16,10 +16,12 @@ import { syncAbonnieren, syncLesen, syncServerLesen, syncText } from './entwurfS
 export type LiveCalcBarProps = {
   ergebnis: KalkulationsErgebnis;
   kundenansicht: boolean;
+  /** Betriebskosten mit Wärmepumpe je Monat und Ersparnis je Jahr (null ohne Daten). */
+  betriebskosten?: { proMonat: number; ersparnisJahr: number | null } | null;
   onSprungZuBlockierter?: () => void;
 };
 
-export default function LiveCalcBar({ ergebnis, kundenansicht, onSprungZuBlockierter }: LiveCalcBarProps) {
+export default function LiveCalcBar({ ergebnis, kundenansicht, betriebskosten, onSprungZuBlockierter }: LiveCalcBarProps) {
   const aktive = ergebnis.positionen.filter((p) => !p.blockiert && p.von !== null).length;
   const blockierte = ergebnis.positionen.filter((p) => p.blockiert).length;
 
@@ -40,6 +42,19 @@ export default function LiveCalcBar({ ergebnis, kundenansicht, onSprungZuBlockie
           <span className="tabular-nums text-[color:var(--modul-gold,#F0C000)]">
             <span className="block text-[13px] uppercase tracking-wide text-white/70">Foerderzuschuss</span>
             {euro(ergebnis.foerderung.zuschuss)} Euro ({ergebnis.foerderung.satz} Prozent)
+          </span>
+        ) : null}
+        {ergebnis.foerderung ? (
+          <span className="tabular-nums">
+            <span className="block text-[13px] uppercase tracking-wide text-white/70">Eigenanteil</span>
+            {euro(ergebnis.foerderung.eigenanteilVon)} bis {euro(ergebnis.foerderung.eigenanteilBis)} Euro
+          </span>
+        ) : null}
+        {betriebskosten ? (
+          <span className="tabular-nums">
+            <span className="block text-[13px] uppercase tracking-wide text-white/70">Betrieb</span>
+            etwa {euro(betriebskosten.proMonat)} Euro im Monat
+            {betriebskosten.ersparnisJahr !== null && betriebskosten.ersparnisJahr > 0 ? ` (spart ${euro(betriebskosten.ersparnisJahr)} im Jahr)` : ''}
           </span>
         ) : null}
         <span className="tabular-nums">

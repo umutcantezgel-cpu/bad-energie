@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import { and, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
@@ -78,10 +78,19 @@ import {
   type Rolle,
 } from '@/lib/types';
 import { leeresGebaeude } from '@/lib/services/heizlast';
+import { pruefeHerkunft } from '@/lib/services/herkunft';
+import {
+  benutzerNeuSchema, benutzerPinSchema, benutzerToggleSchema, einstellungenSchema, foerderRegelnSchema, freigebenSchema,
+  matrixDemoSchema, matrixZeileSchema, statusWechselSchema, stornierenSchema, terminfensterLoeschenSchema, terminfensterNeuSchema,
+  vorbehaltNeuSchema, vorbehaltToggleSchema,
+} from '@/lib/types';
+import { demoPreiseSetzen } from '@/db/seed';
+import type { VersandArt } from '@/lib/types';
+import type { z } from 'zod';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 // ---------------------------------------------------------------------------
 // Jobs Hilfsfunktionen
@@ -123,6 +132,38 @@ async function starteJob(request: NextRequest, job: string): Promise<Response> {
     return Response.json({ ok: false, job, slot: ergebnis.slot, fehler: ergebnis.fehler ?? 'Fehler im Lauf.' }, { status: 500 });
   }
   return Response.json(ergebnis, { status: 200, headers: { 'Cache-Control': 'no-store' } });
+}
+
+// ---------------------------------------------------------------------------
+// Gemeinsame Helfer: Herkunft und Body-Validierung
+// ---------------------------------------------------------------------------
+
+/** 403, wenn die Anfrage nicht aus dem eigenen Kontext stammt (Origin / Sec-Fetch-Site). */
+function herkunftAntwort(request: NextRequest): Response | null {
+  const h = pruefeHerkunft(request);
+  if (h.ok) return null;
+  return NextResponse.json({ ok: false, fehler: h.grund }, { status: 403 });
+}
+
+/** Body gegen ein Zod-Schema prüfen; 400 mit Feldliste bei Fehlern. */
+async function leseBody<S extends z.ZodType>(request: NextRequest, schema: S): Promise<{ ok: true; daten: z.infer<S> } | { ok: false; antwort: Response }> {
+  let roh: unknown;
+  try {
+    roh = await request.json();
+  } catch {
+    return { ok: false, antwort: NextResponse.json({ ok: false, fehler: 'Ungültiges JSON-Format.' }, { status: 400 }) };
+  }
+  const parse = schema.safeParse(roh);
+  if (!parse.success) {
+    const details = parse.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ');
+    return { ok: false, antwort: NextResponse.json({ ok: false, fehler: `Validierungsfehler: ${details}` }, { status: 400 }) };
+  }
+  return { ok: true, daten: parse.data as z.infer<S> };
+}
+
+const VERSAND_BUDGET_MS = 90_000;
+function warte(ms: number): Promise<'zeit'> {
+  return new Promise((resolve) => setTimeout(() => resolve('zeit'), ms));
 }
 
 // ---------------------------------------------------------------------------
@@ -206,6 +247,8 @@ export async function POST(
     if (!session) {
       return NextResponse.json({ ok: false, fehler: 'Nicht autorisiert. Bitte anmelden.' }, { status: 401 });
     }
+    const herkunft = herkunftAntwort(request);
+    if (herkunft) return herkunft;
 
     try {
       const anlage = await speichereInternAnfrage(payload, session);
@@ -233,6 +276,31 @@ export async function POST(
             // Foto-Fehler blockiert nicht die Speicherung
           }
         }
+      }
+
+      // „Sofort senden“ und „Nur Terminmail“: Freigabe mit synchronem Versand (Fachregel 1), Zeitbudget mit Nachlauf.
+      if (payload.aktion !== 'entwurf') {
+        const art: VersandArt = payload.aktion === 'terminmail' ? 'terminmail' : 'erstkontakt';
+        const versand = freigebenService(anlage.anfrageId, session, { art, sofort: true });
+        after(versand.then(() => undefined, () => undefined));
+        const ergebnis = await Promise.race([versand, warte(VERSAND_BUDGET_MS)]);
+        if (ergebnis === 'zeit') {
+          return NextResponse.json({
+            ok: true, modus: 'intern', anfrageId: anlage.anfrageId, ksNummer: anlage.ksNummer, status: anlage.status,
+            aktion: payload.aktion, versand: { kunde: 'freigegeben', dossier: 'entwurf' }, hinweise: anlage.hinweise,
+            rueckmeldung: `${anlage.ksNummer}: Der Versand läuft noch im Hintergrund. Stand unter Entwürfe prüfen.`,
+          }, { status: 202 });
+        }
+        if (!ergebnis.ok) {
+          return NextResponse.json({
+            ok: false, fehler: ergebnis.fehler, hinweise: ergebnis.hinweise ?? anlage.hinweise,
+            anfrageId: anlage.anfrageId, ksNummer: anlage.ksNummer, status: anlage.status,
+          }, { status: ergebnis.grund === 'berechtigung' ? 403 : 422 });
+        }
+        return NextResponse.json({
+          ok: true, modus: 'intern', anfrageId: anlage.anfrageId, ksNummer: anlage.ksNummer, status: anlage.status,
+          aktion: payload.aktion, versand: ergebnis.versand, hinweise: [], rueckmeldung: ergebnis.rueckmeldung,
+        });
       }
 
       return NextResponse.json({
@@ -426,6 +494,10 @@ export async function POST(
   if (!session) {
     return NextResponse.json({ ok: false, fehler: 'Nicht autorisiert.' }, { status: 401 });
   }
+  {
+    const herkunft = herkunftAntwort(request);
+    if (herkunft) return herkunft;
+  }
 
   // Abmelden
   if (slug.length === 1 && slug[0] === 'abmelden') {
@@ -505,10 +577,11 @@ export async function POST(
 
   // Freigabe
   if (slug.length === 1 && slug[0] === 'freigeben') {
+    const body = await leseBody(request, freigebenSchema);
+    if (!body.ok) return body.antwort;
     try {
-      const { anfrageId, sofort } = await request.json();
-      const ergebnis = await freigebenService(anfrageId, session, { sofort: Boolean(sofort) });
-      return NextResponse.json(ergebnis);
+      const ergebnis = await freigebenService(body.daten.anfrageId, session, { sofort: body.daten.sofort, art: body.daten.art });
+      return NextResponse.json(ergebnis, { status: ergebnis.ok ? 200 : ergebnis.grund === 'berechtigung' ? 403 : ergebnis.grund === 'nicht_gefunden' ? 404 : 422 });
     } catch (err) {
       return NextResponse.json({ ok: false, fehler: (err as Error).message }, { status: 500 });
     }
@@ -516,9 +589,10 @@ export async function POST(
 
   // Stornieren
   if (slug.length === 1 && slug[0] === 'stornieren') {
+    const body = await leseBody(request, stornierenSchema);
+    if (!body.ok) return body.antwort;
     try {
-      const { anfrageId } = await request.json();
-      const ergebnis = await stornierenService(anfrageId, session);
+      const ergebnis = await stornierenService(body.daten.anfrageId, session);
       return NextResponse.json(ergebnis);
     } catch (err) {
       return NextResponse.json({ ok: false, fehler: (err as Error).message }, { status: 500 });
@@ -530,14 +604,16 @@ export async function POST(
     if (session.rolle !== 'chef') {
       return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf Richtpreise ändern.' }, { status: 403 });
     }
+    const body = await leseBody(request, matrixZeileSchema);
+    if (!body.ok) return body.antwort;
     try {
-      const { nr, von, bis, einheit, hinweis } = await request.json();
+      const { nr, von, bis, einheit, hinweis } = body.daten;
       const db = await getDb();
       await db.update(richtpreis).set({
-        von: von !== null && !isNaN(von) ? Math.round(von) : null,
-        bis: bis !== null && !isNaN(bis) ? Math.round(bis) : null,
+        von,
+        bis,
         einheit,
-        hinweis: (hinweis || '').trim(),
+        hinweis: hinweis.replace(/ \| Demo \([RD]\)$/, ''),
         geaendertAm: new Date(),
         // Fremdschlüssel auf benutzer.id, nicht der Anzeigename.
         geaendertVon: session.benutzerId,
@@ -553,11 +629,14 @@ export async function POST(
     if (session.rolle !== 'chef') {
       return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf Förderregeln ändern.' }, { status: 403 });
     }
+    const body = await leseBody(request, foerderRegelnSchema);
+    if (!body.ok) return body.antwort;
     try {
-      const regeln = (await request.json()) as FoerderRegeln;
+      const regeln: FoerderRegeln = body.daten;
       const db = await getDb();
       await db.update(foerderRegel).set({
         grund: regeln.grund,
+        einkommenGrenze: regeln.einkommenGrenze,
         effizienz: regeln.effizienz,
         klimageschwindigkeit: regeln.klimageschwindigkeit,
         einkommen: regeln.einkommen,
@@ -576,8 +655,11 @@ export async function POST(
 
   // Vorbehalt toggle
   if (slug.length === 2 && slug[0] === 'matrix' && slug[1] === 'vorbehalt-toggle') {
+    if (session.rolle !== 'chef') return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf den Vorbehaltskatalog ändern.' }, { status: 403 });
+    const body = await leseBody(request, vorbehaltToggleSchema);
+    if (!body.ok) return body.antwort;
     try {
-      const { id, aktiv } = await request.json();
+      const { id, aktiv } = body.daten;
       const db = await getDb();
       await db.update(vorbehalt).set({ aktiv }).where(eq(vorbehalt.id, id));
       return NextResponse.json({ ok: true });
@@ -588,15 +670,26 @@ export async function POST(
 
   // Vorbehalt neu
   if (slug.length === 2 && slug[0] === 'matrix' && slug[1] === 'vorbehalt-neu') {
+    if (session.rolle !== 'chef') return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf den Vorbehaltskatalog ändern.' }, { status: 403 });
+    const body = await leseBody(request, vorbehaltNeuSchema);
+    if (!body.ok) return body.antwort;
     try {
-      const { text, gewerk } = await request.json();
       const db = await getDb();
-      await db.insert(vorbehalt).values({
-        text: String(text || '').trim(),
-        gewerk: (gewerk as Gewerk) || null,
-        aktiv: true,
-      });
+      await db.insert(vorbehalt).values({ text: body.daten.text, gewerk: body.daten.gewerk, aktiv: true });
       return NextResponse.json({ ok: true });
+    } catch (err) {
+      return NextResponse.json({ ok: false, fehler: (err as Error).message }, { status: 500 });
+    }
+  }
+
+  // Demo-Preise laden oder entfernen (Vorführung)
+  if (slug.length === 2 && slug[0] === 'matrix' && slug[1] === 'demo') {
+    if (session.rolle !== 'chef') return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf Demo-Preise setzen.' }, { status: 403 });
+    const body = await leseBody(request, matrixDemoSchema);
+    if (!body.ok) return body.antwort;
+    try {
+      await demoPreiseSetzen(body.daten.an);
+      return NextResponse.json({ ok: true, demoPreise: body.daten.an });
     } catch (err) {
       return NextResponse.json({ ok: false, fehler: (err as Error).message }, { status: 500 });
     }
@@ -668,8 +761,8 @@ export async function POST(
           kontakt: {
             anrede: (befehl.anrede as 'Frau' | 'Herr' | '') || '',
             vorname: befehl.vorname || '',
-            nachname: befehl.nachname || 'Interessent',
-            email: befehl.email || 'dispatch@bad-energie.de',
+            nachname: befehl.nachname || '',
+            email: befehl.email || '',
             telefon: befehl.telefon || '',
             strasse: befehl.strasse || '',
             plzOrt: befehl.plzOrt || '',
@@ -687,12 +780,12 @@ export async function POST(
           positionen,
           kalkulation: {},
           foerderung: { aktiv: false, wohneinheiten: 1, selbstBewohnt: true, altOelOderGas: true, einkommenUnterGrenze: false, natuerlichesKaeltemittel: true },
-          persoenlicherSatz: befehl.persoenlicherSatz,
+          persoenlicherSatz: '',
           annahmen: [],
           vorbehalte: [],
           ausfuehrungSatz: '',
           terminfensterIds: [],
-          notizen: { etage: null, aufzug: null, montagehindernisse: '', leitungswege: '', intern: 'Erfasst über Dispatch' },
+          notizen: { etage: null, aufzug: null, montagehindernisse: '', leitungswege: '', intern: `Erfasst über Dispatch:\n${befehl.rohtext}` },
           skizzen: [],
           fotos: [],
         }, session);
@@ -708,7 +801,7 @@ export async function POST(
           ok: true,
           ksNummer: res.ksNummer,
           anfrageId: res.anfrageId,
-          rueckmeldung: `${res.ksNummer} ${befehl.nachname}, ${befehl.vorhabenKurz}, ${spanneBrutto}, liegt in ${res.status}.${fehltText}`,
+          rueckmeldung: `${res.ksNummer} ${befehl.nachname || 'ohne Namen'}, ${befehl.vorhabenKurz}, ${spanneBrutto}, liegt in ${res.status}.${fehltText}`,
         });
       }
 
@@ -723,9 +816,11 @@ export async function POST(
     if (session.rolle !== 'chef') {
       return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf Benutzer anlegen.' }, { status: 403 });
     }
+    const body = await leseBody(request, benutzerNeuSchema);
+    if (!body.ok) return body.antwort;
     try {
-      const { name, email, pin, rolle, funktion = 'Mitarbeiter' } = await request.json();
-      if (!pinGueltig(pin)) return NextResponse.json({ ok: false, fehler: 'Die PIN muss aus 6 bis 8 Ziffern bestehen.' });
+      const { name, email, pin, rolle, funktion } = body.daten;
+      if (!pinGueltig(pin)) return NextResponse.json({ ok: false, fehler: 'Die PIN muss aus 6 bis 8 Ziffern bestehen.' }, { status: 400 });
 
       const db = await getDb();
       const bereinigteEmail = String(email).trim().toLowerCase();
@@ -754,9 +849,11 @@ export async function POST(
     if (session.rolle !== 'chef') {
       return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf PINs zurücksetzen.' }, { status: 403 });
     }
+    const body = await leseBody(request, benutzerPinSchema);
+    if (!body.ok) return body.antwort;
     try {
-      const { benutzerId, neuePin } = await request.json();
-      if (!pinGueltig(neuePin)) return NextResponse.json({ ok: false, fehler: 'Die PIN muss aus 6 bis 8 Ziffern bestehen.' });
+      const { benutzerId, neuePin } = body.daten;
+      if (!pinGueltig(neuePin)) return NextResponse.json({ ok: false, fehler: 'Die PIN muss aus 6 bis 8 Ziffern bestehen.' }, { status: 400 });
 
       const db = await getDb();
       const pHash = pinHashen(neuePin);
@@ -772,8 +869,10 @@ export async function POST(
     if (session.rolle !== 'chef') {
       return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf Benutzer aktivieren/deaktivieren.' }, { status: 403 });
     }
+    const body = await leseBody(request, benutzerToggleSchema);
+    if (!body.ok) return body.antwort;
     try {
-      const { benutzerId, aktiv } = await request.json();
+      const { benutzerId, aktiv } = body.daten;
       if (benutzerId === session.benutzerId && !aktiv) {
         return NextResponse.json({ ok: false, fehler: 'Sie können Ihren eigenen Account nicht deaktivieren.' });
       }
@@ -791,17 +890,16 @@ export async function POST(
 
   // Terminfenster neu
   if (slug.length === 2 && slug[0] === 'termine' && slug[1] === 'neu') {
+    const body = await leseBody(request, terminfensterNeuSchema);
+    if (!body.ok) return body.antwort;
     try {
-      const { beschriftung, beginnIso, endeIso } = await request.json();
-      if (!beschriftung || !String(beschriftung).trim()) {
-        return NextResponse.json({ ok: false, fehler: 'Beschriftung darf nicht leer sein.' });
-      }
+      const { beschriftung, beginnIso, endeIso } = body.daten;
       const db = await getDb();
       await db.insert(terminfenster).values({
         id: randomUUID(),
-        beschriftung: String(beschriftung).trim(),
-        beginn: new Date(beginnIso),
-        ende: new Date(endeIso),
+        beschriftung,
+        beginn: beginnIso ? new Date(beginnIso) : null,
+        ende: endeIso ? new Date(endeIso) : null,
       });
       return NextResponse.json({ ok: true });
     } catch (err) {
@@ -811,8 +909,10 @@ export async function POST(
 
   // Terminfenster löschen
   if (slug.length === 2 && slug[0] === 'termine' && slug[1] === 'loeschen') {
+    const body = await leseBody(request, terminfensterLoeschenSchema);
+    if (!body.ok) return body.antwort;
     try {
-      const { id } = await request.json();
+      const { id } = body.daten;
       const db = await getDb();
       await db.delete(terminfensterReservierung).where(eq(terminfensterReservierung.terminfensterId, id));
       await db.delete(terminfenster).where(eq(terminfenster.id, id));
@@ -827,8 +927,10 @@ export async function POST(
     if (session.rolle !== 'chef') {
       return NextResponse.json({ ok: false, fehler: 'Nur der Chef darf Betriebseinstellungen ändern.' }, { status: 403 });
     }
+    const body = await leseBody(request, einstellungenSchema);
+    if (!body.ok) return body.antwort;
     try {
-      const werte = (await request.json()) as Einstellungen;
+      const werte = body.daten;
       const db = await getDb();
       const eintraege: { key: string; wert: unknown }[] = [
         { key: 'versandzeit', wert: werte.versandzeit },
@@ -841,6 +943,7 @@ export async function POST(
         { key: 'buero_email', wert: werte.bueroEmail },
         { key: 'absender', wert: werte.absender },
         { key: 'briefbogen', wert: werte.briefbogen },
+        ...(werte.betriebskosten ? [{ key: 'betriebskosten', wert: werte.betriebskosten }] : []),
       ];
 
       for (const e of eintraege) {
@@ -908,7 +1011,9 @@ export async function POST(
   if (slug.length === 3 && slug[0] === 'anfragen' && slug[2] === 'status') {
     try {
       const anfrageId = slug[1];
-      const { status: neuerStatus, grund = '' } = await request.json();
+      const body = await leseBody(request, statusWechselSchema);
+      if (!body.ok) return body.antwort;
+      const { status: neuerStatus, grund } = body.daten;
       const daten = await ladeVorgang(anfrageId);
       if (!daten) return NextResponse.json({ ok: false, fehler: 'Anfrage nicht gefunden.' }, { status: 404 });
 

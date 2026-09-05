@@ -14,6 +14,8 @@ export type DispatchBefehl =
   | { art: 'anpassung'; ksNummer: string; text: string }
   | {
       art: 'neuanlage';
+  /** Der erfasste Text, wandert in die internen Notizen. */
+  rohtext: string;
       anrede: string;
       vorname: string;
       nachname: string;
@@ -133,13 +135,15 @@ export function parseDispatchText(eingabeText: string): DispatchBefehl {
     art: 'neuanlage',
     anrede,
     vorname: '',
-    nachname: nachname || 'Interessent',
+    nachname: nachname || '',
     email,
     telefon,
     strasse,
-    plzOrt: plzOrt || '35578 Wetzlar',
+    plzOrt: plzOrt || '',
     vorlageIds,
-    persoenlicherSatz: persoenlicherSatz || `Vielen Dank für Ihre Anfrage zu Ihrem Vorhaben (${vorhabenKurz}).`,
+    // Der Diktattext ist eine interne Notiz, nie der persönliche Satz des Kundendokuments.
+    persoenlicherSatz: '',
     vorhabenKurz,
+    rohtext: persoenlicherSatz,
   };
 }
