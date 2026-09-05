@@ -86,7 +86,11 @@ export async function schliesseBrowser(): Promise<void> {
   if (!laufend) return;
   try {
     const browser = await laufend;
-    await browser.close();
+    // Chromium schließt gelegentlich nicht sauber; nach fünf Sekunden wird der Prozess beendet.
+    const zeit = new Promise<void>((resolve) => setTimeout(resolve, 5000));
+    await Promise.race([browser.close().catch(() => undefined), zeit]);
+    const prozess = browser.process();
+    if (prozess && prozess.exitCode === null) prozess.kill('SIGKILL');
   } catch {
     // bereits beendet
   }

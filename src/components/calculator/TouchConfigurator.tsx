@@ -43,6 +43,7 @@ import {
   wischRichtung,
   zahl,
   type Ausstellungsbad,
+  enthaltenFuer,
 } from './konfigurator-utils';
 import { euro } from '@/lib/services/calculation';
 
@@ -296,6 +297,7 @@ function KundenModus({
           chips={chips}
           bad={bad}
           eignung={eignungsErgebnis}
+          enthalten={enthaltenFuer(journeyId)}
           onSpringeZuSchritt={(index) => {
             setAbsenden({ art: 'ruhe' });
             setSchritt(index);
@@ -562,9 +564,9 @@ function baueChips(journeyId: JourneyId, zustand: JourneyZustand): AntwortChip[]
           .filter(Boolean)
           .join(', ');
       } else if (frage.art === 'zahl') {
-        anzeige = `${zahl(Number(wert), frage.nachkommastellen ?? 0)} ${frage.einheit}`;
+        anzeige = `${zahl(Number(wert), frage.nachkommastellen ?? 0)} ${Number(wert) === 1 && frage.einheitEinzahl ? frage.einheitEinzahl : frage.einheit}`;
       } else if (frage.art === 'anzahl') {
-        anzeige = `${Number(wert)} ${frage.einheit}`;
+        anzeige = `${Number(wert)} ${Number(wert) === 1 && frage.einheitEinzahl ? frage.einheitEinzahl : frage.einheit}`;
       } else {
         anzeige = String(wert);
       }

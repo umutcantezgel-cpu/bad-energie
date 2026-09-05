@@ -220,3 +220,21 @@ export function wischRichtung(dx: number, dy: number): 'vor' | 'zurueck' | null 
   if (Math.abs(dx) < Math.abs(dy) * WISCH_RICHTUNG) return null;
   return dx < 0 ? 'vor' : 'zurueck';
 }
+
+/** Was der Kunde auf der Ergebnisseite als enthalten sieht, je Strecke (Bad oder Heizung). */
+export function enthaltenFuer(journey: 'bad' | 'heizung' | 'waermepumpe'): string[] {
+  if (journey === 'bad') {
+    return [
+      'Abbau und Entsorgung der alten Einrichtung',
+      'Material und Montage durch unsere Meister',
+      'Anschluss an Wasser, Abwasser und Strom',
+      'Endreinigung der Baustelle',
+    ];
+  }
+  return [
+    'Abbau und Entsorgung der alten Heizung',
+    'Material und Montage durch unsere Meister',
+    'Anschluss an Heizung, Warmwasser und Strom',
+    'Inbetriebnahme, Einweisung und Förderservice',
+  ];
+}

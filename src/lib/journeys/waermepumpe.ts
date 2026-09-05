@@ -148,6 +148,7 @@ export const waermepumpeJourney: Journey = {
           min: 1,
           max: 12,
           einheit: 'Personen',
+          einheitEinzahl: 'Person',
         },
       ],
     },

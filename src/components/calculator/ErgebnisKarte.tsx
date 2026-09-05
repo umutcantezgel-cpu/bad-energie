@@ -28,6 +28,8 @@ export type ErgebnisKarteProps = {
   chips: AntwortChip[];
   bad?: Ausstellungsbad | null;
   eignung?: Eignung | null;
+  /** Liste „Das ist enthalten“, je Strecke; Standard ist die Badliste. */
+  enthalten?: string[];
   onSpringeZuSchritt: (index: number) => void;
 };
 
@@ -46,6 +48,7 @@ export default function ErgebnisKarte({
   bad,
   eignung,
   onSpringeZuSchritt,
+  enthalten,
 }: ErgebnisKarteProps) {
   const hatSpanne =
     ergebnis.pfad === 'spanne' &&
@@ -208,7 +211,7 @@ export default function ErgebnisKarte({
             Das ist enthalten
           </h3>
           <ul className="mt-3 space-y-2 text-slate-700" style={{ fontSize: 'var(--font-size-base)' }}>
-            {ENTHALTEN.map((zeile) => (
+            {(enthalten ?? ENTHALTEN).map((zeile) => (
               <li key={zeile} className="flex items-start gap-2">
                 <span style={{ color: 'var(--status-freigegeben)' }}>
                   <Piktogramm name="haken" groesse={20} />

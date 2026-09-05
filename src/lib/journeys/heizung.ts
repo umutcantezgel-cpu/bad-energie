@@ -75,6 +75,7 @@ export const heizungJourney: Journey = {
           min: 0,
           max: 6,
           einheit: 'Tanks',
+          einheitEinzahl: 'Tank',
           sichtbarWenn: { feld: 'heutig', werte: ['oel'] },
         },
         {
@@ -177,6 +178,7 @@ export const heizungJourney: Journey = {
           min: 1,
           max: 12,
           einheit: 'Wohnungen',
+          einheitEinzahl: 'Wohnung',
         },
         {
           id: 'personen',
@@ -188,6 +190,7 @@ export const heizungJourney: Journey = {
           min: 1,
           max: 12,
           einheit: 'Personen',
+          einheitEinzahl: 'Person',
         },
       ],
     },

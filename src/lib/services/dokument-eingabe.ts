@@ -101,7 +101,8 @@ export function foerderungEingabeAus(daten: VorgangDaten): FoerderungEingabe | n
     altOelOderGas: f.boni?.klimageschwindigkeit ?? true,
     einkommenUnterGrenze: f.boni?.einkommen ?? false,
     natuerlichesKaeltemittel: f.boni?.effizienz ?? true,
-    satzManuell: f.satz ?? null,
+    // Der berechnete Satz wird nie zur Handeingabe; sonst verschwinden die Förderbausteine aus dem Dokument.
+    satzManuell: f.satzManuell ?? null,
   };
 }
 
@@ -134,6 +135,8 @@ export function fehlendeAngaben(daten: VorgangDaten, ergebnis: KalkulationsErgeb
   if (!daten.anfrage.objektAdresse.trim()) fehlt.push('Objektadresse');
   if (!daten.anfrage.persoenlicherSatz.trim()) fehlt.push('Persönlicher Satz');
   for (const p of ergebnis.positionen) {
+    // Abgewählte Zuschläge stehen nicht im Dokument; ihre Platzhalter fehlen dem Kunden nicht.
+    if (!p.aktiv) continue;
     const offen = offenePlatzhalter(p.text);
     if (offen.length) fehlt.push(`Platzhalter in „${p.titel}“: ${offen.map((o) => `[${o}]`).join(', ')}`);
   }

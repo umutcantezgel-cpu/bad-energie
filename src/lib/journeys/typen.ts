@@ -106,6 +106,8 @@ export type ZahlFrage = FrageBasis & {
   max: number;
   schritt: number;
   einheit: string;
+  /** Einzahl der Einheit für die Antwortchips („1 Wohnung“). */
+  einheitEinzahl?: string;
   /** Werte, auf die der Regler einrastet. */
   rasten?: number[];
   nachkommastellen?: number;
@@ -122,6 +124,8 @@ export type AnzahlFrage = FrageBasis & {
   min: number;
   max: number;
   einheit: string;
+  /** Einzahl der Einheit für die Antwortchips („1 Wohnung“). */
+  einheitEinzahl?: string;
 };
 
 export type TextFrage = FrageBasis & {
