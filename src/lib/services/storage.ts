@@ -87,6 +87,10 @@ let zwischenspeicher: Storage | undefined;
 export function getStorage(): Storage {
   if (zwischenspeicher) return zwischenspeicher;
   const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token && process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+    // Kein stiller Rückfall auf die Platte: auf Vercel ist das Dateisystem nur unter /tmp beschreibbar.
+    throw new Error('Dateiablage nicht konfiguriert: BLOB_READ_WRITE_TOKEN setzen (Vercel Blob).');
+  }
   zwischenspeicher = token ? blobStorage(token) : dateiStorage();
   return zwischenspeicher;
 }

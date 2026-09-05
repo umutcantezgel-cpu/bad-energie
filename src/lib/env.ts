@@ -13,6 +13,8 @@ const schema = z.object({
   RESEND_WEBHOOK_SECRET: z.string().optional(),
   MAIL_FROM: z.string().default('Bad & Energie GmbH <info@bad-energie.de>'),
   MAIL_TRANSPORT: z.enum(['resend', 'file']).default('file'),
+  /** Auffangadresse: solange gesetzt, gehen alle Mails dorthin (Vorführung, Tests). */
+  MAIL_TEST_TO: z.string().optional(),
   SESSION_SECRET: z.string().min(32).optional(),
   CRON_SECRET: z.string().min(32).optional(),
   INTAKE_AI: z.enum(['on', 'off']).default('off'),
@@ -46,6 +48,8 @@ export function validateEnv(): void {
   if (!env.CRON_SECRET) fehlend.push('CRON_SECRET (mindestens 32 Zeichen)');
   if (!env.BLOB_READ_WRITE_TOKEN) fehlend.push('BLOB_READ_WRITE_TOKEN');
   if (env.MAIL_TRANSPORT === 'resend' && !env.RESEND_API_KEY) fehlend.push('RESEND_API_KEY');
+  if (env.MAIL_TRANSPORT === 'resend' && !env.RESEND_WEBHOOK_SECRET) fehlend.push('RESEND_WEBHOOK_SECRET (Webhook sonst ungeschützt)');
+  if (env.MAIL_TRANSPORT !== 'resend') fehlend.push('MAIL_TRANSPORT=resend (der Dateiadapter hat auf Vercel keine Platte)');
   if (fehlend.length) throw new Error(`Produktionsstart verweigert. Fehlend oder falsch: ${fehlend.join(', ')}`);
 }
 

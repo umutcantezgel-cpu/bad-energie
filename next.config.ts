@@ -40,6 +40,11 @@ const nextConfig: NextConfig = {
     "/api/intern/[...slug]": ["src/lib/dokumente/assets/**/*"],
     "/intern/[[...slug]]": ["src/lib/dokumente/assets/**/*"],
   },
+  // PGlite ist nur eine Entwicklungsabhängigkeit (25 MB); der dynamische Import in src/db/client.ts
+  // darf sie nicht in das Function-Bundle ziehen (250-MB-Grenze auf Vercel).
+  outputFileTracingExcludes: {
+    "/*": ["node_modules/@electric-sql/pglite/**/*"],
+  },
   experimental: {
     optimizePackageImports: [
       "@phosphor-icons/react",

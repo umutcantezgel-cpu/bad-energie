@@ -130,13 +130,40 @@ export function resendMailer(apiKey: string): Mailer {
   };
 }
 
+/**
+ * Auffangadresse für Vorführung und Tests: solange MAIL_TEST_TO gesetzt ist, gehen alle Mails
+ * an diese Adresse; der echte Empfänger steht im Betreff, Reply-To bleibt erhalten.
+ */
+export function mitTestEmpfaenger(mailer: Mailer, testTo: string): Mailer {
+  const ziel = testTo.trim();
+  if (!istEmail(ziel)) throw new Error(`MAIL_TEST_TO ist keine gültige Adresse: ${testTo}`);
+  return {
+    async senden(m) {
+      const zusatz = ` [an: ${m.an}]`;
+      const betreff = (m.betreff.length + zusatz.length > MAX_BETREFF ? m.betreff.slice(0, MAX_BETREFF - zusatz.length - 1).trimEnd() + '…' : m.betreff) + zusatz;
+      return mailer.senden({ ...m, an: ziel, betreff, header: { ...(m.header ?? {}), 'X-Original-To': m.an } });
+    },
+  };
+}
+
 let zwischenspeicher: Mailer | undefined;
 
 export function getMailer(): Mailer {
   if (zwischenspeicher) return zwischenspeicher;
   const transport = process.env.MAIL_TRANSPORT ?? (process.env.RESEND_API_KEY ? 'resend' : 'file');
   const key = process.env.RESEND_API_KEY;
-  zwischenspeicher = transport === 'resend' && key ? resendMailer(key) : dateiMailer();
+  let mailer: Mailer;
+  if (transport === 'resend' && key) {
+    mailer = resendMailer(key);
+  } else {
+    // Der Dateiadapter schreibt auf die Platte; auf Vercel gibt es keine. Lieber klar scheitern als still verlieren.
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+      throw new Error('Mailversand nicht konfiguriert: MAIL_TRANSPORT=resend und RESEND_API_KEY setzen.');
+    }
+    mailer = dateiMailer();
+  }
+  const testTo = process.env.MAIL_TEST_TO?.trim();
+  zwischenspeicher = testTo ? mitTestEmpfaenger(mailer, testTo) : mailer;
   return zwischenspeicher;
 }
 
