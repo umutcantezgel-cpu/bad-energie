@@ -54,7 +54,7 @@ describe('Portal-Lead durch den Dispatch-Zweig (gegen die Datenbank)', () => {
       const v = vorlagen.find((x) => x.id === vId);
       if (!v) return [];
       return v.bausteine.map((b) => {
-        const vorschlag = schaetzung ? geraeteVorschlag(schaetzung.kwBis, b.groessenVarianten, 'bosch') : null;
+        const vorschlag = schaetzung ? geraeteVorschlag(schaetzung.kwEmpfohlen, b.groessenVarianten, 'bosch') : null;
         const variante = b.groessenVarianten?.find((x) => x.matrixNr === vorschlag?.matrixNr) ?? null;
         const speicher = vorschlag ? speicherVorschlag(lead.gebaeude.personen, variante?.speicherLiterOptionen) : null;
         return positionAusBaustein(b, matrix, {

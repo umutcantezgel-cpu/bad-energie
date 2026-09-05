@@ -72,7 +72,6 @@ import {
   estimateRequestSchema,
   type AnfrageStatus,
   type FoerderRegeln,
-  type Gewerk,
   type InternAnfrage,
   type Rolle,
 } from '@/lib/types';
@@ -806,7 +805,7 @@ export async function POST(
           const v = vorlagen.find((x) => x.id === vId);
           if (!v) return [];
           return v.bausteine.map((b) => {
-            const vorschlag = schaetzung ? geraeteVorschlag(schaetzung.kwBis, b.groessenVarianten, hersteller) : null;
+            const vorschlag = schaetzung ? geraeteVorschlag(schaetzung.kwEmpfohlen, b.groessenVarianten, hersteller) : null;
             const variante = b.groessenVarianten?.find((x) => x.matrixNr === vorschlag?.matrixNr) ?? null;
             const speicher = vorschlag ? speicherVorschlag(gebaeude.personen, variante?.speicherLiterOptionen) : null;
             return positionAusBaustein(b, matrix, {

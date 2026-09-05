@@ -203,7 +203,7 @@ function mappeHeizung(a: HeizungsAntworten, daten: Kalkulationsdaten, wohneinhei
   if (!v) return { ...LEER, ...extras, vorhabenKurz: 'Wärmepumpe', gewerkHaupt: 'waermepumpe' };
   const groesse = bausteinMitVarianten(v);
   // Größe nach Heizlast (Arbeitsweise des Chefs); Wohnflächenspannen nur als Rückfall, wenn sie gepflegt sind.
-  const vorschlag = heizlast ? geraeteVorschlag(heizlast.kwBis, groesse?.groessenVarianten ?? null) : null;
+  const vorschlag = heizlast ? geraeteVorschlag(heizlast.kwEmpfohlen, groesse?.groessenVarianten ?? null) : null;
   const varianteNr = vorschlag?.matrixNr ?? variantenNrNachWohnflaeche(groesse, a.wohnflaeche);
   const varianteGewaehlt = groesse?.groessenVarianten?.find((x) => x.matrixNr === varianteNr) ?? null;
   const speicher = speicherVorschlag(gebaeude.personen, varianteGewaehlt?.speicherLiterOptionen ?? [200, 300]);

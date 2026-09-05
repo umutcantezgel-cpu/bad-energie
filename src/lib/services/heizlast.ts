@@ -161,6 +161,8 @@ export function heizlastAusFlaeche(g: GebaeudeDaten): number | null {
 export type HeizlastErgebnis = {
   kwVon: number;
   kwBis: number;
+  /** Maßgeblicher Wert für die Gerätewahl: der Verbrauchsweg, wenn vorhanden (so arbeitet der Chef), sonst die Fläche. */
+  kwEmpfohlen: number;
   kwVerbrauch: number | null;
   kwFlaeche: number | null;
   methode: 'verbrauch' | 'flaeche' | 'beide';
@@ -179,12 +181,12 @@ export function heizlastSchaetzen(g: GebaeudeDaten): HeizlastErgebnis | null {
     if (kwVon > 0 && (kwBis - kwVon) / kwVon > 0.25) {
       hinweise.push('Verbrauch und Gebäudedaten weichen deutlich voneinander ab. Vor Ort raumweise prüfen.');
     }
-    return { kwVon, kwBis, kwVerbrauch, kwFlaeche, methode: 'beide', hinweise };
+    return { kwVon, kwBis, kwEmpfohlen: kwVerbrauch, kwVerbrauch, kwFlaeche, methode: 'beide', hinweise };
   }
   const kw = (kwVerbrauch ?? kwFlaeche) as number;
   const methode = kwVerbrauch !== null ? 'verbrauch' : 'flaeche';
-  hinweise.push(methode === 'verbrauch' ? 'Nur aus dem Verbrauch geschätzt; Gebäudedaten ergänzen.' : 'Nur aus den Gebäudedaten geschätzt; Verbrauch ergänzen.');
-  return { kwVon: kw, kwBis: kw, kwVerbrauch, kwFlaeche, methode, hinweise };
+  hinweise.push(methode === 'verbrauch' ? 'Nur aus dem Verbrauch geschätzt; Gebäudedaten ergänzen.' : 'Nur aus den Gebäudedaten geschätzt; Verbrauch ergänzen, die Fläche allein überschätzt bei fehlender Dämmung.');
+  return { kwVon: kw, kwBis: kw, kwEmpfohlen: kw, kwVerbrauch, kwFlaeche, methode, hinweise };
 }
 
 // ---------------------------------------------------------------------------

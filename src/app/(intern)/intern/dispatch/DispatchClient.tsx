@@ -44,7 +44,7 @@ export default function DispatchClient() {
     const schaetzung = heizlastSchaetzen(befehl.gebaeude);
     if (!schaetzung) return null;
     const hersteller = befehl.gebaeude.geraet.hersteller;
-    const geraet = geraetAusBaureihe(schaetzung.kwBis, hersteller);
+    const geraet = geraetAusBaureihe(schaetzung.kwEmpfohlen, hersteller);
     return {
       kwVon: schaetzung.kwVon,
       kwBis: schaetzung.kwBis,

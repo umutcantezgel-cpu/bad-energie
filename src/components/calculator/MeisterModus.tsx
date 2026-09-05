@@ -370,7 +370,7 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
   /** Matrixnummer des Geraetevorschlags; die Kachel markiert diese Variante. */
   const vorschlagMatrixNr = useMemo(() => {
     if (!heizlast || !wpVarianten.length) return null;
-    return geraeteVorschlag(heizlast.kwBis, wpVarianten, anfrage.gebaeude.geraet.hersteller)?.matrixNr ?? null;
+    return geraeteVorschlag(heizlast.kwEmpfohlen, wpVarianten, anfrage.gebaeude.geraet.hersteller)?.matrixNr ?? null;
   }, [heizlast, wpVarianten, anfrage.gebaeude.geraet.hersteller]);
 
   /** Uebernimmt Geraet und Speicher in das Gebaeude und in alle Waermepumpen-Positionen. */

@@ -50,9 +50,17 @@ describe('Heizlast nach dem Bogen des Chefs', () => {
     expect(e?.methode).toBe('beide');
     expect(e?.kwVon).toBe(8.3);
     expect(e?.kwBis).toBe(8.3);
+    expect(e?.kwEmpfohlen).toBe(8.3);
     expect(e?.hinweise).toHaveLength(0);
     const weit = gebaeude({ wohnflaeche: 200, baujahr: 1955, bestand: { energieart: 'gas', verbrauchJahr: 8000, kesseltyp: 'brennwert' } });
     expect(heizlastSchaetzen(weit)?.hinweise.length).toBe(1);
+    // Web-Lead ohne Dämmungsangaben: die Fläche allein überschätzt, der Verbrauch ist maßgeblich (Belege 2 und 3).
+    const web = gebaeude({ wohnflaeche: 150, baujahrKlasse: 'vor_1977', lage: 'freistehend', bestand: { energieart: 'gas', verbrauchJahr: 22000, heizungsalterJahre: 25 } });
+    const w = heizlastSchaetzen(web);
+    expect(w?.kwFlaeche).toBe(18.9);
+    expect(w?.kwVerbrauch).toBe(9.2);
+    expect(w?.kwEmpfohlen).toBe(9.2);
+    expect(geraeteVorschlag(w?.kwEmpfohlen ?? 0, WP_VARIANTEN)?.matrixNr).toBe(2);
   });
 
   it('ohne Daten keine Schätzung, mit einem Weg ein Hinweis', () => {

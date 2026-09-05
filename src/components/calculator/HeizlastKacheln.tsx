@@ -42,7 +42,7 @@ export default function HeizlastKacheln({
   const hersteller = gebaeude.geraet.hersteller;
   const heizlast = useMemo(() => heizlastSchaetzen(gebaeude), [gebaeude]);
   const vorschlag = useMemo(
-    () => (heizlast ? geraeteVorschlag(heizlast.kwBis, varianten, hersteller) : null),
+    () => (heizlast ? geraeteVorschlag(heizlast.kwEmpfohlen, varianten, hersteller) : null),
     [heizlast, varianten, hersteller],
   );
   const variante = vorschlag ? (varianten.find((v) => v.matrixNr === vorschlag.matrixNr) ?? null) : null;
