@@ -305,6 +305,7 @@ describe('Massband', () => {
 
 function positionErgebnis(teil: Partial<PositionErgebnis> = {}): PositionErgebnis {
   return {
+    aktiv: true,
     positionId: 'p1',
     titel: 'Wärmepumpe',
     gewerk: 'waermepumpe',

@@ -295,7 +295,8 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
   }, [daten, anfrage.positionen, anfrage.kalkulation, anfrage.foerderung]);
 
   const positionZu = useCallback(
-    (id: string): Position | null => anfrage.positionen.find((p) => p.id === id) ?? null,
+    // Server-Positionen tragen Zeilen-IDs; der Baustein steckt in vorlageZeileId.
+    (id: string): Position | null => anfrage.positionen.find((p) => p.id === id || p.vorlageZeileId === id) ?? null,
     [anfrage.positionen],
   );
 
@@ -349,6 +350,8 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
       // Steht das Geraet fest und passt es zur Variante, steht seine Leistung im Text ("10"), sonst die Beschriftung.
       const kW = teil.kW ?? kwFuerVariante(gewaehlteVariante, anfrage.gebaeude.geraet.kw);
       const neu = positionAusBaustein(b, daten?.matrix ?? [], {
+        // Bestehende Position (auch vom Server geladen) behält ihre ID, sonst entstünde ein Duplikat.
+        id: alt?.id ?? b.id,
         varianteMatrixNr: variante,
         menge: teil.menge ?? alt?.menge ?? b.mengeDefault,
         liter,
@@ -629,7 +632,7 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
                 key={b.id}
                 baustein={b}
                 position={positionZu(b.id)}
-                ergebnis={ergebnis.positionen.find((p) => p.positionId === b.id) ?? null}
+                ergebnis={ergebnis.positionen.find((p) => p.positionId === (positionZu(b.id)?.id ?? b.id)) ?? null}
                 hinweise={hinweiseZu(b.id)}
                 kundenansicht={kundenansicht}
                 speicherWahl={speicherWahl[b.id] ?? null}

@@ -219,7 +219,7 @@ function positionBewerten(p: Position, matrix: Richtpreis[] | undefined): { erge
   return {
     ergebnis: {
       positionId: p.id, titel: p.titel, gewerk: p.gewerk, text: p.text, menge, einheit: p.einheit,
-      einzelVon, einzelBis, von, bis, blockiert, zuschlag: p.zuschlag,
+      einzelVon, einzelBis, von, bis, blockiert, zuschlag: p.zuschlag, aktiv: p.aktiv,
     },
     hinweise: p.aktiv ? hinweise : [],
   };

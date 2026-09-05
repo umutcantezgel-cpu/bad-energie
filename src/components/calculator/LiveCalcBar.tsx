@@ -22,7 +22,7 @@ export type LiveCalcBarProps = {
 };
 
 export default function LiveCalcBar({ ergebnis, kundenansicht, betriebskosten, onSprungZuBlockierter }: LiveCalcBarProps) {
-  const aktive = ergebnis.positionen.filter((p) => !p.blockiert && p.von !== null).length;
+  const aktive = ergebnis.positionen.filter((p) => p.aktiv && !p.blockiert && p.von !== null).length;
   const blockierte = ergebnis.positionen.filter((p) => p.blockiert).length;
 
   return (

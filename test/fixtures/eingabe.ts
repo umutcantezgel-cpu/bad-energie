@@ -73,6 +73,7 @@ function positionen(zeilen: FixtureZeile[]): PositionErgebnis[] {
     bis: z.bis,
     blockiert: false,
     zuschlag: false,
+    aktiv: true,
   }));
 }
 
@@ -153,9 +154,9 @@ export function dossierAus(nummer: '0031' | '0032', optionen: EingabeOptionen = 
     bis: p.bis,
     matrixNr: 7,
     zuschlag: false,
-    aktiv: true,
     notizIntern: 'Nur intern: Kunde hat einen alten Zaehlerschrank, Aufschlag pruefen.',
     blockiert: false,
+    aktiv: true,
   }));
   return {
     ...basis,

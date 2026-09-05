@@ -240,6 +240,7 @@ export type PositionErgebnis = {
   bis: number | null;
   blockiert: boolean;
   zuschlag: boolean;
+  aktiv: boolean;
 };
 
 export type KalkulationsErgebnis = {
