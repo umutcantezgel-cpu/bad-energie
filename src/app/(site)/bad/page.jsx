@@ -111,7 +111,7 @@ export default function BadPage() {
                                     {tier.name}
                                 </span>
                                 <h3 className="text-xl font-black text-slate-900">{tier.subtitle}</h3>
-                                <div className="text-2xl font-black text-[#E4040E]">{tier.priceRange}</div>
+                                <div className="text-xl font-black text-[#0C3A87]">{tier.priceRange}</div>
                                 <p className="text-xs text-slate-600 leading-relaxed font-medium">{tier.description}</p>
                             </div>
                             <div className="pt-6 mt-6 border-t border-slate-200/60">

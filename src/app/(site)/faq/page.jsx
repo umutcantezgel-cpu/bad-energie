@@ -19,7 +19,7 @@ const faqData = {
         icon: Droplets,
         title: 'Bäder & Sanitär',
         questions: [
-            { q: 'Was kostet eine Komplettbadsanierung aus einer Hand?', a: 'Vorkalkulierte Musterbäder beginnen bei ca. 18.500 € (Basic 4,6 m²) bis ca. 42.900 € (Luxus 15,9 m²). Wir erstellen Ihnen nach einem kostenlosen Aufmaß vor Ort ein verbindliches Festpreisangebot.' },
+            { q: 'Was kostet eine Komplettbadsanierung aus einer Hand?', a: 'Die Kosten richten sich nach Raumgröße, Zustand der Leitungen und Ihren individuellen Ausstattungswünschen. Wir erstellen Ihnen nach einem kostenlosen Vor-Ort-Aufmaß gerne ein verbindliches Festpreisangebot auf Anfrage.' },
             { q: 'Wie lange dauert ein kompletter Badumbau?', a: 'Ein Komplettbad wird bei uns dank eingespielter Gewerke-Koordination in der Regel innerhalb von 10 bis 14 Werktagen schlüsselfertig übergeben.' },
             { q: 'Gibt es Zuschüsse für barrierefreie Bäder?', a: 'Ja! Bei Vorliegen eines Pflegegrads (Pflegegrad 1–5) bezuschusst die Pflegekasse den altersgerechten Badumbau mit bis zu 4.000 € pro Person.' },
             { q: 'Wie schütze ich mein Trinkwasser vor Legionellen?', a: 'Warmwasserspeicher müssen auf mindestens 60 °C gehalten werden. Bei selten genutzten Leitungen sollte alle 72 Stunden eine Spülung erfolgen.' }

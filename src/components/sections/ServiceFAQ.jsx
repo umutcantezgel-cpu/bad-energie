@@ -10,7 +10,7 @@ import {
 const faqs = [
     {
         question: "Was kostet eine Badrenovierung?",
-        answer: "Die Kosten variieren stark je nach Größe, Ausstattung und baulichen Gegebenheiten. Ein Standardbad beginnt oft bei ca. 15.000€, während Luxusbäder deutlich teurer sein können. Wir erstellen Ihnen gerne ein individuelles Angebot nach einer Vor-Ort-Besichtigung."
+        answer: "Die Kosten variieren je nach Raumgröße, Ausstattung und baulichen Gegebenheiten. Wir erstellen Ihnen gerne ein transparentes und individuelles Festpreisangebot auf Anfrage nach einer kostenlosen Vor-Ort-Besichtigung."
     },
     {
         question: "Wie lange dauert der Austausch einer Heizungsanlage?",

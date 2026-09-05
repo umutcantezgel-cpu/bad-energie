@@ -176,10 +176,10 @@ export default function ErgebnisKarte({
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="rounded-2xl p-4" style={{ background: 'var(--gewerk-wasser-tint)' }}>
               <p className="font-semibold text-slate-700" style={{ fontSize: 'var(--font-size-sm)' }}>
-                {AUSSTELLUNGSPREIS_LABEL}
+                Badeinrichtung
               </p>
               <p className="zahl-tabellarisch mt-1 font-black" style={{ color: 'var(--modul-blau)', fontSize: 'var(--font-size-2xl)' }}>
-                {euro(bad.preis)} €
+                auf Anfrage
               </p>
               <p className="mt-1 text-slate-600" style={{ fontSize: 'var(--font-size-sm)' }}>
                 {bad.titel}
@@ -190,7 +190,7 @@ export default function ErgebnisKarte({
                 Gesamt mit Handwerk
               </p>
               <p className="zahl-tabellarisch mt-1 font-black text-slate-900" style={{ fontSize: 'var(--font-size-2xl)' }}>
-                {gesamt ? `bis etwa ${euro(gesamt)} €` : 'sagen wir Ihnen persönlich'}
+                auf Anfrage
               </p>
               <p className="mt-1 text-slate-600" style={{ fontSize: 'var(--font-size-sm)' }}>
                 mit Abbruch, Rohbau, Fliesen und Montage
@@ -198,8 +198,7 @@ export default function ErgebnisKarte({
             </div>
           </div>
           <p className="mt-4 text-slate-700" style={{ fontSize: 'var(--font-size-base)' }}>
-            Der Ausstellungspreis zeigt nur die Einrichtung. Der Gesamtbetrag enthält alle Arbeiten, die
-            aus einem alten Raum ein fertiges Bad machen.
+            Die verbindliche Gesamtkalkulation erhalten Sie nach persönlicher Absprache und Vor-Ort-Aufmaß durch unsere Meister.
           </p>
           <Link
             href={`/bad/musterbaeder/${bad.slug}`}

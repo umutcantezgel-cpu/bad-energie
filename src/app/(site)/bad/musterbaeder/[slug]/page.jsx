@@ -30,8 +30,8 @@ export async function generateMetadata({ params }) {
     if (!bath) return { title: 'Musterbad | Bad & Energie GmbH' };
 
     return {
-        title: `${bath.title} (${bath.priceFormatted}) | Bad & Energie GmbH`,
-        description: `${bath.headline}. Ausstattungsliste mit VIGOUR, Duka, CONEL & COSMO Komponenten. Jetzt Festpreis anfragen!`
+        title: `${bath.title} | Bad & Energie GmbH`,
+        description: `${bath.headline}. Ausstattungsliste mit VIGOUR, Duka, CONEL & COSMO Komponenten. Jetzt unverbindlich anfragen!`
     };
 }
 
@@ -78,10 +78,10 @@ export default async function MusterbadDetailPage({ params }) {
 
                     <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 inline-flex items-center gap-6 shadow-inner">
                         <div>
-                            <span className="text-[10px] uppercase font-bold text-blue-200 block tracking-wider">Festpreis-Orientierung:</span>
-                            <span className="text-2xl sm:text-3xl font-black text-amber-300">{bath.priceFormatted}</span>
+                            <span className="text-[10px] uppercase font-bold text-blue-200 block tracking-wider">Kalkulation:</span>
+                            <span className="text-2xl sm:text-3xl font-black text-amber-300">{bath.priceFormatted || "auf Anfrage"}</span>
                         </div>
-                        <span className="text-xs text-blue-200 hidden sm:inline font-medium">{bath.vatNote}</span>
+                        <span className="text-xs text-blue-200 hidden sm:inline font-medium">Individuelles Festpreisangebot nach Vor-Ort-Aufmaß</span>
                     </div>
                 </div>
             </div>
@@ -110,8 +110,8 @@ export default async function MusterbadDetailPage({ params }) {
                                         <h3 className="font-black text-base text-[#0C3A87]">
                                             {comp.category}
                                         </h3>
-                                        <span className="text-xs font-black text-slate-700 bg-white/80 px-3.5 py-1 rounded-full border border-slate-200/60 shadow-xs">
-                                            {comp.price}
+                                        <span className="text-xs font-black text-[#0C3A87] bg-blue-50 px-3.5 py-1 rounded-full border border-blue-200/60 shadow-xs">
+                                            auf Anfrage
                                         </span>
                                     </div>
 

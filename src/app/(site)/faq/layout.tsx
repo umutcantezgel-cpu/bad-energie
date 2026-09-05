@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     question: 'Was kostet eine neue Heizung?',
-    answer: 'Die Kosten variieren stark nach Anlagentyp (Gas, Wärmepumpe, Pellets) und Gebäudegröße. Gas-Brennwertheizungen beginnen bei ca. 8.000€, Wärmepumpen ab ca. 15.000€ (vor Förderung).',
+    answer: 'Die Kosten variieren nach Anlagentyp (Wärmepumpe, Pellets, Gas) und Gebäudegröße. Nutzen Sie unsere unverbindliche Anfrage für ein individuelles Festpreisangebot auf Anfrage vor und nach staatlicher Förderung.',
   },
   {
     question: 'Welche Heizung ist die beste?',
@@ -33,7 +33,7 @@ const faqs = [
   },
   {
     question: 'Was kostet eine Badsanierung?',
-    answer: 'Ein Standardbad beginnt bei ca. 6.900€ (Basic), während Komfort- und Luxusbäder zwischen 15.000€ und 35.000€ liegen. Nutzen Sie unseren Budgetkalkulator für eine Sofortschätzung.',
+    answer: 'Die Kosten für eine Badsanierung richten sich nach Ihren individuellen Wünschen und den baulichen Gegebenheiten vor Ort. Wir erstellen Ihnen gerne ein transparentes Festpreisangebot auf Anfrage.',
   },
   {
     question: 'Wie lange dauert eine Badsanierung?',

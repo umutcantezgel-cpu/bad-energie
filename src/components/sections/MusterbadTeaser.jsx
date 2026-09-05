@@ -66,9 +66,9 @@ export default function MusterbadTeaser() {
                                             </span>
                                         </div>
                                         <div className="text-right">
-                                            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Festpreis-Orientierung:</span>
-                                            <span className="text-2xl font-black text-[#E4040E]">
-                                                {bath.priceFormatted}
+                                            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Kalkulation:</span>
+                                            <span className="text-xl font-black text-[#0C3A87]">
+                                                {bath.priceFormatted || "auf Anfrage"}
                                             </span>
                                         </div>
                                     </div>

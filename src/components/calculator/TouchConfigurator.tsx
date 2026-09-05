@@ -504,10 +504,10 @@ function zusatzAusstellungspreis(journeyId: JourneyId, frage: Frage, wert: Optio
   return (
     <span className="block rounded-xl px-3 py-2" style={{ background: 'var(--gewerk-tint)' }}>
       <span className="block font-semibold text-slate-600" style={{ fontSize: 'var(--font-size-sm)' }}>
-        {AUSSTELLUNGSPREIS_LABEL}
+        Preis
       </span>
       <span className="zahl-tabellarisch block font-black" style={{ color: 'var(--modul-blau)', fontSize: 'var(--font-size-lg)' }}>
-        ca. {euro(treffer.preis)} €
+        auf Anfrage
       </span>
     </span>
   );
@@ -539,14 +539,14 @@ function ErgebnisVorschau({
     return (
       <div className="glass-tile p-6" aria-live="polite">
         <p className="font-semibold text-slate-600" style={{ fontSize: 'var(--font-size-sm)' }}>
-          {AUSSTELLUNGSPREIS_LABEL}
+          Preiskalkulation
         </p>
         <p className="zahl-tabellarisch mt-1 font-black" style={{ color: 'var(--modul-blau)', fontSize: 'var(--font-size-2xl)' }}>
-          ca. {euro(bad.preis)} €
+          auf Anfrage
         </p>
         <p className="mt-2 text-slate-700" style={{ fontSize: 'var(--font-size-base)' }}>
-          Das ist der Preis der Einrichtung in unserer Ausstellung. Was Ihr Vorhaben insgesamt kostet,
-          sagen wir Ihnen nach dieser Anfrage.
+          Individuelle Festpreis-Kalkulation nach Ihren Wünschen. Was Ihr Vorhaben insgesamt kostet,
+          sagen wir Ihnen persönlich nach dieser Anfrage.
         </p>
       </div>
     );
