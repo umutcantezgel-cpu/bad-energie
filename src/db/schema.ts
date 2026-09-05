@@ -207,6 +207,8 @@ export type FoerderungDaten = {
   eigenanteilBis: number;
   boni?: { effizienz?: boolean; klimageschwindigkeit?: boolean; einkommen?: boolean };
   wohneinheiten?: number;
+  /** Vom Meister gesetzter Satz; null, wenn der Satz aus den Boni berechnet wurde. */
+  satzManuell?: number | null;
 };
 
 export const anfrage = pgTable('anfrage', {

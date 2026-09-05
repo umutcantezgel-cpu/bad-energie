@@ -136,6 +136,7 @@ function foerderungSpeicherwert(eingabe: FoerderungEingabe | null, ergebnis: Kal
       einkommen: eingabe.einkommenUnterGrenze,
     },
     wohneinheiten: eingabe.wohneinheiten,
+    satzManuell: eingabe.satzManuell ?? null,
   };
 }
 
@@ -518,7 +519,7 @@ export async function ladeInternAnfrage(anfrageId: string): Promise<InternAnfrag
       altOelOderGas: a.foerderung?.boni?.klimageschwindigkeit ?? true,
       einkommenUnterGrenze: a.foerderung?.boni?.einkommen ?? false,
       natuerlichesKaeltemittel: a.foerderung?.boni?.effizienz ?? true,
-      satzManuell: a.foerderung?.satz ?? null,
+      satzManuell: a.foerderung?.satzManuell ?? null,
     },
     persoenlicherSatz: a.persoenlicherSatz,
     annahmen: a.annahmen ?? [],

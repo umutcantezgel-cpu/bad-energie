@@ -473,3 +473,14 @@ describe('Betriebskosten und Förderbausteine', () => {
     expect(html).not.toMatch(/Jahresarbeitszahl|JAZ|ct\/kWh|Cent/);
   });
 });
+
+
+describe('Abgewählte Zuschläge', () => {
+  it('stehen nicht im Kundendokument, weil sie auch nicht in der Summe stehen', () => {
+    const e = eingabeAus('0032');
+    const mitZuschlag = { ...e, positionen: [...e.positionen, { ...e.positionen[0], positionId: 'z1', titel: 'Zuschlag Zaehlerschrank', text: 'Erneuerung des Zaehlerschranks', zuschlag: true, aktiv: false }] };
+    const html = renderKostenschaetzungHtml(mitZuschlag);
+    expect(html).not.toContain('Zuschlag Zaehlerschrank');
+    expect(renderErstkontaktMail(mitZuschlag).html).not.toContain('Zuschlag Zaehlerschrank');
+  });
+});

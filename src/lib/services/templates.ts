@@ -296,7 +296,7 @@ function basisTokens(e: DokumentEingabe): TokenWerte {
 
 /** Nur bewertete, aktive Positionen erscheinen im Kundendokument. */
 function kundenZeilen(e: DokumentEingabe) {
-  return e.positionen.filter((p) => !p.blockiert && p.von !== null && p.bis !== null);
+  return e.positionen.filter((p) => p.aktiv && !p.blockiert && p.von !== null && p.bis !== null);
 }
 
 // ---------------------------------------------------------------------------
