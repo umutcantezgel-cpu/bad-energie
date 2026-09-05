@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import type { InternAnfrage, InternAnfrageDTO, KalkulationsErgebnis, Position, PositionErgebnis } from '@/lib/types';
 import {
+  lohntServerEntwurf,
   LEINWAND_BREITE,
   LEINWAND_HOEHE,
   UNDO_TIEFE,
@@ -472,5 +473,17 @@ describe('Ansichtsschalter', () => {
     expect(ansichtLesen().baustelle).toBe(false);
     ansichtSetzen({ baustelle: true });
     expect(ansichtLesen().baustelle).toBe(true);
+  });
+});
+
+
+describe('lohntServerEntwurf', () => {
+  it('sendet leere Entwuerfe nie an den Server, bestehende Anfragen immer', () => {
+    const leer = leereAnfrage();
+    expect(lohntServerEntwurf(leer, false)).toBe(false);
+    expect(lohntServerEntwurf({ ...leer, vorlageIds: ['waermepumpe_gas'] }, false)).toBe(false);
+    expect(lohntServerEntwurf({ ...leer, vorlageIds: ['waermepumpe_gas'], kontakt: { ...leer.kontakt, nachname: 'Diflo' } }, false)).toBe(true);
+    expect(lohntServerEntwurf({ ...leer, vorlageIds: ['waermepumpe_gas'], kontakt: { ...leer.kontakt, telefon: '0641' } }, false)).toBe(true);
+    expect(lohntServerEntwurf(leer, true)).toBe(true);
   });
 });

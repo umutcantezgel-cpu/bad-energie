@@ -677,3 +677,14 @@ export function ansichtSetzen(teil: Partial<Ansichtszustand>): void {
 export function ansichtZuruecksetzen(): void {
   ansichtZustand = ANSICHT_SERVER;
 }
+
+/**
+ * Ein leerer Konfigurator darf keinen Vorgang mit KS-Nummer erzeugen: Ohne bestehende Anfrage wird erst
+ * an den Server gesendet, wenn eine Vorlage gewählt ist und der Kunde erkennbar ist (Name, E-Mail oder Telefon).
+ */
+export function lohntServerEntwurf(a: InternAnfrage, hatAnfrageId: boolean): boolean {
+  if (hatAnfrageId || a.anfrageId) return true;
+  if (a.vorlageIds.length === 0) return false;
+  const k = a.kontakt;
+  return Boolean(k.nachname.trim() || k.email.trim() || (k.telefon ?? '').trim());
+}

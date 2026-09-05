@@ -77,6 +77,7 @@ import {
   zeigerGrobLesen,
   zeigerServerLesen,
   type AbschnittId,
+  lohntServerEntwurf,
 } from './meister-utils';
 
 export type MeisterModusProps = { anfrageId?: string; initial?: InternAnfrageDTO | null };
@@ -237,15 +238,20 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
 
   // Autosave einrichten.
   useEffect(() => {
+    const hatAnfrageId = Boolean(anfrageId ?? initial?.anfrageId);
     autosave.current = starteAutosave({
       schluessel,
-      senden: (a) => speichereEntwurf({ ...a, aktion: 'entwurf' }),
+      // Ein leerer Konfigurator bleibt lokal; erst mit Vorlage und erkennbarem Kunden entsteht ein Vorgang (KS-Nummer).
+      senden: async (a) => {
+        if (!lohntServerEntwurf(a, hatAnfrageId)) return;
+        await speichereEntwurf({ ...a, aktion: 'entwurf' });
+      },
     });
     return () => {
       autosave.current?.stoppe();
       autosave.current = null;
     };
-  }, [schluessel]);
+  }, [schluessel, anfrageId, initial?.anfrageId]);
 
   useEffect(() => {
     if (ersteRunde.current) {
@@ -362,7 +368,8 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
     if (!daten) return;
     for (const b of gewaehlteBausteine) {
       if (b.zuschlag) continue;
-      if (anfrage.positionen.some((p) => p.id === b.id)) continue;
+      // Vom Server geladene Positionen tragen Zeilen-IDs; der Baustein steckt in vorlageZeileId.
+      if (anfrage.positionen.some((p) => p.id === b.id || p.vorlageZeileId === b.id)) continue;
       setzePosition(b, { aktiv: true });
     }
   }, [daten, gewaehlteBausteine, anfrage.positionen, setzePosition]);

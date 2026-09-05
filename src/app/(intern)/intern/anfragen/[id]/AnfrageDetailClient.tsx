@@ -146,6 +146,8 @@ function konfiguratorZeilen(roh: Record<string, unknown>): Angabe[] {
         for (const frage of schritt.fragen) {
           if (frage.ziel !== 'antworten') continue;
           if (!(frage.feld in antworten)) continue;
+          // Nur Fragen zeigen, die der Kunde auch gesehen hat (Varianten mit sichtbarWenn).
+          if (frage.sichtbarWenn && !(frage.sichtbarWenn.werte as unknown[]).includes(antworten[frage.sichtbarWenn.feld])) continue;
           const wert = antworten[frage.feld];
           if (wert === null || wert === undefined || wert === '') continue;
           erledigt.add(frage.feld);
@@ -557,7 +559,7 @@ export default function AnfrageDetailClient({
                 <span className="font-semibold text-[#B42318]">fehlt</span>
               )}</p>
               <p className="text-slate-500">Telefon: <a href={`tel:${dto.kontakt.telefon}`} className="font-semibold text-slate-900">{dto.kontakt.telefon || 'Nicht angegeben'}</a></p>
-              <p className="text-slate-500">Adresse: <span className="font-semibold text-slate-900">{dto.kontakt.strasse}, {dto.kontakt.plzOrt}</span></p>
+              <p className="text-slate-500">Adresse: <span className="font-semibold text-slate-900">{[dto.kontakt.strasse, dto.kontakt.plzOrt].filter(Boolean).join(', ') || '—'}</span></p>
             </div>
           </div>
 
