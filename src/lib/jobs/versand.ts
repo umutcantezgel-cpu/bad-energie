@@ -20,7 +20,8 @@ export async function versandJob(jetzt: Date): Promise<JobErgebnis> {
       // Freigegeben und fällig: der reguläre Abendversand.
       and(
         eq(versandauftrag.status, 'freigegeben'),
-        lte(versandauftrag.faelligAm, jetzt),
+        // Dossier und Eingangsbestätigung tragen kein `faellig_am`; ein hängender Auftrag kommt so zurück.
+        or(isNull(versandauftrag.faelligAm), lte(versandauftrag.faelligAm, jetzt)),
         or(isNull(versandauftrag.naechsterVersuchAm), lte(versandauftrag.naechsterVersuchAm, jetzt)),
       ),
       // Fehlversuch mit abgelaufener Wartezeit: Dossier und Eingangsbestätigung tragen kein
@@ -53,6 +54,11 @@ export async function versandJob(jetzt: Date): Promise<JobErgebnis> {
       } else {
         blockiert += 1;
         zeilen.push(`${bericht.art} ${bericht.status}${bericht.fehler ? `: ${bericht.fehler}` : ''}`);
+      }
+      // Das Büro-Dossier läuft parallel zur Kundenmail; sein Scheitern gehört in die Tageszusammenfassung.
+      if (bericht.dossier && bericht.dossier.status !== 'versendet') {
+        blockiert += 1;
+        zeilen.push(`${bericht.art}: Dossier ${bericht.dossier.status}${bericht.dossier.fehler ? `: ${bericht.dossier.fehler}` : ''}`);
       }
     } catch (fehler) {
       blockiert += 1;

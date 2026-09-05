@@ -585,6 +585,8 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
       return;
     }
     try {
+      // Erst die Autosave-Kette abschließen: ein Aufruf ohne Vorgangskennung darf nie neben einem laufenden Speichern stehen.
+      await autosave.current?.jetzt().catch(() => undefined);
       const antwort = await speichereEntwurf(koerper, { auftragAnlegen: true });
       if (antwort.ok && antwort.modus === 'intern') {
         serverKennung.current = antwort.anfrageId;
@@ -622,6 +624,8 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
       return;
     }
     try {
+      // Erst die Autosave-Kette abschließen: ein Aufruf ohne Vorgangskennung darf nie neben einem laufenden Speichern stehen.
+      await autosave.current?.jetzt().catch(() => undefined);
       const antwort = await fetch('/api/estimate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

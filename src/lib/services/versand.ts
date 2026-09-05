@@ -1,6 +1,6 @@
 import 'server-only';
 import { randomUUID } from 'node:crypto';
-import { and, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { getDb } from '@/db/client';
 import { anfrage as anfrageTabelle, dokument, versandauftrag } from '@/db/schema';
 import type { VersandArt, VersandStatus } from '../types';
@@ -109,6 +109,8 @@ async function beanspruche(auftragId: string, jetzt: Date): Promise<Auftrag | nu
  */
 async function gebeAbgeleitetenAuftragFrei(auftrag: Auftrag, jetzt: Date): Promise<void> {
   if (auftrag.status !== 'entwurf' && auftrag.status !== 'fehlgeschlagen') return;
+  // Ein endgültig gescheiterter Auftrag wird nicht still wiederbelebt; das entscheidet ein Mensch.
+  if (auftrag.status === 'fehlgeschlagen' && auftrag.versuch >= MAX_VERSUCHE) return;
   await setzeVersandStatus(auftrag.id, ['entwurf', 'fehlgeschlagen'], 'freigegeben', {
     freigegebenAm: auftrag.freigegebenAm ?? jetzt,
   });
@@ -342,6 +344,19 @@ async function schliesseVorgangAb(auftrag: Auftrag, artefakte: Artefakte, jetzt:
  * Versendet einen Auftrag. Für Kundenarten wird zusätzlich das Büro-Dossier als eigener Auftrag
  * parallel verschickt; ein Fehler dort ändert den Kundenversand nicht.
  */
+/** Jüngste abgelegte Kostenschätzung (PDF) eines Vorgangs, für ein nachgeholtes Dossier. */
+async function ladeJuengstesPdf(anfrageId: string): Promise<Buffer | null> {
+  const db = await getDb();
+  const zeilen = await db.select().from(dokument)
+    .where(and(eq(dokument.anfrageId, anfrageId), eq(dokument.art, 'kostenschaetzung_pdf')))
+    .orderBy(desc(dokument.version))
+    .limit(1);
+  const d = zeilen[0];
+  if (!d) return null;
+  const datei = await getStorage().get(d.blobPfad);
+  return datei ? Buffer.from(datei.daten) : null;
+}
+
 export async function versendeAuftrag(auftragId: string, optionen: { jetzt?: Date } = {}): Promise<VersandBericht> {
   const jetzt = optionen.jetzt ?? new Date();
   const auftrag = await ladeAuftrag(auftragId);
@@ -350,7 +365,9 @@ export async function versendeAuftrag(auftragId: string, optionen: { jetzt?: Dat
   if (auftrag.art === 'dossier') {
     const geladen = await ladeEingaben(auftrag.anfrageId, { jetzt });
     if (!geladen) return { auftragId, art: auftrag.art, status: 'fehlgeschlagen', fehler: 'Anfrage nicht gefunden.' };
-    const artefakte: Artefakte = { mail: { betreff: '', html: '', text: '' }, pdf: null, dokumentIds: [], dokument: geladen.dokument, dossier: geladen.dossier };
+    // Ein nachgeholtes Dossier trägt dieselbe Kostenschätzung wie der Erstversand: das abgelegte PDF.
+    const pdf = await ladeJuengstesPdf(auftrag.anfrageId);
+    const artefakte: Artefakte = { mail: { betreff: '', html: '', text: '' }, pdf, dokumentIds: [], dokument: geladen.dokument, dossier: geladen.dossier };
     const status = await sendeDossier(auftrag, artefakte, jetzt);
     return { auftragId, art: auftrag.art, status };
   }
@@ -377,10 +394,14 @@ export async function versendeAuftrag(auftragId: string, optionen: { jetzt?: Dat
   const dossierAuftrag = KUNDENARTEN.includes(auftrag.art) && auftrag.art !== 'erinnerung'
     ? await stelleAuftragBereit(auftrag.anfrageId, 'dossier')
     : null;
+  // Ein Dossier mit eigenem Wiederholungstermin (oder endgültig gescheitert) zählt nur einmal je Lauf:
+  // Der Versandjob holt es selbst nach; hier wird es nicht ein zweites Mal angestoßen.
+  const dossierWartet = dossierAuftrag !== null && dossierAuftrag.status === 'fehlgeschlagen'
+    && (dossierAuftrag.naechsterVersuchAm !== null || dossierAuftrag.versuch >= MAX_VERSUCHE);
 
   const [kundeErgebnis, dossierErgebnis] = await Promise.allSettled([
     sendeKundenmail(beansprucht, artefakte, jetzt),
-    dossierAuftrag ? sendeDossier(dossierAuftrag, artefakte, jetzt) : Promise.resolve<VersandStatus>('storniert'),
+    dossierAuftrag && !dossierWartet ? sendeDossier(dossierAuftrag, artefakte, jetzt) : Promise.resolve<VersandStatus>('storniert'),
   ]);
 
   let status: VersandStatus = 'versendet';
@@ -404,7 +425,12 @@ export async function versendeAuftrag(auftragId: string, optionen: { jetzt?: Dat
   }
 
   const bericht: VersandBericht = { auftragId, art: auftrag.art, status, ...(fehlertext ? { fehler: fehlertext } : {}) };
-  if (dossierAuftrag) {
+  if (dossierAuftrag && dossierWartet) {
+    bericht.dossier = {
+      auftragId: dossierAuftrag.id, status: 'fehlgeschlagen',
+      fehler: dossierAuftrag.versuch >= MAX_VERSUCHE ? 'endgültig gescheitert, bitte von Hand erneut versuchen' : 'Wiederholung über den Versandjob',
+    };
+  } else if (dossierAuftrag) {
     bericht.dossier = dossierErgebnis.status === 'fulfilled'
       ? { auftragId: dossierAuftrag.id, status: dossierErgebnis.value }
       : { auftragId: dossierAuftrag.id, status: 'fehlgeschlagen', fehler: String(dossierErgebnis.reason) };

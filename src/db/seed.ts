@@ -8,7 +8,8 @@ import {
   type GroessenVariante,
 } from './schema';
 
-const LEGACY = path.resolve(process.cwd(), 'legacy/kostenschaetzung-altsystem/Kostenschaetzung/00 Vorlagen');
+// Feste Zeichenkette statt berechnetem Pfad (Datei-Trace der Function).
+const LEGACY = 'legacy/kostenschaetzung-altsystem/Kostenschaetzung/00 Vorlagen';
 
 type Einheit = 'pauschal' | 'je_stueck' | 'je_lfm' | 'je_tank';
 type Gewerk = 'heizung' | 'bad' | 'wasser' | 'waermepumpe' | 'solar' | 'pv' | 'klima' | 'lueftung' | 'elektro';

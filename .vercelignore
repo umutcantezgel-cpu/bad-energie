@@ -4,18 +4,18 @@
 # (src, public, drizzle, scripts, Konfiguration), bleibt bewusst außerhalb dieser Liste.
 
 # Lokale Laufzeitdaten: PGlite-Datenbank, Outbox, Blob-Ablage
-data
+/data
 
 # Testartefakte
-test-results
-playwright-report
+/test-results
+/playwright-report
 
 # Belege des Chefs und Migrationsmaterial, nur lokal vorhanden
-Arbeitsweise Chef
-Pipeline Kopie 5
-Angebote Bad und energie GmbH Kopie
-01a05849-*
-01a0584a-*
+/Arbeitsweise Chef
+/Pipeline Kopie 5
+/Angebote Bad und energie GmbH Kopie
+/01a05849-*
+/01a0584a-*
 
 # Build-Ausgabe entsteht auf Vercel neu
-.next
+/.next

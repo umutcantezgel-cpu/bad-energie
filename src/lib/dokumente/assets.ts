@@ -10,18 +10,13 @@
 import 'server-only';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-/** Kandidaten für das Assetverzeichnis: Projektwurzel (Vercel, Entwicklung) und Modulpfad (Test, tsx). */
+/**
+ * Assetverzeichnis relativ zur Projektwurzel. Ein berechneter Pfad über import.meta.url zog im
+ * Datei-Trace der Function die Nachbarschaft mit; outputFileTracingIncludes stellt die Dateien bereit.
+ */
 function basen(): string[] {
-  const liste = [path.join(process.cwd(), 'src', 'lib', 'dokumente', 'assets')];
-  try {
-    const hier = path.dirname(fileURLToPath(import.meta.url));
-    liste.push(path.join(hier, 'assets'));
-  } catch {
-    // import.meta.url steht in manchen Bundles nicht zur Verfügung; die Projektwurzel genügt.
-  }
-  return liste;
+  return [path.join(process.cwd(), 'src', 'lib', 'dokumente', 'assets')];
 }
 
 const textCache = new Map<string, string>();

@@ -106,7 +106,7 @@ Beide stehen in `vercel.json` und laufen gegen `/api/jobs/[job]`:
 
 | Job | Zeitplan | Bedeutung |
 |---|---|---|
-| `versand` | `0 17 * * *` (17:00 UTC) | 18:00 Berliner Zeit im Winter, 19:00 im Sommer; sendet die freigegebenen Aufträge nach dem Puffer |
+| `versand` | `5 17 * * *` (17:00 UTC) | 18:00 Berliner Zeit im Winter, 19:00 im Sommer; sendet die freigegebenen Aufträge nach dem Puffer |
 | `wiedervorlage` | `0 4 * * *` (04:00 UTC) | Erinnerungen nach Regel 9; führt Speicherfrist und Bereinigung mit aus |
 
 Der Job `eingang` hat keinen Zeitplan. Er läuft von Hand: entweder mit dem Bearer-Token oder als angemeldeter

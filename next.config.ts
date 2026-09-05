@@ -31,6 +31,8 @@ const baseSecurityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // PGlite bleibt außerhalb des Bundlers (nur lokal vorhanden); der Ausschluss unten hält seine Dateien aus dem Trace.
+  serverExternalPackages: ["@electric-sql/pglite"],
   compress: true,
   poweredByHeader: false,
   images: {
