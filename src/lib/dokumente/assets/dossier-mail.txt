@@ -26,6 +26,9 @@ Foerdersatz: {{foerder_satz}} Prozent
 Zuschuss: {{foerder_zuschuss}} Euro
 Eigenanteil: {{eigenanteil_von}} bis {{eigenanteil_bis}} Euro
 <!-- /FOERDERUNG -->
+<!-- BETRIEBSKOSTEN -->
+Betriebskosten (Kundendokument): heute etwa {{betrieb_heute_jahr}} Euro ({{betrieb_energieart}}), mit Wärmepumpe etwa {{betrieb_wp_jahr}} Euro im Jahr, rund {{betrieb_wp_monat}} Euro im Monat, Ersparnis etwa {{betrieb_ersparnis_jahr}} Euro.
+<!-- /BETRIEBSKOSTEN -->
 
 INTERNE FAKTOREN
 {{faktoren_text}}

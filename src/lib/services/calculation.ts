@@ -136,6 +136,16 @@ export function foerderSatz(regeln: FoerderRegeln, eingabe: FoerderungEingabe): 
   return { satz: Math.min(summe, regeln.deckel), boni };
 }
 
+/** Förderbausteine in der Sprache des Chefs (Beleg 1): nur die wirksamen Boni, mit Prozent. */
+export function foerderBausteine(boni: FoerderungErgebnis['boni'], regeln: FoerderRegeln): string[] {
+  const liste: string[] = [];
+  if (boni.grund > 0) liste.push(`Grundförderung ${boni.grund} %`);
+  if (boni.effizienz > 0) liste.push(`Natürliches Kältemittel (R290) ${boni.effizienz} %`);
+  if (boni.klimageschwindigkeit > 0) liste.push(`Alte Gas- oder Ölheizung ${boni.klimageschwindigkeit} %`);
+  if (boni.einkommen > 0) liste.push(`Einkommen bis ${euro(regeln.einkommenGrenze)} € ${boni.einkommen} %`);
+  return liste;
+}
+
 export function foerderfaehigeKosten(regeln: FoerderRegeln, wohneinheiten: number, bruttoBis: number): number {
   const we = Math.max(1, Math.min(wohneinheiten || 1, regeln.maxWe));
   const deckel = regeln.kostenWe1 + regeln.kostenJeWeitere * (we - 1);
@@ -267,20 +277,37 @@ export function vorschlagManuell(intern: Position['intern'], faktoren: Kalkulati
  * Liefert die öffentliche Sicht: gerundete Bruttospanne nur, wenn keine Basisposition blockiert ist.
  * Zuschläge ohne Menge fließen nicht ein und werden benannt. Nie Netto, nie Zeilenwerte, nie Faktoren.
  */
-export function oeffentlicheSpanne(ergebnis: KalkulationsErgebnis): OeffentlicheErgebnisDTO {
+export type OeffentlicheExtras = {
+  /** Betriebskostenvergleich; unabhängig von der Matrix, erscheint auch im Vorangebots-Pfad. */
+  betriebskosten?: { energieartLabel: string; heuteJahr: number | null; wpJahr: number; ersparnisJahr: number | null; proMonat: number } | null;
+  foerderRegeln?: FoerderRegeln;
+};
+
+export function oeffentlicheSpanne(ergebnis: KalkulationsErgebnis, extras: OeffentlicheExtras = {}): OeffentlicheErgebnisDTO {
   const basisBlockiert = ergebnis.positionen.some((p) => !p.zuschlag && p.blockiert);
   const nichtEnthalten = ergebnis.positionen.filter((p) => p.zuschlag && (p.blockiert || p.von === null)).map((p) => p.titel);
-  if (basisBlockiert || ergebnis.bruttoBis <= 0) return { pfad: 'vorangebot', nichtEnthalten };
-  const dto: OeffentlicheErgebnisDTO = {
-    pfad: 'spanne',
-    bruttoVonGerundet: Math.floor(ergebnis.bruttoVon / OEFFENTLICHE_RUNDUNG) * OEFFENTLICHE_RUNDUNG,
-    bruttoBisGerundet: Math.ceil(ergebnis.bruttoBis / OEFFENTLICHE_RUNDUNG) * OEFFENTLICHE_RUNDUNG,
-    nichtEnthalten,
-  };
-  if (ergebnis.foerderung) {
+  const dto: OeffentlicheErgebnisDTO = basisBlockiert || ergebnis.bruttoBis <= 0
+    ? { pfad: 'vorangebot', nichtEnthalten }
+    : {
+      pfad: 'spanne',
+      bruttoVonGerundet: Math.floor(ergebnis.bruttoVon / OEFFENTLICHE_RUNDUNG) * OEFFENTLICHE_RUNDUNG,
+      bruttoBisGerundet: Math.ceil(ergebnis.bruttoBis / OEFFENTLICHE_RUNDUNG) * OEFFENTLICHE_RUNDUNG,
+      nichtEnthalten,
+    };
+  if (dto.pfad === 'spanne' && ergebnis.foerderung) {
     dto.foerderzuschuss = ergebnis.foerderung.zuschuss;
+    dto.foerderSatz = ergebnis.foerderung.satz;
+    if (extras.foerderRegeln) dto.foerderBausteine = foerderBausteine(ergebnis.foerderung.boni, extras.foerderRegeln);
     dto.eigenanteilVon = Math.floor(ergebnis.foerderung.eigenanteilVon / OEFFENTLICHE_RUNDUNG) * OEFFENTLICHE_RUNDUNG;
     dto.eigenanteilBis = Math.ceil(ergebnis.foerderung.eigenanteilBis / OEFFENTLICHE_RUNDUNG) * OEFFENTLICHE_RUNDUNG;
+  }
+  const b = extras.betriebskosten;
+  if (b && b.heuteJahr !== null && b.ersparnisJahr !== null && b.ersparnisJahr > 0) {
+    dto.heizkostenHeuteJahr = b.heuteJahr;
+    dto.heizkostenWpJahr = b.wpJahr;
+    dto.heizkostenWpMonat = b.proMonat;
+    dto.ersparnisJahr = b.ersparnisJahr;
+    dto.energieartLabel = b.energieartLabel;
   }
   return dto;
 }

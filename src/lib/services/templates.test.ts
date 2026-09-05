@@ -435,3 +435,41 @@ describe('Freigabeblatt und Abschlussbericht', () => {
     expect(md).toContain('- Fliesenarbeiten');
   });
 });
+
+
+describe('Betriebskosten und Förderbausteine', () => {
+  const betriebskosten = { energieartLabel: 'Gas', heuteJahr: 2420, wpJahr: 1510, wpMitPvJahr: null, ersparnisJahr: 910, proMonat: 125 };
+  const bausteine = ['Grundförderung 30 %', 'Alte Gas- oder Ölheizung 20 %', 'Natürliches Kältemittel (R290) 5 %'];
+
+  it('zeigt den Block nur, wenn Betriebskosten vorliegen', () => {
+    const mit = renderKostenschaetzungHtml(eingabeAus('0032', { betriebskosten, foerderBausteine: bausteine }));
+    expect(mit).toContain('Was Sie im Betrieb sparen können');
+    expect(mit).toContain('etwa 2.420 € im Jahr');
+    expect(mit).toContain('etwa 1.510 € im Jahr');
+    expect(mit).toContain('rund 125 € im Monat');
+    expect(mit).toContain('Darin enthalten: Grundförderung 30 %, Alte Gas- oder Ölheizung 20 %, Natürliches Kältemittel (R290) 5 %.');
+    const ohne = renderKostenschaetzungHtml(eingabeAus('0032'));
+    expect(ohne).not.toContain('Was Sie im Betrieb sparen können');
+    expect(ohne).not.toContain('Darin enthalten');
+    expect(ohne).not.toContain('{{betrieb_');
+  });
+
+  it('setzt den Satz in Erstkontakt und Dossier, nicht in die Terminmail', () => {
+    const e = eingabeAus('0032', { betriebskosten, foerderBausteine: bausteine });
+    const mail = renderErstkontaktMail(e);
+    expect(mail.html).toContain('rund 125 € im Monat');
+    expect(mail.text).toContain('rund 125 Euro im Monat');
+    expect(mail.text).toContain('Darin enthalten: Grundförderung 30 %');
+    const termin = renderTerminmail(e);
+    expect(termin.html).not.toContain('125');
+    expect(termin.text).not.toContain('Betrieb');
+    const dossier = renderDossierMail(dossierAus('0032', { betriebskosten, foerderBausteine: bausteine }));
+    expect(dossier.text).toContain('Betriebskosten (Kundendokument)');
+  });
+
+  it('Jahresarbeitszahl und Energiepreise erreichen das Kundendokument nie', () => {
+    const html = renderKostenschaetzungHtml(eingabeAus('0032', { betriebskosten, foerderBausteine: bausteine }))
+      .replace(/data:[a-z/+.-]+;base64,[A-Za-z0-9+/=]+/g, '');
+    expect(html).not.toMatch(/Jahresarbeitszahl|JAZ|ct\/kWh|Cent/);
+  });
+});

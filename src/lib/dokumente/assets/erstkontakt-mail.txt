@@ -6,8 +6,11 @@ Ich habe Ihr Vorhaben auf Basis Ihrer Angaben durchgerechnet. Die Kostenschätzu
 
 Voraussichtlich {{summe_brutto_von}} bis {{summe_brutto_bis}} Euro, inklusive Material, Montage und Mehrwertsteuer.
 <!-- FOERDERUNG -->
-Davon übernimmt die Förderung voraussichtlich rund {{foerder_zuschuss}} Euro. Ihr Eigenanteil liegt damit bei etwa {{eigenanteil_von}} bis {{eigenanteil_bis}} Euro.
+Davon übernimmt die Förderung voraussichtlich rund {{foerder_zuschuss}} Euro. Ihr Eigenanteil liegt damit bei etwa {{eigenanteil_von}} bis {{eigenanteil_bis}} Euro.<!-- FOERDER_BAUSTEINE --> Darin enthalten: {{foerder_bausteine}}.<!-- /FOERDER_BAUSTEINE -->
 <!-- /FOERDERUNG -->
+<!-- BETRIEBSKOSTEN -->
+Im Betrieb rechnen wir mit etwa {{betrieb_wp_jahr}} Euro im Jahr statt heute etwa {{betrieb_heute_jahr}} Euro, also rund {{betrieb_wp_monat}} Euro im Monat.
+<!-- /BETRIEBSKOSTEN -->
 
 Das ist eine Spanne, keine feste Zahl. Wo genau wir darin landen, sehe ich erst vor Ort: Technikraum, Aufstellort, Leitungswege. Dafür brauche ich etwa eine Stunde bei Ihnen.
 

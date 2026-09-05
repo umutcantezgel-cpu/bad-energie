@@ -5,6 +5,7 @@ import type { FoerderRegeln, Position, Richtpreis } from '../types';
 import {
   berechne, bruttoAusNetto, enthaeltVerboteneFelder, euro, foerderSatz, oeffentlicheSpanne,
   offenePlatzhalter, platzhalterEinsetzen, rundeAuf, rundeEuro, positionAusBaustein,
+  foerderBausteine,
 } from './calculation';
 
 const REGELN: FoerderRegeln = {
@@ -140,5 +141,27 @@ describe('positionAusBaustein', () => {
     expect(p.von).toBe(19800);
     expect(p.matrixNr).toBe(2);
     expect(offenePlatzhalter(p.text)).toEqual([]);
+  });
+});
+
+
+describe('Förderbausteine und Betriebskosten in der öffentlichen Spanne', () => {
+  it('benennt nur wirksame Boni in der Sprache des Chefs', () => {
+    const regeln = { ...REGELN, einkommenGrenze: 40000 };
+    expect(foerderBausteine({ grund: 30, effizienz: 5, klimageschwindigkeit: 20, einkommen: 0 }, regeln))
+      .toEqual(['Grundförderung 30 %', 'Natürliches Kältemittel (R290) 5 %', 'Alte Gas- oder Ölheizung 20 %']);
+    expect(foerderBausteine({ grund: 30, effizienz: 0, klimageschwindigkeit: 0, einkommen: 30 }, regeln))
+      .toEqual(['Grundförderung 30 %', 'Einkommen bis 40.000 € 30 %']);
+  });
+
+  it('trägt Betriebskosten auch im Vorangebots-Pfad und nie Preise oder Netto', () => {
+    const ergebnis = berechne({ positionen: [], foerderRegeln: REGELN });
+    const dto = oeffentlicheSpanne(ergebnis, { betriebskosten: { energieartLabel: 'Gas', heuteJahr: 2420, wpJahr: 1510, ersparnisJahr: 910, proMonat: 125 } });
+    expect(dto.pfad).toBe('vorangebot');
+    expect(dto.heizkostenHeuteJahr).toBe(2420);
+    expect(dto.heizkostenWpMonat).toBe(125);
+    expect(enthaeltVerboteneFelder(dto)).toEqual([]);
+    const ohneErsparnis = oeffentlicheSpanne(ergebnis, { betriebskosten: { energieartLabel: 'Gas', heuteJahr: 1000, wpJahr: 1510, ersparnisJahr: -510, proMonat: 125 } });
+    expect(ohneErsparnis.heizkostenWpJahr).toBeUndefined();
   });
 });

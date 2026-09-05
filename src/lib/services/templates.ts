@@ -280,6 +280,13 @@ function basisTokens(e: DokumentEingabe): TokenWerte {
     foerder_zuschuss: e.foerderung ? euro(e.foerderung.zuschuss) : '',
     eigenanteil_von: e.foerderung ? euro(e.foerderung.eigenanteilVon) : '',
     eigenanteil_bis: e.foerderung ? euro(e.foerderung.eigenanteilBis) : '',
+    foerder_bausteine: e.foerderBausteine.join(', '),
+    betrieb_energieart: e.betriebskosten?.energieartLabel ?? '',
+    betrieb_heute_jahr: e.betriebskosten ? euro(e.betriebskosten.heuteJahr) : '',
+    betrieb_wp_jahr: e.betriebskosten ? euro(e.betriebskosten.wpJahr) : '',
+    betrieb_wp_pv_jahr: e.betriebskosten?.wpMitPvJahr !== null && e.betriebskosten?.wpMitPvJahr !== undefined ? euro(e.betriebskosten.wpMitPvJahr) : '',
+    betrieb_ersparnis_jahr: e.betriebskosten ? euro(e.betriebskosten.ersparnisJahr) : '',
+    betrieb_wp_monat: e.betriebskosten ? euro(e.betriebskosten.proMonat) : '',
     // Benannte Abweichung 5: Button auf die Bestätigungsseite, sonst mailto
     termin_href: ziel ?? mailto,
     termin_mailto: mailto,
@@ -313,6 +320,8 @@ export function renderKostenschaetzungHtml(e: DokumentEingabe): string {
   // Reihenfolge tragend: Zeilen ausrollen, dann Blöcke, dann Tokens.
   let html = expandRows(vorlage, zeilen);
   html = stripBlock(html, 'FOERDERUNG', Boolean(e.foerderung));
+  html = stripBlock(html, 'BETRIEBSKOSTEN', Boolean(e.betriebskosten));
+  html = stripBlock(html, 'FOERDER_BAUSTEINE', e.foerderBausteine.length > 0);
   html = stripBlock(html, 'VORBEHALTE', e.vorbehalte.length > 0);
   // Legende nur mit den Gewerken der tatsächlich gedruckten Zeilen
   tokens.legende = legendeHtml(kundenZeilen(e).map((p) => p.gewerk));
@@ -328,19 +337,24 @@ function mailArtefakt(
   e: DokumentEingabe,
   dateien: { html: string; text: string },
   betreff: string,
-  optionen: { foerderung?: boolean; terminLink?: boolean } = {},
+  optionen: { foerderung?: boolean; terminLink?: boolean; betriebskosten?: boolean } = {},
 ): MailArtefakt {
   const tokens = basisTokens(e);
   const mitFoerderung = optionen.foerderung ?? Boolean(e.foerderung);
+  const mitBetriebskosten = optionen.betriebskosten ?? (mitFoerderung !== false && Boolean(e.betriebskosten));
   const mitLink = optionen.terminLink ?? Boolean(sicheresZiel(e.bestaetigungsUrl));
 
   let html = ladeText(dateien.html);
   html = stripBlock(html, 'FOERDERUNG', mitFoerderung);
+  html = stripBlock(html, 'BETRIEBSKOSTEN', mitBetriebskosten);
+  html = stripBlock(html, 'FOERDER_BAUSTEINE', mitFoerderung && e.foerderBausteine.length > 0);
   html = stripBlock(html, 'MAILTO_ZEILE', mitLink);
   html = fillTokens(html, tokens);
 
   let text = ladeText(dateien.text);
   text = stripBlock(text, 'FOERDERUNG', mitFoerderung);
+  text = stripBlock(text, 'BETRIEBSKOSTEN', mitBetriebskosten);
+  text = stripBlock(text, 'FOERDER_BAUSTEINE', mitFoerderung && e.foerderBausteine.length > 0);
   text = stripBlock(text, 'TERMIN_LINK', mitLink);
   text = fillTokensText(text, tokens);
 
@@ -367,7 +381,7 @@ export function renderTerminmail(e: DokumentEingabe): MailArtefakt {
     e,
     { html: 'terminmail.html', text: 'terminmail.txt' },
     'Ihre Anfrage, Terminvorschlag',
-    { foerderung: false },
+    { foerderung: false, betriebskosten: false },
   );
   // Die Textvorlage des Altsystems trägt eine Betreffzeile im Kopf, die nicht in den Body gehört.
   return { ...artefakt, text: artefakt.text.replace(/^Betreff:[^\n]*\n\n?/, '') };
@@ -492,12 +506,14 @@ export function renderDossierMail(e: DossierEingabe): MailArtefakt {
   const mitFoerderung = Boolean(e.foerderung);
   let html = ladeText('dossier-mail.html');
   html = stripBlock(html, 'FOERDERUNG', mitFoerderung);
+  html = stripBlock(html, 'BETRIEBSKOSTEN', Boolean(e.betriebskosten));
   html = stripBlock(html, 'WARNUNGEN', e.warnungen.length > 0);
   html = stripBlock(html, 'ANHAENGE', e.anhaenge.length > 0);
   html = fillTokens(html, tokens);
 
   let text = ladeText('dossier-mail.txt');
   text = stripBlock(text, 'FOERDERUNG', mitFoerderung);
+  text = stripBlock(text, 'BETRIEBSKOSTEN', Boolean(e.betriebskosten));
   text = stripBlock(text, 'WARNUNGEN', e.warnungen.length > 0);
   text = stripBlock(text, 'ANHAENGE', e.anhaenge.length > 0);
   text = fillTokensText(text, tokens);

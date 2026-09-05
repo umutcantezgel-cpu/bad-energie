@@ -5,7 +5,8 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import type { Briefbogen, DokumentEingabe, DossierEingabe, DossierPosition } from '../../src/lib/dokumente/datenblatt';
+import type {
+  Betriebskosten, Briefbogen, DokumentEingabe, DossierEingabe, DossierPosition } from '../../src/lib/dokumente/datenblatt';
 import { bruttoAusNetto } from '../../src/lib/services/calculation';
 import type { Einheit, FoerderungErgebnis, Gewerk, PositionErgebnis } from '../../src/lib/types';
 
@@ -90,6 +91,8 @@ function foerderung(f: FixtureFoerderung | null): FoerderungErgebnis | null {
 export type EingabeOptionen = {
   vorbehalte?: string[];
   bestaetigungsUrl?: string | null;
+  betriebskosten?: Betriebskosten | null;
+  foerderBausteine?: string[];
   appUrl?: string;
 };
 
@@ -124,6 +127,8 @@ export function eingabeAus(nummer: '0031' | '0032', optionen: EingabeOptionen = 
     bruttoVon: bruttoAusNetto(nettoVon),
     bruttoBis: bruttoAusNetto(nettoBis),
     foerderung: foerderung(f.foerderung),
+    betriebskosten: optionen.betriebskosten ?? null,
+    foerderBausteine: optionen.foerderBausteine ?? [],
     annahmen: f.annahmen,
     vorbehalte: optionen.vorbehalte ?? [],
     terminvorschlag: f.terminvorschlag,

@@ -29,6 +29,16 @@ export type DokumentKunde = {
   telefon: string;
 };
 
+/** Betriebskostenvergleich für Kundendokumente: nur gerundete Beträge, keine Preise, keine Jahresarbeitszahl. */
+export type Betriebskosten = {
+  energieartLabel: string;
+  heuteJahr: number;
+  wpJahr: number;
+  wpMitPvJahr: number | null;
+  ersparnisJahr: number;
+  proMonat: number;
+};
+
 /** Kundensichtbare Eingabe (Allow-List). Enthält nie interne Faktoren, Notizen oder Skizzen. */
 export type DokumentEingabe = {
   ksNummer: string;
@@ -49,6 +59,10 @@ export type DokumentEingabe = {
   bruttoVon: number;
   bruttoBis: number;
   foerderung: FoerderungErgebnis | null;
+  /** Nur, wenn heutiger Verbrauch und Preis bekannt sind; sonst null (kein Block). */
+  betriebskosten: Betriebskosten | null;
+  /** Förderbausteine in der Sprache des Chefs, leer ohne Förderung. */
+  foerderBausteine: string[];
   annahmen: string[];
   vorbehalte: string[];
   terminvorschlag: string;

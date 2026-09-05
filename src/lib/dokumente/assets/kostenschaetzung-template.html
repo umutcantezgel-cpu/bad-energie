@@ -267,9 +267,24 @@
       <tr><td>Zuschuss bei {{foerder_satz}} % Fördersatz</td><td class="z">ca. {{foerder_zuschuss}} €</td></tr>
       <tr><td class="eigen">Ihr voraussichtlicher Eigenanteil</td><td class="z eigen">{{eigenanteil_von}} bis {{eigenanteil_bis}} €</td></tr>
     </table>
+    <!-- FOERDER_BAUSTEINE -->
+    <p>Darin enthalten: {{foerder_bausteine}}.</p>
+    <!-- /FOERDER_BAUSTEINE -->
     <p>Der Fördersatz hängt von Ihrer Situation ab, etwa ob Sie das Haus selbst bewohnen. Der Antrag muss vor Auftragserteilung gestellt werden, wir bereiten die Unterlagen vor.</p>
   </div>
   <!-- /FOERDERUNG -->
+
+  <!-- BETRIEBSKOSTEN -->
+  <div class="foerderung">
+    <h3>Was Sie im Betrieb sparen können</h3>
+    <table>
+      <tr><td>Heizkosten heute ({{betrieb_energieart}})</td><td class="z">etwa {{betrieb_heute_jahr}} € im Jahr</td></tr>
+      <tr><td>Mit der Wärmepumpe</td><td class="z">etwa {{betrieb_wp_jahr}} € im Jahr</td></tr>
+      <tr><td class="eigen">Ersparnis</td><td class="z eigen">etwa {{betrieb_ersparnis_jahr}} € im Jahr</td></tr>
+    </table>
+    <p>Das sind rund {{betrieb_wp_monat}} € im Monat für Wärme und Warmwasser. Grundlage sind Ihr bisheriger Verbrauch und die heutigen Energiepreise; der Wert ist ein Richtwert.</p>
+  </div>
+  <!-- /BETRIEBSKOSTEN -->
 
   <h2>Wovon diese Schätzung ausgeht</h2>
   <ul class="annahmen">

@@ -10,9 +10,10 @@ import type {
   AnfrageStatus, Dringlichkeit, Einheit, FoerderungEingabe, Gewerk, KalkulationsErgebnis, Position, Quelle, Richtpreis,
   FoerderRegeln,
 } from '../types';
-import type { DokumentEingabe, DossierEingabe, DossierPosition } from '../dokumente/datenblatt';
-import { berechne, offenePlatzhalter } from './calculation';
-import { ladeEinstellungen, ladeFoerderRegeln, ladeMatrix, type Einstellungen } from './kalkulationsdaten';
+import type { Betriebskosten, DokumentEingabe, DossierEingabe, DossierPosition } from '../dokumente/datenblatt';
+import { berechne, foerderBausteine, offenePlatzhalter } from './calculation';
+import { betriebskosten as berechneBetriebskosten, heizlastSchaetzen, leeresGebaeude } from './heizlast';
+import { FOERDER_STANDARD, ladeEinstellungen, ladeFoerderRegeln, ladeMatrix, type Einstellungen } from './kalkulationsdaten';
 import { pruefeVersandtexte } from './textregeln';
 import { datumDeutsch, plusTage } from './zeit';
 
@@ -243,6 +244,7 @@ export function datenblattJson(daten: VorgangDaten, ergebnis: KalkulationsErgebn
       leitungswege: a.leitungswege, intern: a.interneNotizen,
     },
     konfigurator_antworten: a.konfiguratorAntworten,
+    gebaeude: a.gebaeude,
   }, null, 2);
 }
 
@@ -250,7 +252,22 @@ export function datenblattJson(daten: VorgangDaten, ergebnis: KalkulationsErgebn
 // Eingaben für die Dokumenten-Engine
 // ---------------------------------------------------------------------------
 
-export type EingabeOptionen = { bestaetigungsUrl?: string | null; jetzt?: Date };
+export type EingabeOptionen = { bestaetigungsUrl?: string | null; jetzt?: Date; foerderRegeln?: FoerderRegeln };
+
+/** Kundensichtbarer Betriebskostenvergleich; null ohne heutigen Verbrauch oder Preis. */
+export function kundenBetriebskosten(daten: VorgangDaten, einst: Einstellungen): Betriebskosten | null {
+  const gebaeude = daten.anfrage.gebaeude ?? leeresGebaeude();
+  const b = berechneBetriebskosten(gebaeude, einst.betriebskosten, heizlastSchaetzen(gebaeude));
+  if (!b || b.heuteJahr === null || b.ersparnisJahr === null || b.ersparnisJahr <= 0) return null;
+  return {
+    energieartLabel: b.energieartLabel,
+    heuteJahr: b.heuteJahr,
+    wpJahr: b.wpJahr,
+    wpMitPvJahr: gebaeude.geraet.pvGewuenscht ? b.wpMitPvJahr : null,
+    ersparnisJahr: b.ersparnisJahr,
+    proMonat: b.proMonat,
+  };
+}
 
 function bearbeiterAus(daten: VorgangDaten, einst: Einstellungen) {
   return daten.bearbeiter
@@ -292,6 +309,8 @@ export function baueDokumentEingabe(
     bruttoVon: ergebnis.bruttoVon,
     bruttoBis: ergebnis.bruttoBis,
     foerderung: ergebnis.foerderung,
+    betriebskosten: a.gewerkHaupt === 'waermepumpe' || daten.vorlageIds.some((id) => id.startsWith('waermepumpe')) ? kundenBetriebskosten(daten, einst) : null,
+    foerderBausteine: ergebnis.foerderung ? foerderBausteine(ergebnis.foerderung.boni, optionen.foerderRegeln ?? FOERDER_STANDARD) : [],
     annahmen: a.annahmen ?? [],
     vorbehalte: a.vorbehalte ?? [],
     terminvorschlag: terminvorschlagText(daten.fenster),
@@ -384,8 +403,8 @@ export async function ladeEingaben(anfrageId: string, optionen: EingabeOptionen 
     daten,
     ergebnis,
     einstellungen,
-    dokument: baueDokumentEingabe(daten, ergebnis, einstellungen, optionen),
-    dossier: baueDossierEingabe(daten, ergebnis, einstellungen, optionen),
+    dokument: baueDokumentEingabe(daten, ergebnis, einstellungen, { ...optionen, foerderRegeln: regeln }),
+    dossier: baueDossierEingabe(daten, ergebnis, einstellungen, { ...optionen, foerderRegeln: regeln }),
   };
 }
 
