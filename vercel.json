@@ -6,15 +6,11 @@
   "crons": [
     {
       "path": "/api/jobs/versand",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 18 * * *"
     },
     {
       "path": "/api/jobs/wiedervorlage",
       "schedule": "0 4 * * *"
-    },
-    {
-      "path": "/api/jobs/eingang",
-      "schedule": "30 5,11 * * *"
     }
   ]
 }
