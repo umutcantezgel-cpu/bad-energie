@@ -32,7 +32,7 @@ const baseSecurityHeaders = [
 
 const nextConfig: NextConfig = {
   // PGlite bleibt außerhalb des Bundlers (nur lokal vorhanden); der Ausschluss unten hält seine Dateien aus dem Trace.
-  serverExternalPackages: ["@electric-sql/pglite"],
+  serverExternalPackages: ["@electric-sql/pglite", "@sparticuz/chromium", "puppeteer-core"],
   compress: true,
   poweredByHeader: false,
   images: {
@@ -41,8 +41,21 @@ const nextConfig: NextConfig = {
   // Die Schlüssel sind Globs auf den Routennamen: Klammern eines dynamischen Segments würden
   // als Zeichenklasse gelesen und träfen keine Route. Darum die Präfixe mit `**`.
   outputFileTracingIncludes: {
-    "/api/intern/**": ["src/lib/dokumente/assets/**/*"],
-    "/intern/**": ["src/lib/dokumente/assets/**/*"],
+    "/api/intern/**": [
+      "src/lib/dokumente/assets/**/*",
+      "node_modules/@puppeteer/browsers/**/*",
+      "node_modules/@sparticuz/chromium/bin/**/*",
+    ],
+    "/intern/**": [
+      "src/lib/dokumente/assets/**/*",
+      "node_modules/@puppeteer/browsers/**/*",
+      "node_modules/@sparticuz/chromium/bin/**/*",
+    ],
+    "/api/jobs/**": [
+      "src/lib/dokumente/assets/**/*",
+      "node_modules/@puppeteer/browsers/**/*",
+      "node_modules/@sparticuz/chromium/bin/**/*",
+    ],
   },
   // Die entpackte Function darf 250 MB nicht überschreiten. Ausgeschlossen wird alles, was die
   // Function nie liest: PGlite (nur Entwicklungsabhängigkeit, 25 MB), die Bilder aus `public`
