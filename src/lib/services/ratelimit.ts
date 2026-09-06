@@ -55,8 +55,10 @@ export async function pruefeLimit(schluessel: string, max: number, fensterMs: nu
     .onConflictDoUpdate({
       target: rateLimit.schluessel,
       set: {
-        zaehler: sql`case when ${rateLimit.fensterBeginn} <= ${grenze} then 1 else ${rateLimit.zaehler} + 1 end`,
-        fensterBeginn: sql`case when ${rateLimit.fensterBeginn} <= ${grenze} then ${jetzt} else ${rateLimit.fensterBeginn} end`,
+        // Rohe SQL-Fragmente bekommen keine Date-Objekte: der Postgres-Treiber auf Vercel serialisiert sie
+        // nicht (PGlite lokal schon). Deshalb ISO-Text mit ausdrücklichem Typ.
+        zaehler: sql`case when ${rateLimit.fensterBeginn} <= ${grenze.toISOString()}::timestamptz then 1 else ${rateLimit.zaehler} + 1 end`,
+        fensterBeginn: sql`case when ${rateLimit.fensterBeginn} <= ${grenze.toISOString()}::timestamptz then ${jetzt.toISOString()}::timestamptz else ${rateLimit.fensterBeginn} end`,
       },
     })
     .returning({ zaehler: rateLimit.zaehler });
