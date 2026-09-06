@@ -251,7 +251,13 @@ export async function POST(
 
       // Nur der gesalzene Hash wird gespeichert: die Zählertabelle darf kein Besucherverzeichnis werden.
       const ip = ipHash(clientIp(request.headers), new Date());
-      const limit = await pruefeLimit(`estimate:kunde:ip:${ip}`, 20, 10 * 60 * 1000);
+      let limit: Awaited<ReturnType<typeof pruefeLimit>>;
+      try {
+        limit = await pruefeLimit(`estimate:kunde:ip:${ip}`, 20, 10 * 60 * 1000);
+      } catch (err) {
+        console.error('[estimate] Rate-Limit nicht prüfbar:', err instanceof Error ? err.message : err);
+        return NextResponse.json({ ok: false, fehler: 'Die Anfrage konnte gerade nicht gespeichert werden. Bitte rufen Sie uns an.' }, { status: 500 });
+      }
       if (!limit.erlaubt) {
         return NextResponse.json(
           { ok: false, fehler: 'Zu viele Anfragen. Bitte probieren Sie es in einigen Minuten erneut.' },
@@ -285,6 +291,7 @@ export async function POST(
           ergebnis: anlage.ergebnis,
         });
       } catch (err) {
+        console.error('[estimate] Kundenanfrage fehlgeschlagen:', err instanceof Error ? err.message : err);
         const msg = err instanceof Error ? err.message : 'Interner Fehler bei der Speicherung.';
         return NextResponse.json({ ok: false, fehler: msg }, { status: 500 });
       }
@@ -471,7 +478,9 @@ export async function POST(
         userAgent: request.headers.get('user-agent'),
       });
       return NextResponse.json(ergebnis);
-    } catch {
+    } catch (err) {
+      // Ursache ins Protokoll (ohne PIN), nach außen bleibt die Meldung allgemein.
+      console.error('[anmelden] fehlgeschlagen:', err instanceof Error ? err.message : err);
       return NextResponse.json({ ok: false, fehler: 'Ungültige Anfrage.' }, { status: 400 });
     }
   }
