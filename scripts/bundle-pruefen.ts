@@ -106,6 +106,33 @@ function textAusArgument(name: string, vorgabe: string): string {
   return treffer ? treffer.slice(name.length + 3) : vorgabe;
 }
 
+/**
+ * Dateien, die die Function für PDF, Datenbank und Dokumente zwingend braucht. Fehlt eine davon im
+ * Trace, würde der Versand erst auf Vercel scheitern (die Ausschlussmuster in next.config.ts greifen
+ * per Teilstring; "data/**" traf einmal node_modules/@puppeteer/browsers/lib/browser-data).
+ */
+export const PFLICHTDATEIEN: ReadonlyArray<{ route: string; muster: string }> = [
+  { route: 'app/api/intern/[...slug]/route', muster: '@puppeteer/browsers/lib/browser-data/browser-data.js' },
+  { route: 'app/api/intern/[...slug]/route', muster: '@sparticuz/chromium/bin/' },
+  { route: 'app/api/intern/[...slug]/route', muster: 'puppeteer-core/lib/' },
+  { route: 'app/api/intern/[...slug]/route', muster: 'src/lib/dokumente/assets/kostenschaetzung-template.html' },
+  { route: 'app/api/intern/[...slug]/route', muster: 'src/lib/dokumente/assets/erstkontakt-mail.html' },
+];
+
+/** Prüft je Route, ob die Pflichtdateien im Trace liegen; liefert die fehlenden Einträge. */
+export function fehlendePflichtdateien(
+  eintraege: ReadonlyArray<{ route: string; dateien: ReadonlyArray<string> }>,
+  pflicht: ReadonlyArray<{ route: string; muster: string }> = PFLICHTDATEIEN,
+): Array<{ route: string; muster: string }> {
+  const fehlt: Array<{ route: string; muster: string }> = [];
+  for (const p of pflicht) {
+    const eintrag = eintraege.find((e) => e.route === p.route);
+    if (!eintrag) continue;
+    if (!eintrag.dateien.some((d) => d.includes(p.muster))) fehlt.push(p);
+  }
+  return fehlt;
+}
+
 function main(): void {
   const projektWurzel = process.cwd();
   const serverWurzel = path.resolve(projektWurzel, textAusArgument('verzeichnis', path.join('.next', 'server')));
@@ -128,6 +155,18 @@ function main(): void {
     .sort((a, b) => b.bytes - a.bytes);
 
   console.log(tabelle(zeilen, grenzeMb));
+
+  const traces = dateien.map((pfad) => ({
+    route: routenName(pfad, serverWurzel),
+    dateien: (JSON.parse(readFileSync(pfad, 'utf8')) as { files?: string[] }).files ?? [],
+  }));
+  const fehlt = fehlendePflichtdateien(traces);
+  if (fehlt.length) {
+    console.error('\nPflichtdateien fehlen im Function-Trace:');
+    for (const f of fehlt) console.error(`  ${f.route}: ${f.muster}`);
+    console.error('Abhilfe: outputFileTracingExcludes in next.config.ts prüfen (Muster wirken als Teilstring).');
+    process.exit(1);
+  }
 
   const zuGross = zeilen.filter((z) => z.bytes > grenzeMb * MB);
   if (!zuGross.length) {

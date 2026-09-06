@@ -62,17 +62,26 @@ const nextConfig: NextConfig = {
   // (liefert das CDN aus), die Laufzeitdaten unter `data`, das Altsystem sowie die lokalen
   // Material- und Belegordner, die nicht im Repository liegen.
   outputFileTracingExcludes: {
+    // Achtung: Next vergleicht diese Muster als Teilstring des Pfads (picomatch mit contains).
+    // Ein Muster wie "data/**/*" träfe auch node_modules/@puppeteer/browsers/lib/browser-data/…
+    // und ließ das PDF auf Vercel scheitern. Deshalb nur eindeutige Ordnerpfade.
     "/*": [
       "node_modules/@electric-sql/pglite/**/*",
-      "public/**/*",
-      "legacy/**/*",
-      "data/**/*",
+      "public/images/**/*",
+      "public/videos/**/*",
+      "public/fonts/**/*",
+      "legacy/kostenschaetzung-altsystem/**/*",
+      "data/pglite/**/*",
+      "data/pglite.defekt-*/**/*",
+      "data/outbox/**/*",
+      "data/blob/**/*",
+      "data/e2e/**/*",
       ".next/cache/**/*",
       "Arbeitsweise Chef/**/*",
       "Pipeline Kopie 5/**/*",
       "Angebote Bad und energie GmbH Kopie/**/*",
-      "01a05849-*/**/*",
-      "01a0584a-*/**/*",
+      "01a05849-bf12-774d-8e7f-0b0c17933e1d*/**/*",
+      "01a0584a-6791-702d-a2c5-8ab6088b219d*/**/*",
     ],
   },
   experimental: {
