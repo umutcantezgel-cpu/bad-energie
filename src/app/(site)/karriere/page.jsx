@@ -4,12 +4,6 @@ import { Briefcase, CheckCircle2, ShieldCheck, Phone, Calendar, ArrowRight, Hear
 import { COMPANY_DATA } from '@/config/company';
 import QualityPromise from '@/components/sections/QualityPromise';
 
-export const metadata = {
-    title: 'Karriere & Jobs Wetzlar | Anlagenmechaniker SHK & Monteure | Bad & Energie GmbH',
-    description: 'Offene Stellen bei Bad & Energie GmbH in Wetzlar: Anlagenmechaniker SHK (m/w/d), Kundendiensttechniker & Meister. Überdurchschnittliche Bezahlung & 4-Tage-Woche Option.',
-    alternates: { canonical: 'https://bad-energie.de/karriere' }
-};
-
 export default function KarrierePage() {
     return (
         <div className="pt-32 pb-24 min-h-screen relative overflow-hidden">

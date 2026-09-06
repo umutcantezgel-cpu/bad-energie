@@ -12,12 +12,13 @@ import {
 } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import TouchConfigurator from '@/components/calculator/TouchConfigurator';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Fliesenverlegung Wetzlar | Meisterhafte Fliesen- & Mosaikarbeiten | Bad & Energie GmbH',
-    description: 'Fachgerechte Fliesenverlegung im Badezimmer: Großformatige Fliesen, Feinsteinzeug, Mosaike und Naturstein in Wetzlar & Lahn-Dill.',
-    alternates: { canonical: 'https://bad-energie.de/bad/fliesen' }
-};
+export const metadata = createMetadata({
+    title: 'Fliesenverlegung Wetzlar: Meisterbetrieb für Bäder',
+    description: 'Fachgerechte Fliesenverlegung im Badezimmer: XXL-Großformate, Feinsteinzeug, Mosaike und Verbundabdichtung nach DIN 18534 in Wetzlar & Lahn-Dill.',
+    path: '/bad/fliesen'
+});
 
 export default function FliesenPage() {
     return (
@@ -52,6 +53,14 @@ export default function FliesenPage() {
 
             {/* Content Grid */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
+                <div className="text-center max-w-3xl mx-auto mb-12">
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
+                        Meisterhafte Fliesenarbeiten für moderne Bäder
+                    </h2>
+                    <p className="mt-2 text-sm text-slate-600">
+                        Vom großformatigen Feinsteinzeug bis zur normgerechten Verbundabdichtung – alles aus einer Hand.
+                    </p>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[
                         { title: 'XXL Großformatfliesen', desc: 'Fliesen bis 120 x 260 cm für moderne, fugenarme Wandflächen mit minimalem Pflegeaufwand und atemberaubender Raumwirkung.' },

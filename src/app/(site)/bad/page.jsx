@@ -16,12 +16,13 @@ import {
 import { COMPANY_DATA } from '@/config/company';
 import { MUSTERBAEDER, QUALITY_TIERS } from '@/config/musterbaeder';
 import TouchConfigurator from '@/components/calculator/TouchConfigurator';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Badsanierung & Badrenovierung Wetzlar | Bad & Energie GmbH',
-    description: 'Ihr Meisterbetrieb für schlüsselfertige Badsanierung, Musterbäder, barrierefreie Bäder nach DIN 18040-2 und 3D-Badplanung in Wetzlar und Umgebung.',
-    alternates: { canonical: 'https://bad-energie.de/bad' }
-};
+export const metadata = createMetadata({
+    title: 'Badsanierung & Badrenovierung Wetzlar: Meisterbetrieb',
+    description: 'Ihr Meisterbetrieb für schlüsselfertige Badsanierung, Musterbäder, barrierefreie Bäder nach DIN 18040-2 und 3D-Badplanung in Wetzlar & Lahn-Dill.',
+    path: '/bad'
+});
 
 export default function BadPage() {
     return (
@@ -79,9 +80,9 @@ export default function BadPage() {
                                 <div className="w-11 h-11 rounded-2xl bg-white text-[#0C3A87] group-hover:bg-[#0C3A87] group-hover:text-white transition-colors flex items-center justify-center mb-3 shadow-xs border border-white/80">
                                     <Icon className="w-5 h-5" />
                                 </div>
-                                <h3 className="font-black text-sm sm:text-base text-slate-900 group-hover:text-[#0C3A87] transition-colors mb-1">
+                                <h2 className="font-black text-sm sm:text-base text-slate-900 group-hover:text-[#0C3A87] transition-colors mb-1">
                                     {item.title}
-                                </h3>
+                                </h2>
                                 <p className="text-xs text-slate-500 font-medium">{item.desc}</p>
                             </Link>
                         );

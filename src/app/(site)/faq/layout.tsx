@@ -1,82 +1,56 @@
+import type { Metadata } from 'next';
 import { createMetadata } from '@/lib/metadata';
-import { buildGraph, buildFaqNode, buildBreadcrumbNode, buildWebPageNode, SITE_URL } from '@/lib/schema';
+import { buildGraph, buildFaqNode, buildBreadcrumbNode, SITE_URL } from '@/lib/schema';
 import JsonLd from '@/components/seo/JsonLd';
 
-export const metadata = createMetadata({
-  title: 'FAQ – Häufig gestellte Fragen zu Bad & Heizung | Bad & Energie GmbH',
-  description: 'Antworten auf alle Fragen rund um Badsanierung, NIBE Wärmepumpen, Gas-Brennwert, Lüftung & Legionellenschutz in Wetzlar & Lahn-Dill.',
+export const metadata: Metadata = createMetadata({
+  title: 'Häufig gestellte Fragen (FAQ)',
+  description: 'Antworten auf häufige Fragen zu Badsanierung, NIBE Wärmepumpen, KfW-Förderung und Heizungswartung bei Bad & Energie GmbH in Wetzlar & Lahn-Dill.',
   path: '/faq',
 });
 
-const pageUrl = `${SITE_URL}/faq`;
-const breadcrumbs = [
-  { name: 'Home', path: '/' },
-  { name: 'FAQ', path: '/faq' },
-];
-
-const faqs = [
+const faqItems = [
   {
     question: 'Wie oft sollte meine Heizung gewartet werden?',
-    answer: 'Wir empfehlen eine jährliche Wartung, idealerweise vor Beginn der Heizperiode (September/Oktober). Dies sichert die Effizienz und verlängert die Lebensdauer Ihrer Anlage.',
+    answer: 'Wir empfehlen eine jährliche Wartung, idealerweise vor Beginn der Heizperiode (September/Oktober). Dies sichert maximale Energieeffizienz und verlängert die Lebensdauer Ihrer Anlage.',
   },
   {
-    question: 'Wann lohnt sich ein Heizungstausch?',
-    answer: 'Bei Anlagen älter als 15-20 Jahre, stark steigenden Energiekosten oder häufigen Reparaturen ist ein Austausch oft wirtschaftlich sinnvoll. Wir beraten Sie gerne individuell.',
+    question: 'Wann lohnt sich der Umstieg auf eine Wärmepumpe?',
+    answer: 'Bei Öl- oder Gasheizungen älter als 15 Jahre oder hohen Betriebskosten ist der Wechsel auf eine NIBE Luft-Wasser- oder Sole-Wasser-Wärmepumpe mit bis zu 70% KfW 458 Förderung hochattraktiv.',
   },
   {
-    question: 'Was kostet eine neue Heizung?',
-    answer: 'Die Kosten variieren nach Anlagentyp (Wärmepumpe, Pellets, Gas) und Gebäudegröße. Nutzen Sie unsere unverbindliche Anfrage für ein individuelles Festpreisangebot auf Anfrage vor und nach staatlicher Förderung.',
+    question: 'Was kostet eine Wärmepumpe nach Förderung?',
+    answer: 'Durch die staatliche BEG-Förderung (Grundförderung 30% + Geschwindigkeitsbonus 20% + Einkommensbonus 30% + 5% Effizienzbonus für natürliches Kältemittel R290) reduziert sich der Eigenanteil auf einen Bruchteil der Bruttokosten.',
   },
   {
-    question: 'Welche Heizung ist die beste?',
-    answer: 'Das hängt von Ihrem Gebäude, Ihrem Budget und Ihren Prioritäten ab. Wärmepumpen sind sehr effizient und werden stark gefördert, Gas ist oft günstiger in der Anschaffung.',
+    question: 'Was kostet eine Komplettbadsanierung aus einer Hand?',
+    answer: 'Die Kosten richten sich nach Raumgröße, Zustand der Leitungen und Ihren individuellen Ausstattungswünschen. Wir erstellen Ihnen nach einem kostenlosen Vor-Ort-Aufmaß gerne ein verbindliches Festpreisangebot auf Anfrage.',
   },
   {
-    question: 'Was kostet eine Badsanierung?',
-    answer: 'Die Kosten für eine Badsanierung richten sich nach Ihren individuellen Wünschen und den baulichen Gegebenheiten vor Ort. Wir erstellen Ihnen gerne ein transparentes Festpreisangebot auf Anfrage.',
-  },
-  {
-    question: 'Wie lange dauert eine Badsanierung?',
-    answer: 'Ein komplettes Bad wird von uns im Schnitt in 8 bis 12 Werktagen schlüsselfertig fertiggestellt – mit festem Bauzeitenplan.',
-  },
-  {
-    question: 'Was tun bei einem Wasserrohrbruch?',
-    answer: 'Sofort den Hauptwasserhahn schließen, Strom im betroffenen Bereich abschalten und unseren Notdienst unter 06441 20 39 053 anrufen.',
-  },
-  {
-    question: 'Wie vermeide ich Legionellen?',
-    answer: 'Warmwasserspeicher auf mindestens 60°C halten, Leitungen regelmäßig spülen und die gesetzlich vorgeschriebene 3-jährliche Legionellenprüfung durchführen lassen.',
-  },
-  {
-    question: 'Wie oft muss eine Wohnraumlüftung gewartet werden?',
-    answer: 'Mindestens einmal jährlich sollten Filter gereinigt/gewechselt und das System überprüft werden.',
-  },
-  {
-    question: 'In welchem Gebiet sind Sie tätig?',
-    answer: 'Wir sind in Wetzlar, Gießen und im gesamten Lahn-Dill-Kreis für Sie im Einsatz.',
-  },
-  {
-    question: 'Wie hoch ist die Förderung für Wärmepumpen?',
-    answer: 'Aktuell werden NIBE Wärmepumpen mit bis zu 70% der förderfähigen Kosten bezuschusst (KfW Heizungsförderung 458).',
+    question: 'Gibt es Zuschüsse für barrierefreie Bäder?',
+    answer: 'Ja! Bei Vorliegen eines Pflegegrads (Pflegegrad 1–5) bezuschusst die Pflegekasse den altersgerechten Badumbau mit bis zu 4.000 € pro Person.',
   },
 ];
 
-const faqGraph = buildGraph([
-  buildWebPageNode({
-    url: pageUrl,
-    name: 'Häufig gestellte Fragen (FAQ) | Bad & Energie GmbH',
-    description:
-      'Antworten auf alle Fragen rund um Badsanierung, Heizung, NIBE Wärmepumpen, Wohnraumlüftung und Fördermittel in Wetzlar.',
-    breadcrumbItems: breadcrumbs,
-  }),
-  buildBreadcrumbNode(breadcrumbs, pageUrl),
-  buildFaqNode(faqs, pageUrl),
-]);
+export default function FaqLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const pageUrl = `${SITE_URL}/faq`;
+  const breadcrumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'FAQ', path: '/faq' },
+  ];
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+  const schemaGraph = buildGraph([
+    buildFaqNode(faqItems, pageUrl),
+    buildBreadcrumbNode(breadcrumbs, pageUrl),
+  ]);
+
   return (
     <>
-      <JsonLd schema={faqGraph} />
+      <JsonLd schema={schemaGraph} />
       {children}
     </>
   );

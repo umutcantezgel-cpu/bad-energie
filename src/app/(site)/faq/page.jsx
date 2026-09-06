@@ -126,6 +126,9 @@ export default function FAQPage() {
 
                 {/* Questions Grid */}
                 <div className="space-y-4">
+                    <h2 className="text-2xl font-black text-slate-900 mb-6">
+                        {searchQuery ? 'Suchergebnisse' : faqData[openCategory]?.title || 'Häufig gestellte Fragen'}
+                    </h2>
                     {(searchQuery ? filteredCategories : categories.filter(([key]) => key === openCategory)).map(([key, category]) => {
                         const Icon = category.icon;
                         return (

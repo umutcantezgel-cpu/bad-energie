@@ -51,7 +51,7 @@ export default function ServicePage() {
             Umfassende Haustechnik-Leistungen in Wetzlar &amp; Region
           </h1>
           <p className="text-xl text-[var(--color-text-secondary)] max-w-3xl mx-auto font-light leading-relaxed">
-            Als eingetragener Meisterbetrieb bietet Ihnen Batherm Haustechnik in Wetzlar erstklassige Leistungen in Sanitärtechnik, moderner Heizungstechnik, Klimatechnik, Wärmepumpen und intelligenter Gebäudeautomation. Profitieren Sie von handwerklicher Präzision, transparenten Festpreisen und persönlicher Fachberatung.
+            Als eingetragener Meisterbetrieb bietet Ihnen die Bad &amp; Energie GmbH in Wetzlar erstklassige Leistungen in Sanitärtechnik, moderner Heizungstechnik, Klimatechnik, Wärmepumpen und intelligenter Gebäudeautomation. Profitieren Sie von handwerklicher Präzision, transparenten Festpreisen und persönlicher Fachberatung.
           </p>
         </div>
 
@@ -101,12 +101,12 @@ export default function ServicePage() {
 
                     {/* Action Buttons */}
                     <div className="flex flex-wrap gap-[var(--spacing-3)] mt-auto pt-[var(--spacing-4)] border-t border-[var(--color-neutral-100)]">
-                      <Link href={`/leistungen/${service.id}`}>
+                      <Link href={`/leistungen/${service.id}`} aria-label={`${service.name} Details ansehen`}>
                         <Button
                           variant="ghost"
                           className="text-[var(--color-neutral-600)] hover:text-[var(--color-blue-700)] hover:bg-[var(--color-blue-50)]"
                         >
-                          Mehr erfahren
+                          {service.name} Details
                           <ArrowRight className="ml-2 w-4 h-4" />
                         </Button>
                       </Link>

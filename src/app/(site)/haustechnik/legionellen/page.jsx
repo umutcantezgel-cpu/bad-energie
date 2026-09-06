@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { ShieldAlert, ShieldCheck, CheckCircle2, Phone, Calendar, ArrowRight, Activity, Thermometer, Filter, AlertTriangle } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import QualityPromise from '@/components/sections/QualityPromise';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Legionellenprüfung & Desinfektion Wetzlar | TrinkwV | Bad & Energie GmbH',
-    description: 'Gesetzliche Legionellenprüfung für Vermieter in Wetzlar & Lahn-Dill: Thermische Desinfektion >60°C, chemische Spülung, Ultrafiltration & Gefährdungsanalyse.',
-    alternates: { canonical: 'https://bad-energie.de/haustechnik/legionellen' }
-};
+export const metadata = createMetadata({
+    title: 'Legionellenprüfung Wetzlar | TrinkwV Prüfung & Sanierung',
+    description: 'Gesetzliche Legionellenprüfung für Vermieter in Wetzlar & Lahn-Dill: Thermische Desinfektion, chemische Spülung, Ultrafiltration & Gefährdungsanalyse.',
+    path: '/haustechnik/legionellen'
+});
 
 export default function LegionellenPage() {
     return (
@@ -56,9 +57,9 @@ export default function LegionellenPage() {
                             <AlertTriangle className="w-5 h-5 text-amber-600" />
                             <span>Gesetzliche Untersuchungspflicht nach Trinkwasserverordnung</span>
                         </div>
-                        <h3 className="text-2xl font-black text-slate-900 mb-2">
+                        <h2 className="text-2xl font-black text-slate-900 mb-2">
                             Wer ist zur regelmäßigen Legionellenprüfung verpflichtet?
-                        </h3>
+                        </h2>
                         <p className="text-xs text-slate-600 leading-relaxed mb-4 font-medium">
                             Die dreijährliche Untersuchungspflicht gilt für alle Großanlagen zur Trinkwassererwärmung in gewerblich oder öffentlich vermieteten Gebäuden (Mehrfamilienhäuser ab 3 Wohneinheiten mit Warmwasserspeicher &gt; 400 Liter oder mehr als 3 Liter Rohrvolumen zwischen Speicher und Entnahmestelle).
                         </p>

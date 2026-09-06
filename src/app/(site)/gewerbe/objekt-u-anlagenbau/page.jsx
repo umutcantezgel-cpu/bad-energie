@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { Building2, CheckCircle2, ShieldCheck, Phone, Calendar, ArrowRight } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import QualityPromise from '@/components/sections/QualityPromise';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Objekt- & Anlagenbau Wetzlar | TGA Generalunternehmer | Bad & Energie GmbH',
+export const metadata = createMetadata({
+    title: 'Objekt- & Anlagenbau Wetzlar | TGA Generalunternehmer',
     description: 'TGA Objekt- und Anlagenbau in Wetzlar & Hessen: Planung, Bauleitung und Montage komplexer Sanitär-, Heizungs- und Lüftungsanlagen für Großprojekte.',
-    alternates: { canonical: 'https://bad-energie.de/gewerbe/objekt-u-anlagenbau' }
-};
+    path: '/gewerbe/objekt-u-anlagenbau'
+});
 
 export default function ObjektAnlagenbauPage() {
     return (
@@ -37,6 +38,14 @@ export default function ObjektAnlagenbauPage() {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+                <div className="text-center max-w-3xl mx-auto mb-12">
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
+                        Gewerbliche TGA-Leistungen im Überblick
+                    </h2>
+                    <p className="mt-3 text-sm sm:text-base text-slate-600">
+                        Präzise Fachplanung, strukturierte Bauleitung und verlässliche Ausführung aus Meisterhand.
+                    </p>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[
                         { title: 'Schnittstellenkoordination', desc: 'Lückenlose Verzahnung von Sanitär, Heizung, Lüftung und Regelungstechnik mit eigenem Bauleiter vor Ort.' },

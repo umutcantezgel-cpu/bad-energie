@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { ArrowRight, Briefcase } from 'lucide-react';
+import { Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { createPageUrl } from '@/utils';
@@ -17,13 +17,13 @@ export default function CareerCTA() {
                         <div className="max-w-2xl">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-semibold uppercase tracking-wider mb-6">
                                 <Briefcase className="w-4 h-4" />
-                                Karriere bei Baris
+                                Karriere bei Bad &amp; Energie
                             </div>
                             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                                Werde Teil unseres Teams!
+                                Werde Teil unseres Meisterteams!
                             </h2>
                             <p className="text-lg text-[var(--color-neutral-300)] leading-relaxed mb-8">
-                                Wir suchen ständig nach motivierten Talenten. Ob erfahrener Anlagenmechaniker SHK, Meister oder Auszubildender – wenn du Lust auf gutes Handwerk und ein tolles Team hast, bist du bei uns richtig.
+                                Wir suchen motivierte Talente. Ob erfahrener Anlagenmechaniker SHK, Meister oder Auszubildender – wenn du Lust auf solides Handwerk und ein starkes Team hast, bist du bei der Bad &amp; Energie GmbH in Wetzlar genau richtig.
                             </p>
                             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                                 <Link href={createPageUrl('Karriere')}>

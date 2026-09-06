@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Admin Login',
-  description: 'Interner Verwaltungsbereich der Batherm Haustechnik.',
+  title: 'Mitarbeiter Login | Bad & Energie GmbH',
+  description: 'Interner Verwaltungsbereich der Bad & Energie GmbH in Wetzlar.',
   robots: {
     index: false,
     follow: false,

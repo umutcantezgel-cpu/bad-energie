@@ -17,7 +17,7 @@ const breadcrumbs = [
 const leistungenSchema = buildGraph([
   buildWebPageNode({
     url: pageUrl,
-    name: 'Haustechnik Leistungen in Wetzlar | Batherm Haustechnik',
+    name: 'Haustechnik Leistungen in Wetzlar | Bad & Energie GmbH',
     description:
       'Komplettes Leistungsportfolio: Sanitärtechnik, moderne Heizungstechnik, Wärmepumpen, Klimatechnik und Smart Home.',
     breadcrumbItems: breadcrumbs,
@@ -26,7 +26,7 @@ const leistungenSchema = buildGraph([
   {
     '@type': 'OfferCatalog',
     '@id': `${pageUrl}#catalog`,
-    name: 'Leistungen von Batherm Haustechnik',
+    name: 'Leistungen von Bad & Energie GmbH',
     provider: { '@id': ORG_ID },
     itemListElement: [
       {

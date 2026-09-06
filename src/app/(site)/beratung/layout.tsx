@@ -4,7 +4,7 @@ import JsonLd from '@/components/seo/JsonLd';
 
 export const metadata = createMetadata({
   title: 'Kostenlose Fachberatung buchen',
-  description: 'Buchen Sie einen kostenlosen Beratungstermin bei Batherm Haustechnik Wetzlar. Persönlich, kompetent und unverbindlich vor Ort oder online.',
+  description: 'Buchen Sie einen kostenlosen Beratungstermin bei der Bad & Energie GmbH in Wetzlar. Persönlich, kompetent und unverbindlich vor Ort oder online.',
   path: '/beratung',
 });
 
@@ -35,7 +35,7 @@ const beratungFaqs = [
 const beratungGraph = buildGraph([
   buildWebPageNode({
     url: pageUrl,
-    name: 'Kostenlose Fachberatung Haustechnik Wetzlar | Batherm Haustechnik',
+    name: 'Kostenlose Fachberatung Haustechnik Wetzlar | Bad & Energie GmbH',
     description:
       'Buchen Sie Ihre unverbindliche Beratung vor Ort für Badsanierung, Heizungswechsel und Wärmepumpen in Wetzlar.',
     breadcrumbItems: breadcrumbs,

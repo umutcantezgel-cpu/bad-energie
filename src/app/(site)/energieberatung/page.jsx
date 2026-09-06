@@ -253,7 +253,7 @@ export default function Energieberatung() {
                         Lassen Sie sich jetzt unverbindlich beraten
                     </h2>
                     <p className="text-neutral-300 text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
-                        Vereinbaren Sie Ihren individuellen Beratungstermin bei Batherm Haustechnik und erfahren Sie, wie viel Energie Sie in Ihrem Gebäude einsparen können.
+                        Vereinbaren Sie Ihren individuellen Beratungstermin bei der Bad &amp; Energie GmbH und erfahren Sie, wie viel Energie Sie in Ihrem Gebäude einsparen können.
                     </p>
                     <Link href="/beratung">
                         <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-6 rounded-full shadow-xl">

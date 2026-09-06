@@ -125,8 +125,8 @@ export default function HeizungPage() {
                                 <h3 className="font-black text-base text-slate-900 mb-2">{item.title}</h3>
                                 <p className="text-xs text-slate-600 leading-relaxed mb-4 font-medium">{item.desc}</p>
                             </div>
-                            <Link href={item.path} className="text-xs font-black text-[#0C3A87] hover:underline flex items-center gap-1">
-                                <span>Mehr erfahren</span>
+                            <Link href={item.path} className="text-xs font-black text-[#0C3A87] hover:underline flex items-center gap-1" aria-label={`${item.title} ansehen`}>
+                                <span>{item.title} entdecken</span>
                                 <ArrowRight className="w-3.5 h-3.5" />
                             </Link>
                         </div>

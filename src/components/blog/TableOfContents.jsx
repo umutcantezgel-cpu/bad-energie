@@ -43,10 +43,10 @@ const TableOfContents = ({ content }) => {
 
     return (
         <div className="hidden lg:block sticky top-32 ml-8 w-64 p-6 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg">
-            <h4 className="flex items-center gap-2 font-bold text-gray-900 mb-4 text-sm uppercase tracking-wider">
+            <p className="flex items-center gap-2 font-bold text-gray-900 mb-4 text-sm uppercase tracking-wider">
                 <List className="w-4 h-4 text-primary-600" />
                 Inhalt
-            </h4>
+            </p>
             <nav className="space-y-1 relative">
                 {/* Active Indicator Line matches list height via CSS or direct styling */}
                 <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gray-100 rounded-full" />

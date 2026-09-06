@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { Filter, CheckCircle2, ShieldCheck, Phone, Calendar, ArrowRight } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import QualityPromise from '@/components/sections/QualityPromise';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Trinkwasserfilter Wetzlar | Rückspülfilter nach DIN EN 13443 | Bad & Energie GmbH',
+export const metadata = createMetadata({
+    title: 'Trinkwasserfilter Wetzlar | Rückspülfilter & Schutz',
     description: 'Trinkwasserfilter & Druckminderer nach DIN 1988 in Wetzlar & Lahn-Dill: Schutz vor Rostpartikeln, Sand, Rohrbruch und Lochfraß-Korrosion.',
-    alternates: { canonical: 'https://bad-energie.de/haustechnik/trinkwasserfilter' }
-};
+    path: '/haustechnik/trinkwasserfilter'
+});
 
 export default function TrinkwasserfilterPage() {
     return (
@@ -37,6 +38,14 @@ export default function TrinkwasserfilterPage() {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+                <div className="text-center max-w-3xl mx-auto mb-12">
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
+                        Vorteile normgerechter Trinkwasserfilter
+                    </h2>
+                    <p className="mt-3 text-sm sm:text-base text-slate-600">
+                        Zuverlässiger Schutz nach DIN 1988 vor Korrosion, Partikeln und unkontrollierten Druckschwankungen.
+                    </p>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[
                         { title: 'Rückspülbare Feinfilter (manuell & automatisiert)', desc: 'Kein teurer Filterkerzentausch nötig: Mit einem einfachen Dreh wird der Filter gründlich mit gefiltertem Wasser rückgespült – ohne Unterbrechung der Wasserversorgung.' },

@@ -5,12 +5,6 @@ import { COMPANY_DATA } from '@/config/company';
 import ReviewsSection from '@/components/sections/ReviewsSection';
 import QualityPromise from '@/components/sections/QualityPromise';
 
-export const metadata = {
-    title: 'Referenzen & Kundenprojekte | Bad, Heizung & Lüftung | Bad & Energie GmbH',
-    description: 'Erfolgreiche Kundenprojekte der Bad & Energie GmbH in Wetzlar, Gießen & Lahn-Dill: Komplettbäder, NIBE Wärmepumpen, Wohnraumlüftung & Haustechnik.',
-    alternates: { canonical: 'https://bad-energie.de/referenzen' }
-};
-
 export default function ReferenzenPage() {
     const projects = [
         {

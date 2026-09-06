@@ -4,6 +4,7 @@ import { CITIES } from '@/config/cities';
 import { SERVICES } from '@/config/services';
 import { COMPANY_DATA } from '@/config/company';
 import { notFound } from 'next/navigation';
+import { createMetadata } from '@/lib/metadata';
 import { buildGraph, buildServiceNode, buildBreadcrumbNode, buildWebPageNode, SITE_URL } from '@/lib/schema';
 import JsonLd from '@/components/seo/JsonLd';
 import { MapPin, Phone, Calendar, ArrowRight, ShieldCheck, CheckCircle2, Sparkles, Award } from 'lucide-react';
@@ -37,43 +38,13 @@ export async function generateMetadata({
   const city = CITIES.find((c) => c.slug === stadt);
   if (!service || !city) return {};
 
-  const title = `${service.name} in ${city.name} – Meisterbetrieb | Bad & Energie GmbH`;
-  const description = `${service.name} in ${city.name}: Fachgerechte Montage & Wartung vom Meisterbetrieb. ${
-    city.distanceKm === 0 ? 'Direkt vor Ort in Wetzlar.' : `Nur ${city.distanceKm} km entfernt.`
-  } Bis zu 70% Förderung & Festpreisgarantie.`;
-
-  const url = `https://bad-energie.de/leistungen/${service.id}/${city.slug}`;
-
-  return {
-    title,
-    description,
-    alternates: { 
-      canonical: url,
-      languages: {
-        'de': url,
-        'x-default': url,
-      },
-    },
-    openGraph: {
-      title,
-      description,
-      url,
-      siteName: 'Bad & Energie GmbH',
-      locale: 'de_DE',
-      type: 'website',
-    },
-    robots: { 
-      index: true, 
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
-    },
-  };
+  return createMetadata({
+    title: `${service.name} in ${city.name} – Meisterbetrieb`,
+    description: `${service.name} in ${city.name}: Fachgerechte Montage & Wartung vom Meisterbetrieb. ${
+      city.distanceKm === 0 ? 'Direkt vor Ort in Wetzlar.' : `Nur ${city.distanceKm} km entfernt.`
+    } Bis zu 70% Förderung & Festpreisgarantie.`,
+    path: `/leistungen/${service.id}/${city.slug}`,
+  });
 }
 
 // ---------------------------------------------------------------------------

@@ -16,7 +16,7 @@ export default function FeaturedTestimonial() {
                     </div>
 
                     <blockquote className="text-2xl md:text-3xl lg:text-4xl font-medium text-white mb-8 leading-normal font-heading">
-                        &quot;Baris Aydin und sein Team haben unser Badezimmer in eine Wellness-Oase verwandelt. Die Planung war kreativ, die Umsetzung absolut pünktlich und sauber. Wir sind begeistert!&quot;
+                        &quot;Das Meisterteam der Bad &amp; Energie GmbH hat unser Badezimmer in eine Wellness-Oase verwandelt. Die Planung war kreativ, die Umsetzung absolut pünktlich und sauber. Wir sind begeistert!&quot;
                     </blockquote>
 
                     <div className="flex flex-col items-center">

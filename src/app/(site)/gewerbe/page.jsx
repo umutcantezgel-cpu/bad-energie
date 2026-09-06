@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { Building2, Award, CheckCircle2, ArrowRight, ShieldCheck, Phone, Calendar, Flame, Users } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import QualityPromise from '@/components/sections/QualityPromise';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Gewerbekunden & Objektbau Wetzlar | B2B Haustechnik | Bad & Energie GmbH',
-    description: 'TGA Objekt- und Anlagenbau für Unternehmen, Wohnungsbaugesellschaften & Kommunen in Wetzlar & Lahn-Dill: Großheizanlagen, gewerbliche Sanitärräume & Wartung.',
-    alternates: { canonical: 'https://bad-energie.de/gewerbe' }
-};
+export const metadata = createMetadata({
+    title: 'Gewerbekunden & Objektbau Wetzlar | B2B Haustechnik',
+    description: 'TGA Objekt- und Anlagenbau für Unternehmen, Wohnungsbau & Kommunen in Wetzlar: Großheizanlagen, gewerbliche Sanitärräume & zuverlässige Wartung.',
+    path: '/gewerbe'
+});
 
 export default function GewerbePage() {
     return (

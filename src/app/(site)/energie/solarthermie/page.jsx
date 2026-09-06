@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { Sun, Droplets, CheckCircle2, ShieldCheck, Phone, Calendar, ArrowRight } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import QualityPromise from '@/components/sections/QualityPromise';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Solarthermie Wetzlar | Solare Warmwasserbereitung & Heizungsunterstützung | Bad & Energie GmbH',
-    description: 'Solarthermie-Anlagen in Wetzlar & Lahn-Dill: Bis zu 60% Energieersparnis bei der Warmwasserbereitung mit Flach- & Röhrenkollektoren.',
-    alternates: { canonical: 'https://bad-energie.de/energie/solarthermie' }
-};
+export const metadata = createMetadata({
+    title: 'Solarthermie Wetzlar | Warmwasser & Heizung | Bad & Energie',
+    description: 'Solarthermie in Wetzlar & Lahn-Dill: Sparen Sie bis zu 60% Energie bei der Warmwasserbereitung mit modernen Flach- & Röhrenkollektoren.',
+    path: '/energie/solarthermie'
+});
 
 export default function SolarthermiePage() {
     return (
@@ -38,6 +39,14 @@ export default function SolarthermiePage() {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+                <div className="text-center max-w-3xl mx-auto mb-12">
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
+                        Vorteile moderner Solarthermie-Anlagen
+                    </h2>
+                    <p className="mt-3 text-sm sm:text-base text-slate-600">
+                        Nachhaltige Wärme, spürbare Entlastung Ihrer Heizkosten und maximale Effizienz für Ihr Zuhause.
+                    </p>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[
                         { title: 'Bis zu 60 % Warmwasser-Ersparnis', desc: 'Solarkollektoren decken über das Jahr gemittelt mehr als die Hälfte des gesamten Warmwasserbedarfs eines Einfamilienhauses ab.' },

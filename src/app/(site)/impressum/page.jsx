@@ -2,12 +2,6 @@ import React from 'react';
 import Link from 'next/link';
 import { COMPANY_DATA } from '@/config/company';
 
-export const metadata = {
-    title: 'Impressum | Bad & Energie GmbH Wetzlar',
-    description: 'Gesetzliche Anbieterkennzeichnung der Bad & Energie GmbH gemäß § 5 DDG: Geschäftsführer Sabri Demir, HRB 2449 Amtsgericht Wetzlar, USt-IdNr. DE215 933 612.',
-    alternates: { canonical: 'https://bad-energie.de/impressum' }
-};
-
 export default function ImpressumPage() {
     return (
         <div className="pt-32 pb-24 min-h-screen relative overflow-hidden">

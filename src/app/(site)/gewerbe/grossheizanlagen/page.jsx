@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { Flame, Zap, CheckCircle2, ShieldCheck, Phone, Calendar, ArrowRight } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import QualityPromise from '@/components/sections/QualityPromise';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Großheizanlagen & Kaskaden Wetzlar | Industrieheizung | Bad & Energie GmbH',
-    description: 'Großheizanlagen in Wetzlar & Lahn-Dill: Wärmepumpen-Kaskaden bis in den Megawatt-Bereich, Industriebrennwert & Nahwärmenetze für Gewerbe & Wohnungsbau.',
-    alternates: { canonical: 'https://bad-energie.de/gewerbe/grossheizanlagen' }
-};
+export const metadata = createMetadata({
+    title: 'Großheizanlagen & Kaskaden Wetzlar | Industrieheizung',
+    description: 'Großheizanlagen in Wetzlar & Lahn-Dill: Wärmepumpen-Kaskaden bis Megawatt-Bereich, Industriebrennwert & Nahwärmenetze für Gewerbe & Wohnungsbau.',
+    path: '/gewerbe/grossheizanlagen'
+});
 
 export default function GrossheizanlagenPage() {
     return (
@@ -37,6 +38,14 @@ export default function GrossheizanlagenPage() {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+                <div className="text-center max-w-3xl mx-auto mb-12">
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
+                        Effiziente Großwärme &amp; Kaskadenlösungen
+                    </h2>
+                    <p className="mt-3 text-sm sm:text-base text-slate-600">
+                        Maximale Ausfallsicherheit, modulare Skalierbarkeit und intelligente Gebäudeleittechnik für Industrie und Gewerbe.
+                    </p>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[
                         { title: 'NIBE Groß-Wärmepumpen Kaskaden', desc: 'Zusammenschaltung mehrerer Wärmepumpenmodule ermöglicht Leistungen von 100 kW bis über 1.000 kW – hocheffizient auch bei schwankendem Lastprofil.' },

@@ -5,12 +5,6 @@ import { COMPANY_DATA } from '@/config/company';
 import TouchConfigurator from '@/components/calculator/TouchConfigurator';
 import QualityPromise from '@/components/sections/QualityPromise';
 
-export const metadata = {
-    title: 'Fördermittelberatung Heizung & Bad 2025/2026 | Bis 70% BEG/KfW | Bad & Energie GmbH',
-    description: 'Staatliche Fördermittel für Wärmepumpen & Badsanierung in Wetzlar: Bis zu 70% KfW 458 Zuschuss + bis zu 4.000 € Pflegekassen-Zuschuss für barrierefreie Bäder.',
-    alternates: { canonical: 'https://bad-energie.de/foerderung' }
-};
-
 export default function FoerderungPage() {
     return (
         <div className="pt-32 pb-24 min-h-screen relative overflow-hidden">

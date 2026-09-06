@@ -3,12 +3,6 @@ import Link from 'next/link';
 import { MapPin, Phone, Mail, Clock, Printer, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 
-export const metadata = {
-    title: 'Kontakt & Standorte Wetzlar | Bad & Energie GmbH',
-    description: 'Kontaktieren Sie die Bad & Energie GmbH: Hauptsitz Hans-Sachs-Str. 12 (35576 Wetzlar, Tel. 06441 20 39 053) & Betriebsstätte Siegmund-Hiepe-Str. 20 (Tel. 06441 42956).',
-    alternates: { canonical: 'https://bad-energie.de/kontakt' }
-};
-
 export default function KontaktPage() {
     return (
         <div className="pt-32 pb-24 min-h-screen relative overflow-hidden">

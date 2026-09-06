@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { Zap, Battery, CheckCircle2, ShieldCheck, Phone, Calendar, ArrowRight, Sun } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import QualityPromise from '@/components/sections/QualityPromise';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Photovoltaik & Stromspeicher Wetzlar | Solarstrom & Wärmepumpe | Bad & Energie GmbH',
+export const metadata = createMetadata({
+    title: 'Photovoltaik & Stromspeicher Wetzlar: Meisterbetrieb',
     description: 'Photovoltaikanlagen mit Batteriespeicher in Wetzlar & Lahn-Dill: Eigener Solarstrom für Haushalt, NIBE Wärmepumpe & Wallbox. 0% Mehrwertsteuer.',
-    alternates: { canonical: 'https://bad-energie.de/energie/photovoltaik' }
-};
+    path: '/energie/photovoltaik'
+});
 
 export default function PhotovoltaikPage() {
     return (
@@ -37,6 +38,14 @@ export default function PhotovoltaikPage() {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+                <div className="text-center max-w-3xl mx-auto mb-12">
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
+                        Vorteile moderner Photovoltaik- &amp; Speichertechnik
+                    </h2>
+                    <p className="mt-2 text-sm text-slate-600">
+                        Nachhaltiger Solarstrom perfekt abgestimmt auf Heizung und Haustechnik in Wetzlar &amp; Lahn-Dill.
+                    </p>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[
                         { title: 'Smarte Wärmepumpen-Kopplung (SG Ready)', desc: 'Wenn die PV-Anlage Überschussstrom liefert, hebt die NIBE Wärmepumpe automatisch die Speichertemperatur an und speichert Energie thermisch.' },

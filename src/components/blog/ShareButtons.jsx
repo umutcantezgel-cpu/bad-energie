@@ -12,8 +12,8 @@ const ShareButtons = ({ url, title, description }) => {
     const [copied, setCopied] = useState(false);
     const [showShareMenu, setShowShareMenu] = useState(false);
 
-    const shareUrl = url || (typeof window !== 'undefined' ? window.location.href : 'https://www.batherm.de');
-    const shareTitle = title || (typeof document !== 'undefined' ? document.title : 'Batherm Haustechnik');
+    const shareUrl = url || (typeof window !== 'undefined' ? window.location.href : 'https://bad-energie.de');
+    const shareTitle = title || (typeof document !== 'undefined' ? document.title : 'Bad & Energie GmbH');
     const shareDescription = description || '';
 
     const shareLinks = {

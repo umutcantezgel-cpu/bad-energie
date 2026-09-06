@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { RefreshCw, CheckCircle2, ShieldCheck, Phone, Calendar, ArrowRight } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import QualityPromise from '@/components/sections/QualityPromise';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Regen- & Grauwassernutzung Wetzlar | Zisterne & Wassereinsparung | Bad & Energie GmbH',
-    description: 'Regenwassernutzungsanlagen & Grauwasserrecycling in Wetzlar & Lahn-Dill: Bis zu 50% Trinkwassereinsparung für WC-Spülung, Waschmaschine & Gartenbewässerung.',
-    alternates: { canonical: 'https://bad-energie.de/haustechnik/regen-und-grauwassernutzung' }
-};
+export const metadata = createMetadata({
+    title: 'Regen- & Grauwassernutzung Wetzlar | Zisterne & Umwelt',
+    description: 'Regenwassernutzungsanlagen & Grauwasserrecycling in Wetzlar & Lahn-Dill: Bis zu 50% Trinkwassereinsparung für WC-Spülung, Waschmaschine & Garten.',
+    path: '/haustechnik/regen-und-grauwassernutzung'
+});
 
 export default function RegenGrauwasserPage() {
     return (
@@ -37,6 +38,14 @@ export default function RegenGrauwasserPage() {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+                <div className="text-center max-w-3xl mx-auto mb-12">
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
+                        Vorteile der Regen- und Grauwassernutzung
+                    </h2>
+                    <p className="mt-3 text-sm sm:text-base text-slate-600">
+                        Ressourcen schonen, Betriebskosten senken und von kommunalen Gebühreneinsparungen profitieren.
+                    </p>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[
                         { title: 'Bis zu 50 % Trinkwassereinsparung', desc: 'Rund die Hälfte unseres täglichen Wasserbedarfs erfordert keine Trinkwasserqualität. Regenwasser ist kalkfrei und optimal für Waschmaschinen.' },

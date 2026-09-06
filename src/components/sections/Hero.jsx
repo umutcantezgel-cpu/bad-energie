@@ -32,7 +32,7 @@ const Hero = ({
                 {backgroundImage && (
                     <ResponsiveImage
                         src={backgroundImage}
-                        alt="Batherm Haustechnik Premium"
+                        alt="Bad &amp; Energie GmbH Meisterbetrieb Wetzlar"
                         containerClassName="absolute inset-0 w-full h-full"
                         className="animate-[kenburns_20s_ease-out_forwards]"
                         priority={true}

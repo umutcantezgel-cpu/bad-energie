@@ -2,6 +2,8 @@ import { SERVICES } from '@/config/services';
 import { buildGraph, buildServiceNode, buildBreadcrumbNode, buildWebPageNode, SITE_URL } from '@/lib/schema';
 import JsonLd from '@/components/seo/JsonLd';
 
+import { createMetadata } from '@/lib/metadata';
+
 export const dynamicParams = false;
 
 export function generateStaticParams() {
@@ -15,46 +17,12 @@ export async function generateMetadata({ params }) {
   const service = SERVICES.find((s) => s.id === id);
   if (!service) return {};
 
-  const pageUrl = `${SITE_URL}/leistungen/${service.id}`;
-  const title = `${service.name} in Wetzlar & Umgebung`;
-  const fullTitle = `${title} | Batherm Haustechnik`;
-  const description = `${service.shortDescription}. Ihr zertifizierter Meisterbetrieb für ${service.name} in Wetzlar. Kostenlose Beratung & faire Festpreise.`;
-
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: pageUrl,
-      languages: {
-        'de': pageUrl,
-        'x-default': pageUrl,
-      },
-    },
-    openGraph: {
-      title: fullTitle,
-      description,
-      url: pageUrl,
-      siteName: 'Batherm Haustechnik',
-      locale: 'de_DE',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: fullTitle,
-      description,
-    },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
-    },
-  };
+  return createMetadata({
+    title: `${service.name} in Wetzlar & Lahn-Dill`,
+    description: `${service.shortDescription}. Meisterbetrieb für ${service.name} in Wetzlar & Lahn-Dill. Kostenlose Beratung & faire Festpreise.`,
+    path: `/leistungen/${service.id}`,
+    image: service.image,
+  });
 }
 
 export default async function Layout({ children, params }) {
@@ -73,7 +41,7 @@ export default async function Layout({ children, params }) {
     serviceSchemaGraph = buildGraph([
       buildWebPageNode({
         url: pageUrl,
-        name: `${service.name} Wetzlar | Batherm Haustechnik`,
+        name: `${service.name} Wetzlar | Bad & Energie GmbH`,
         description: service.shortDescription,
         breadcrumbItems: breadcrumbs,
       }),

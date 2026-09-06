@@ -33,8 +33,12 @@ const ServiceCard = ({ title, description, icon: Icon, href, className }) => {
             </p>
 
             {href && (
-                <Link href={href} className="inline-flex items-center text-sm font-semibold text-blue-600 group-hover:text-blue-700 mt-auto">
-                    Mehr erfahren
+                <Link 
+                    href={href} 
+                    className="inline-flex items-center text-sm font-semibold text-blue-600 group-hover:text-blue-700 mt-auto"
+                    aria-label={`${title} im Detail ansehen`}
+                >
+                    <span>{title ? `${title} ansehen` : 'Leistung ansehen'}</span>
                     <svg className="ml-2 w-4 h-4 transition-transform duration-300 group-hover:translate-x-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                     </svg>

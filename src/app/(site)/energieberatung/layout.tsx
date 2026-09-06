@@ -40,7 +40,7 @@ const energieFaqs = [
 const energieGraph = buildGraph([
   buildWebPageNode({
     url: pageUrl,
-    name: 'Energieberatung & Sanierungsfahrplan Wetzlar | Batherm Haustechnik',
+    name: 'Energieberatung & Sanierungsfahrplan Wetzlar | Bad & Energie GmbH',
     description:
       'Unabhängige Energieberatung für Heizungstausch, Wärmepumpen, hydraulischen Abgleich und staatliche Förderung.',
     breadcrumbItems: breadcrumbs,

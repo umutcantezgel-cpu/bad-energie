@@ -2,12 +2,6 @@ import React from 'react';
 import Link from 'next/link';
 import { COMPANY_DATA } from '@/config/company';
 
-export const metadata = {
-    title: 'Datenschutzerklärung | Bad & Energie GmbH Wetzlar',
-    description: 'Datenschutzerklärung der Bad & Energie GmbH nach DSGVO und BDSG. Informationen zur Erhebung und Verarbeitung personenbezogener Daten.',
-    alternates: { canonical: 'https://bad-energie.de/datenschutz' }
-};
-
 export default function DatenschutzPage() {
     return (
         <div className="pt-32 pb-20 bg-slate-50 min-h-screen">

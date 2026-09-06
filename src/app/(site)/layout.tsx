@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://bad-energie.de'),
   title: {
     default: 'Bad & Energie GmbH | Meisterbetrieb für Badsanierung & Heiztechnik Wetzlar',
-    template: '%s | Bad & Energie GmbH'
+    template: '%s'
   },
   description: 'Ihr Meisterbetrieb für schlüsselfertige Badsanierung, NIBE Wärmepumpen, Gas-Brennwert, Wohnraumlüftung & Trinkwasserhygiene in Wetzlar & Lahn-Dill. Bis zu 70% BEG-Förderung.',
   keywords: [

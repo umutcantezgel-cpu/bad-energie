@@ -4,6 +4,7 @@ import { CITIES } from '@/config/cities';
 import { SERVICES } from '@/config/services';
 import { COMPANY_DATA } from '@/config/company';
 import { notFound } from 'next/navigation';
+import { createMetadata } from '@/lib/metadata';
 import { buildGraph, buildCityLocalBusinessNode, buildBreadcrumbNode, buildWebPageNode, SITE_URL } from '@/lib/schema';
 import JsonLd from '@/components/seo/JsonLd';
 import { MapPin, Phone, Calendar, ArrowRight, ShieldCheck, CheckCircle2, Sparkles, Award } from 'lucide-react';
@@ -24,44 +25,15 @@ export async function generateMetadata({
   const city = CITIES.find((c) => c.slug === stadt);
   if (!city) return {};
 
-  const pageUrl = `https://bad-energie.de/standorte/${city.slug}`;
-  const title = `${city.name}: Badsanierung & Heiztechnik | Bad & Energie GmbH`;
-  const description = `Ihr Meisterbetrieb für Badsanierung, Wärmepumpen & Haustechnik in ${city.name}. ${
-    city.distanceKm === 0
-      ? 'Direkt vor Ort in Wetzlar.'
-      : `Nur ${city.distanceKm} km entfernt.`
-  } Kostenlose Beratung & bis zu 70% Förderung.`;
-
-  return {
-    title,
-    description,
-    alternates: { 
-      canonical: pageUrl,
-      languages: {
-        'de': pageUrl,
-        'x-default': pageUrl,
-      },
-    },
-    openGraph: {
-      title,
-      description,
-      url: pageUrl,
-      siteName: 'Bad & Energie GmbH',
-      locale: 'de_DE',
-      type: 'website',
-    },
-    robots: { 
-      index: true, 
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
-    },
-  };
+  return createMetadata({
+    title: `${city.name}: Badsanierung & Heizung`,
+    description: `Ihr Meisterbetrieb für Badsanierung, Wärmepumpen & Haustechnik in ${city.name}. ${
+      city.distanceKm === 0
+        ? 'Direkt vor Ort in Wetzlar.'
+        : `Nur ${city.distanceKm} km entfernt.`
+    } Kostenlose Beratung & bis zu 70% Förderung.`,
+    path: `/standorte/${city.slug}`,
+  });
 }
 
 function getNearbyCities(currentSlug: string, count: number = 5) {

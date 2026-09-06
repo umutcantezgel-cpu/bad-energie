@@ -27,13 +27,13 @@ import MusterbadTeaser from '@/components/sections/MusterbadTeaser';
 import ReviewsSection from '@/components/sections/ReviewsSection';
 import TouchConfigurator from '@/components/calculator/TouchConfigurator';
 
-export const metadata = {
-    title: 'Bad & Energie GmbH | Meisterbetrieb für Badsanierung & Heiztechnik Wetzlar',
+import { createMetadata } from '@/lib/metadata';
+
+export const metadata = createMetadata({
+    title: 'Meisterbetrieb für Badsanierung & Heiztechnik Wetzlar',
     description: 'Ihr Meisterbetrieb für Badsanierung, NIBE Wärmepumpen, Gas-Brennwert, Wohnraumlüftung und Trinkwasserhygiene in Wetzlar, Gießen & Lahn-Dill. Bis zu 70% Förderung.',
-    alternates: {
-        canonical: 'https://bad-energie.de'
-    }
-};
+    path: '/'
+});
 
 export default function HomePage() {
     return (
@@ -131,9 +131,9 @@ export default function HomePage() {
                                         Schnell-Finder
                                     </div>
 
-                                    <h3 className="text-xl font-black text-slate-900 mb-1">
+                                    <h2 className="text-xl font-black text-slate-900 mb-1">
                                         Was möchten Sie modernisieren?
-                                    </h3>
+                                    </h2>
                                     <p className="text-xs text-slate-500 mb-5 font-medium">
                                         Wählen Sie Ihr Fachgewerk für eine maßgeschneiderte Lösung:
                                     </p>

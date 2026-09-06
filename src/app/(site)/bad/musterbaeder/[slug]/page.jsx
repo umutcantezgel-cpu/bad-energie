@@ -16,6 +16,10 @@ import { MUSTERBAEDER } from '@/config/musterbaeder';
 import { COMPANY_DATA } from '@/config/company';
 import TouchConfigurator from '@/components/calculator/TouchConfigurator';
 
+import { createMetadata } from '@/lib/metadata';
+import { buildGraph, buildBreadcrumbNode, buildWebPageNode, buildProjectNode, SITE_URL } from '@/lib/schema';
+import JsonLd from '@/components/seo/JsonLd';
+
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
@@ -29,10 +33,12 @@ export async function generateMetadata({ params }) {
     const bath = MUSTERBAEDER.find((b) => b.slug === slug);
     if (!bath) return { title: 'Musterbad | Bad & Energie GmbH' };
 
-    return {
-        title: `${bath.title} | Bad & Energie GmbH`,
-        description: `${bath.headline}. Ausstattungsliste mit VIGOUR, Duka, CONEL & COSMO Komponenten. Jetzt unverbindlich anfragen!`
-    };
+    return createMetadata({
+        title: `${bath.title} (${bath.size})`,
+        description: `${bath.headline}. Detaillierte Ausstattung mit VIGOUR, Duka & CONEL Elementen. Jetzt unverbindlich anfragen!`,
+        path: `/bad/musterbaeder/${bath.slug}`,
+        image: bath.image,
+    });
 }
 
 export default async function MusterbadDetailPage({ params }) {
@@ -43,8 +49,32 @@ export default async function MusterbadDetailPage({ params }) {
         notFound();
     }
 
+    const pageUrl = `${SITE_URL}/bad/musterbaeder/${bath.slug}`;
+    const breadcrumbs = [
+        { name: 'Home', path: '/' },
+        { name: 'Bäder', path: '/bad' },
+        { name: 'Musterbäder', path: '/bad/musterbaeder' },
+        { name: bath.title, path: pageUrl },
+    ];
+    const schemaGraph = buildGraph([
+        buildWebPageNode({
+            url: pageUrl,
+            name: `${bath.title} | Bad & Energie GmbH`,
+            description: bath.headline,
+            breadcrumbItems: breadcrumbs,
+        }),
+        buildBreadcrumbNode(breadcrumbs, pageUrl),
+        buildProjectNode({
+            name: bath.title,
+            description: bath.headline,
+            url: pageUrl,
+            image: bath.image,
+        }),
+    ]);
+
     return (
         <div className="pt-32 pb-24 min-h-screen relative overflow-hidden">
+            <JsonLd schema={schemaGraph} />
             {/* Ambient Glow */}
             <div className="ambient-glow-blue -top-20 -left-20" />
             <div className="ambient-glow-cyan top-96 -right-20" />

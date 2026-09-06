@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { Wrench, CheckCircle2, ShieldCheck, Phone, Calendar, ArrowRight } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import QualityPromise from '@/components/sections/QualityPromise';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Sanitärinstallation & Leitungsnetz Wetzlar | Meisterbetrieb | Bad & Energie GmbH',
-    description: 'Fachgerechte Sanitärinstallation in Wetzlar & Lahn-Dill: Trinkwasserleitungen (Edelstahl/Mehrschichtverbund), Abwasser, Vorwandtechnik von CONEL & Notdienst.',
-    alternates: { canonical: 'https://bad-energie.de/haustechnik/sanitaerinstallation' }
-};
+export const metadata = createMetadata({
+    title: 'Sanitärinstallation Wetzlar | Leitungsnetz & Meisterbetrieb',
+    description: 'Fachgerechte Sanitärinstallation in Wetzlar & Lahn-Dill: Trinkwasserleitungen, Abwasser, Vorwandtechnik von CONEL, Schallschutz & Notdienst.',
+    path: '/haustechnik/sanitaerinstallation'
+});
 
 export default function SanitaerinstallationPage() {
     return (
@@ -37,6 +38,14 @@ export default function SanitaerinstallationPage() {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+                <div className="text-center max-w-3xl mx-auto mb-12">
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
+                        Sanitäre Leistungen für Leitungsnetze
+                    </h2>
+                    <p className="mt-3 text-sm sm:text-base text-slate-600">
+                        Hygienische Trinkwassersicherheit, DIN-konformer Schallschutz und langlebige Vorwandelemente.
+                    </p>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[
                         { title: 'Edelstahl- & Mehrschichtverbundrohre', desc: 'Diffusionsdichte, hygienische und langlebige Trinkwasserleitungen ohne Blei- oder Schwermetalleintrag.' },

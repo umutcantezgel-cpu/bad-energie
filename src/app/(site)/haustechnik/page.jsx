@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { Shield, Droplets, Filter, CheckCircle2, ArrowRight, ShieldCheck, Phone, Calendar, RefreshCw, Wrench } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import QualityPromise from '@/components/sections/QualityPromise';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Haustechnik & Wasserhygiene Wetzlar | Trinkwasserfilter & Legionellen | Bad & Energie GmbH',
-    description: 'Moderne Haustechnik in Wetzlar & Lahn-Dill: Trinkwasserfilter, Entkalkungsanlagen, Legionellenprüfung nach TrinkwV, Regenwassernutzung & Sanitärinstallation.',
-    alternates: { canonical: 'https://bad-energie.de/haustechnik' }
-};
+export const metadata = createMetadata({
+    title: 'Haustechnik & Wasserhygiene Wetzlar | Trinkwasser & Filter',
+    description: 'Moderne Haustechnik in Wetzlar & Lahn-Dill: Trinkwasserfilter, Entkalkungsanlagen, Legionellenprüfung nach TrinkwV & Sanitärinstallation.',
+    path: '/haustechnik'
+});
 
 export default function HaustechnikPage() {
     return (

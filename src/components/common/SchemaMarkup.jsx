@@ -3,13 +3,13 @@ import React from 'react';
 import { siteConfig } from '@/config/site';
 
 const SchemaMarkup = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://batherm.de';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://bad-energie.de';
 
     // LocalBusiness Schema
     const localBusinessSchema = {
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
-        "name": siteConfig.name, // "Bariş Haustechnik"
+        "name": siteConfig.name,
         "image": `${origin}/images/og-image.jpg`, // Adjust path if needed
         "description": siteConfig.description,
         "url": origin,

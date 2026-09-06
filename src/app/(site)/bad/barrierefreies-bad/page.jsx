@@ -13,12 +13,13 @@ import {
 } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import TouchConfigurator from '@/components/calculator/TouchConfigurator';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Barrierefreie Badmodernisierung Wetzlar | Bis 4.000 € Pflegekassenzuschuss',
-    description: 'Altersgerechte und barrierefreie Badmodernisierung nach DIN 18040-2 in Wetzlar. Bodengleiche Duschen, Dusch-WC & bis zu 4.000 € Zuschuss der Pflegekasse.',
-    alternates: { canonical: 'https://bad-energie.de/bad/barrierefreies-bad' }
-};
+export const metadata = createMetadata({
+    title: 'Barrierefreies Bad Wetzlar: Bis 4.000 € Zuschuss',
+    description: 'Barrierefreie Badmodernisierung nach DIN 18040-2 in Wetzlar & Lahn-Dill. Bodengleiche Duschen, Dusch-WCs und Unterstützung beim Pflegekassenzuschuss.',
+    path: '/bad/barrierefreies-bad'
+});
 
 export default function BarrierefreiesBadPage() {
     return (
@@ -68,9 +69,9 @@ export default function BarrierefreiesBadPage() {
                                 <BadgePercent className="w-5 h-5" />
                                 <span>Zuschuss für wohnumfeldverbessernde Maßnahmen (§ 40 SGB XI)</span>
                             </div>
-                            <h3 className="text-2xl font-black text-slate-900">
+                            <h2 className="text-2xl font-black text-slate-900">
                                 Bis zu 4.000 € Zuschuss von der Pflegekasse
-                            </h3>
+                            </h2>
                             <p className="text-xs text-slate-600 leading-relaxed font-medium">
                                 Bereits ab Pflegegrad 1 bezuschusst die Pflegekasse den Umbau auf ein barrierefreies Bad mit bis zu 4.000 € pro Person (bei Ehepaaren mit Pflegegrad sogar bis zu 8.000 €). Wir erstellen für Sie den förderkonformen Kostenvoranschlag.
                             </p>

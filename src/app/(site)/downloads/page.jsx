@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { FileText, Download, CheckCircle2, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
 import { COMPANY_DATA } from '@/config/company';
 import QualityPromise from '@/components/sections/QualityPromise';
+import { createMetadata } from '@/lib/metadata';
 
-export const metadata = {
-    title: 'Downloads & Broschüren | Checklisten & Förderleitfaden | Bad & Energie GmbH',
+export const metadata = createMetadata({
+    title: 'Downloads & Broschüren: Leitfäden vom Meisterbetrieb',
     description: 'Nützliche Downloads der Bad & Energie GmbH Wetzlar: Bad-Planungscheckliste, Förderleitfaden KfW/BEG, Trinkwasserhygiene-Leitfaden & Musterbad-Katalog.',
-    alternates: { canonical: 'https://bad-energie.de/downloads' }
-};
+    path: '/downloads'
+});
 
 export default function DownloadsPage() {
     const downloads = [
@@ -40,6 +41,9 @@ export default function DownloadsPage() {
             </div>
 
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-8 text-center">
+                    Verfügbare Leitfäden &amp; Checklisten
+                </h2>
                 <div className="space-y-4">
                     {downloads.map((doc, idx) => (
                         <div key={idx} className="glass-surface p-6 sm:p-8 rounded-[2rem] flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:shadow-[0_20px_40px_rgba(12,58,135,0.1)] hover:-translate-y-0.5 transition-all duration-500">

@@ -160,6 +160,7 @@ export default function BlogPostPage() {
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
+                      h1: ({ node, ...props }) => <h2 id={generateSlug(props.children)} className="text-2xl font-black mt-10 mb-4 pb-2 border-b border-slate-200" {...props} />,
                       h2: ({ node, ...props }) => <h2 id={generateSlug(props.children)} className="text-2xl font-black mt-10 mb-4 pb-2 border-b border-slate-200" {...props} />,
                       h3: ({ node, ...props }) => <h3 id={generateSlug(props.children)} className="text-lg font-black mt-8 mb-3 text-[#0C3A87]" {...props} />,
                       ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-6 space-y-1.5 marker:text-[#0C3A87]" {...props} />,
