@@ -61,7 +61,7 @@ export const SEO_CONFIG = {
 
         contact: {
             title: "Kontakt & Standorte | Bad & Energie GmbH Wetzlar",
-            description: "Hans-Sachs-Str. 12 & Siegmund-Hiepe-Str. 20 in Wetzlar. Telefon 06441 20 39 053. Schnelle Terminvergabe.",
+            description: "Siegmund-Hiepe-Str. 20 in 35578 Wetzlar. Telefon 06441-42956. Schnelle Terminvergabe.",
             keywords: ["Kontakt", "Standort Wetzlar", "Beratungstermin", "Bad & Energie"],
             canonical: "https://bad-energie.de/kontakt"
         }
@@ -71,19 +71,19 @@ export const SEO_CONFIG = {
     getOrganizationSchema: () => ({
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
-        "name": "Bad & Energie GmbH",
+        "name": "Bad & Energie GmbH Lahn-Dill",
         "description": "Meisterbetrieb für Badsanierung, NIBE Wärmepumpen, Wohnraumlüftung und Trinkwasserhygiene in Wetzlar",
         "image": "https://bad-energie.de/logo.png",
         "url": "https://bad-energie.de",
         "address": {
             "@type": "PostalAddress",
-            "streetAddress": "Hans-Sachs-Straße 12",
+            "streetAddress": "Siegmund-Hiepe-Str. 20",
             "addressLocality": "Wetzlar",
-            "postalCode": "35576",
+            "postalCode": "35578",
             "addressCountry": "DE"
         },
-        "telephone": "+49 6441 2039053",
-        "email": "anfrage@bad-energie-profi.de",
+        "telephone": "+49 6441 42956",
+        "email": "info@bad-energie.de",
         "areaServed": ["Wetzlar", "Gießen", "Lahn-Dill-Kreis"],
         "priceRange": "€€€",
         "sameAs": [],

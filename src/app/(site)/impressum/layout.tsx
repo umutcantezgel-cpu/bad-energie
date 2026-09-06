@@ -4,7 +4,7 @@ import JsonLd from '@/components/seo/JsonLd';
 
 export const metadata = createMetadata({
   title: 'Impressum & rechtliche Angaben',
-  description: 'Impressum und gesetzliche Anbieterkennzeichnung der Bad & Energie GmbH, Hans-Sachs-Straße 12, 35576 Wetzlar. Geschäftsführer Sabri Demir.',
+  description: 'Impressum und gesetzliche Anbieterkennzeichnung der Bad & Energie GmbH Lahn-Dill, Siegmund-Hiepe-Str. 20, 35578 Wetzlar. Geschäftsführer Sabri Demir.',
   path: '/impressum',
 });
 

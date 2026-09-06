@@ -53,10 +53,10 @@ export default async function TermineBestaetigenPage({
             Dieser Bestätigungslink ist leider abgelaufen oder wurde bereits verwendet. Bitte kontaktieren Sie uns direkt, um einen neuen Termin abzustimmen.
           </p>
           <a
-            href="tel:+4964412039053"
+            href="tel:+49644142956"
             className="inline-flex items-center justify-center min-h-[48px] px-6 rounded-2xl bg-[color:var(--modul-blau,#1B3A8C)] text-white font-semibold text-sm"
           >
-            06441 2039053 anrufen
+            06441-42956 anrufen
           </a>
         </div>
       </div>

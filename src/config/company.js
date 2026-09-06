@@ -5,7 +5,7 @@ import { Award, Users, Target, Heart, Clock, Shield, CheckCircle, Zap, Droplet, 
 
 export const COMPANY_DATA = {
     // Legal Information (Handelsregister)
-    legalName: "Bad & Energie GmbH",
+    legalName: "Bad & Energie GmbH Lahn-Dill",
     tradeName: "Bad & Energie GmbH Lahn-Dill",
     owner: {
         firstName: "Sabri",
@@ -16,40 +16,41 @@ export const COMPANY_DATA = {
 
     // Headquarters & Branch Addresses
     headquarters: {
-        street: "Hans-Sachs-Straße 12",
-        postalCode: "35576",
-        city: "Wetzlar",
-        state: "Hessen",
-        country: "Deutschland",
-        fullAddress: "Hans-Sachs-Straße 12, 35576 Wetzlar, Deutschland",
-        phone: "06441 20 39 053",
-        phoneLink: "064412039053",
-        email: "anfrage@bad-energie-profi.de",
-        mapsUrl: "https://maps.app.goo.gl/txCk3uNgQjeTJWux9"
-    },
-
-    branchLahnDill: {
-        street: "Siegmund-Hiepe-Straße 20",
+        street: "Siegmund-Hiepe-Str. 20",
         postalCode: "35578",
         city: "Wetzlar",
         state: "Hessen",
         country: "Deutschland",
-        fullAddress: "Siegmund-Hiepe-Straße 20, 35578 Wetzlar, Deutschland",
-        phone: "06441 42956",
+        fullAddress: "Siegmund-Hiepe-Str. 20, 35578 Wetzlar, Deutschland",
+        phone: "06441-42956",
         phoneLink: "0644142956",
-        fax: "06441 48781",
+        fax: "06441-48781",
+        email: "info@bad-energie.de",
+        mapsUrl: "https://maps.app.goo.gl/txCk3uNgQjeTJWux9"
+    },
+
+    branchLahnDill: {
+        street: "Siegmund-Hiepe-Str. 20",
+        postalCode: "35578",
+        city: "Wetzlar",
+        state: "Hessen",
+        country: "Deutschland",
+        fullAddress: "Siegmund-Hiepe-Str. 20, 35578 Wetzlar, Deutschland",
+        phone: "06441-42956",
+        phoneLink: "0644142956",
+        fax: "06441-48781",
         email: "info@bad-energie.de"
     },
 
     // Address & Contact (Backwards compatibility)
     address: {
-        street: "Hans-Sachs-Straße 12",
-        postalCode: "35576",
+        street: "Siegmund-Hiepe-Str. 20",
+        postalCode: "35578",
         city: "Wetzlar",
         state: "Hessen",
         country: "Deutschland",
         countryCode: "DE",
-        fullAddress: "Hans-Sachs-Straße 12, 35576 Wetzlar, Deutschland"
+        fullAddress: "Siegmund-Hiepe-Str. 20, 35578 Wetzlar, Deutschland"
     },
 
     // Tax & Registration
@@ -110,19 +111,19 @@ export const COMPANY_DATA = {
 
     // Contact
     contact: {
-        phone: "06441 20 39 053",
-        phoneSecondary: "06441 42956",
-        phoneFormatted: "06441 20 39 053",
-        phoneLink: "064412039053",
+        phone: "06441-42956",
+        phoneSecondary: "06441-42956",
+        phoneFormatted: "06441-42956",
+        phoneLink: "0644142956",
         phoneSecondaryLink: "0644142956",
-        fax: "06441 48781",
-        email: "anfrage@bad-energie-profi.de",
+        fax: "06441-48781",
+        email: "info@bad-energie.de",
         emailSecondary: "info@bad-energie.de",
         website: "https://bad-energie.de",
         emergency: {
             available: true,
-            phone: "06441 20 39 053",
-            phoneSecondary: "06441 42956",
+            phone: "06441-42956",
+            phoneSecondary: "06441-42956",
             note: "Zuverlässiger Notdienst-Service für unsere Bestandskunden"
         }
     },
@@ -211,7 +212,7 @@ export const historyTimeline = [
     {
         year: "2021 - Heute",
         title: "Zukunft & Leitung durch Sabri Demir",
-        description: "Übernahme durch Sabri Demir mit komplettem Team, Kundenstamm und Maschinenpark. Umzug an den modernen Hauptstandort Hans-Sachs-Straße 12 mit starkem Fokus auf erneuerbare Energien und digitale Planung."
+        description: "Übernahme durch Sabri Demir mit komplettem Team, Kundenstamm und Maschinenpark. Ausbau des Hauptstandorts in der Siegmund-Hiepe-Str. 20 mit starkem Fokus auf erneuerbare Energien und digitale Planung."
     }
 ];
 

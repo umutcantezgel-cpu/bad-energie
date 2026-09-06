@@ -37,11 +37,12 @@ export default function DatenschutzPage() {
                         <h2 className="text-base font-bold text-slate-900">2. Hinweis zur verantwortlichen Stelle</h2>
                         <p>Die verantwortliche Stelle für die Datenverarbeitung auf dieser Website ist:</p>
                         <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-slate-800 font-medium">
-                            <p><strong>Bad &amp; Energie GmbH</strong></p>
-                            <p>Geschäftsführer: Sabri Demir</p>
-                            <p>Hans-Sachs-Straße 12, 35576 Wetzlar</p>
-                            <p>Telefon: {COMPANY_DATA.headquarters.phone}</p>
-                            <p>E-Mail: {COMPANY_DATA.headquarters.email}</p>
+                            <p><strong>{COMPANY_DATA.legalName}</strong></p>
+                            <p>Geschäftsführer: {COMPANY_DATA.owner.fullName}</p>
+                            <p>{COMPANY_DATA.headquarters.street}, {COMPANY_DATA.headquarters.postalCode} {COMPANY_DATA.headquarters.city}</p>
+                            <p>Telefon: {COMPANY_DATA.contact.phone}</p>
+                            <p>Telefax: {COMPANY_DATA.contact.fax}</p>
+                            <p>E-Mail: {COMPANY_DATA.contact.email}</p>
                         </div>
                     </div>
 

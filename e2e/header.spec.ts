@@ -13,7 +13,7 @@ test.describe('Header & Navigation Desktop', () => {
     await expect(topBar).toContainText('Ausstellungen Wetzlar & Gießen');
     await expect(topBar).toContainText('24/7 Notdienst');
     await expect(topBar).toContainText('Hilfe-Center');
-    await expect(topBar).toContainText('06441 20 39 053');
+    await expect(topBar).toContainText('06441-42956');
 
     // Klick auf Hilfe-Center öffnet die HelpSidebar
     const hilfeBtn = topBar.getByRole('button', { name: 'Hilfe-Center' });

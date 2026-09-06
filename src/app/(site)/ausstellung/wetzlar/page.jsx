@@ -51,7 +51,7 @@ export default function AusstellungWetzlarPage() {
                             360°-Erlebnis &amp; Bemusterung vor Ort
                         </h2>
                         <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
-                            In unserem Showroom in der Hans-Sachs-Straße 12 in 35576 Wetzlar können Sie Materialien, Oberflächen, Badmöbel von VIGOUR, Duka Duschwände und funktionierende NIBE Wärmepumpen hautnah erleben und anfassen.
+                            In unseren Räumlichkeiten in der {COMPANY_DATA.headquarters.street} in {COMPANY_DATA.headquarters.postalCode} {COMPANY_DATA.headquarters.city} können Sie Materialien, Oberflächen, Badmöbel von VIGOUR, Duka Duschwände und funktionierende NIBE Wärmepumpen hautnah erleben und anfassen.
                         </p>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 text-left">

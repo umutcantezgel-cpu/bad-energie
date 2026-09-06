@@ -17,7 +17,7 @@ export default function AGBPage() {
                     <div className="space-y-4 text-xs text-slate-600 leading-relaxed border-b border-slate-100 pb-6">
                         <h2 className="text-base font-bold text-slate-900">§ 1 Geltungsbereich &amp; Vertragspartner</h2>
                         <p>
-                            (1) Diese Allgemeinen Geschäftsbedingungen gelten für alle Verträge über Lieferungen, Montage-, Installations- und Wartungsleistungen zwischen der <strong>Bad &amp; Energie GmbH</strong>, Hans-Sachs-Straße 12, 35576 Wetzlar (nachfolgend &bdquo;Auftragnehmer&ldquo;) und ihren Kunden (nachfolgend &bdquo;Auftraggeber&ldquo;).
+                            (1) Diese Allgemeinen Geschäftsbedingungen gelten für alle Verträge über Lieferungen, Montage-, Installations- und Wartungsleistungen zwischen der <strong>{COMPANY_DATA.legalName}</strong>, {COMPANY_DATA.headquarters.street}, {COMPANY_DATA.headquarters.postalCode} {COMPANY_DATA.headquarters.city} (nachfolgend &bdquo;Auftragnehmer&ldquo;) und ihren Kunden (nachfolgend &bdquo;Auftraggeber&ldquo;).
                         </p>
                         <p>
                             (2) Abweichende oder ergänzende Bedingungen des Auftraggebers werden nicht Vertragsbestandteil, es sei denn, der Auftragnehmer stimmt ihrer Geltung ausdrücklich schriftlich zu.

@@ -49,11 +49,12 @@ export default function BarrierefreiheitPage() {
                             Sind Ihnen Mängel beim barrierefreien Zugang zu Inhalten von <a href="https://bad-energie.de" className="text-[#0C3A87] underline">https://bad-energie.de</a> aufgefallen? Oder haben Sie Fragen zur Umsetzung der Barrierefreiheit? Sie können sich jederzeit bei uns melden:
                         </p>
                         <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 font-medium text-slate-800">
-                            <p><strong>Bad &amp; Energie GmbH</strong></p>
-                            <p>Ansprechpartner: Sabri Demir</p>
-                            <p>Hans-Sachs-Straße 12, 35576 Wetzlar</p>
-                            <p>Telefon: {COMPANY_DATA.headquarters.phone}</p>
-                            <p>E-Mail: <a href={`mailto:${COMPANY_DATA.headquarters.email}`} className="text-[#0C3A87] underline">{COMPANY_DATA.headquarters.email}</a></p>
+                            <p><strong>{COMPANY_DATA.legalName}</strong></p>
+                            <p>Ansprechpartner: {COMPANY_DATA.owner.fullName}</p>
+                            <p>{COMPANY_DATA.headquarters.street}, {COMPANY_DATA.headquarters.postalCode} {COMPANY_DATA.headquarters.city}</p>
+                            <p>Telefon: {COMPANY_DATA.contact.phone}</p>
+                            <p>Telefax: {COMPANY_DATA.contact.fax}</p>
+                            <p>E-Mail: <a href={`mailto:${COMPANY_DATA.contact.email}`} className="text-[#0C3A87] underline">{COMPANY_DATA.contact.email}</a></p>
                         </div>
                     </div>
 

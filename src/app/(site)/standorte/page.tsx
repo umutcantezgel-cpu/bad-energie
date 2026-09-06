@@ -54,7 +54,7 @@ export default function StandorteOverviewPage() {
           </h1>
 
           <p className="text-lg sm:text-xl text-blue-100 max-w-3xl mx-auto leading-relaxed">
-            Als Meisterbetrieb mit Hauptsitz in der Hans-Sachs-Straße 12 in Wetzlar betreuen wir private und gewerbliche Kunden
+            Als Meisterbetrieb mit Hauptsitz in der Siegmund-Hiepe-Str. 20 in Wetzlar betreuen wir private und gewerbliche Kunden
             in Wetzlar, Gießen und einem Umkreis von bis zu 50 Kilometern. Schnelle Anfahrtswege, persönliche Beratung vor Ort
             und handwerkliche Meisterqualität.
           </p>

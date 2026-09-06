@@ -27,15 +27,15 @@ const STORAGE_KEYS = {
 
 // Adapter to map COMPANY_DATA to legacy siteConfig structure for UI compatibility
 const getAdaptedSiteConfig = () => ({
-    name: COMPANY_DATA?.legalName || "Bad & Energie GmbH",
+    name: COMPANY_DATA?.legalName || "Bad & Energie GmbH Lahn-Dill",
     description: "Ihr Meisterbetrieb für Badsanierung, Heizung und Haustechnik in Wetzlar und Umgebung.",
     contact: {
-        phone: COMPANY_DATA?.contact?.phone || "06441 20 39 053",
-        phoneLink: (COMPANY_DATA?.contact?.phone || "064412039053").replace(/[^0-9+]/g, ''),
-        email: COMPANY_DATA?.contact?.email || "anfrage@bad-energie-profi.de",
+        phone: COMPANY_DATA?.contact?.phone || "06441-42956",
+        phoneLink: (COMPANY_DATA?.contact?.phone || "0644142956").replace(/[^0-9+]/g, ''),
+        email: COMPANY_DATA?.contact?.email || "info@bad-energie.de",
         address: {
-            street: COMPANY_DATA?.address?.street || "Hans-Sachs-Straße 12",
-            zipCity: `${COMPANY_DATA?.address?.postalCode || "35576"} ${COMPANY_DATA?.address?.city || "Wetzlar"}`
+            street: COMPANY_DATA?.address?.street || "Siegmund-Hiepe-Str. 20",
+            zipCity: `${COMPANY_DATA?.address?.postalCode || "35578"} ${COMPANY_DATA?.address?.city || "Wetzlar"}`
         },
         hours: {
             weekdays: COMPANY_DATA?.hours?.formattedWeekdays || "Mo - Do: 07:00 – 16:45 Uhr",

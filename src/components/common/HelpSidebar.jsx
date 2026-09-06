@@ -90,7 +90,7 @@ export default function HelpSidebar({ isOpen, onClose }) {
       items: [
         {
           title: 'Wasserrohrbruch',
-          content: '1. Hauptwasserhahn sofort zudrehen (meist im Keller oder Hausanschlussraum).\n2. Strom im betroffenen Bereich am Sicherungskasten abschalten.\n3. Wertgegenstände sichern & Wasser aufwischen.\n4. Bad & Energie Meister anrufen: 06441 20 39 053'
+          content: '1. Hauptwasserhahn sofort zudrehen (meist im Keller oder Hausanschlussraum).\n2. Strom im betroffenen Bereich am Sicherungskasten abschalten.\n3. Wertgegenstände sichern & Wasser aufwischen.\n4. Bad & Energie Meister anrufen: 06441-42956'
         },
         {
           title: 'Heizungsausfall im Winter',
@@ -244,20 +244,14 @@ export default function HelpSidebar({ isOpen, onClose }) {
                   Direkter Meister-Draht Wetzlar
                 </span>
                 <p className="text-xs text-slate-600 font-medium">
-                  Rufen Sie uns direkt im Showroom Hans-Sachs-Str. 12 oder der Betriebsstätte Siegmund-Hiepe-Str. 20 an:
+                  Rufen Sie uns direkt im Meisterbetrieb in der {COMPANY_DATA.headquarters.street} an:
                 </p>
                 <div className="space-y-2 pt-1">
                   <a
-                    href={`tel:${COMPANY_DATA.headquarters.phoneLink}`}
+                    href={`tel:${COMPANY_DATA.contact.phoneLink}`}
                     className="block p-3 rounded-xl bg-white text-[#0C3A87] font-black text-xs border border-blue-200 shadow-xs text-center hover:bg-blue-50 transition-colors"
                   >
-                    Hauptsitz: {COMPANY_DATA.headquarters.phone}
-                  </a>
-                  <a
-                    href={`tel:${COMPANY_DATA.branchLahnDill.phoneLink}`}
-                    className="block p-3 rounded-xl bg-white text-[#0C3A87] font-black text-xs border border-blue-200 shadow-xs text-center hover:bg-blue-50 transition-colors"
-                  >
-                    Betriebsstätte: {COMPANY_DATA.branchLahnDill.phone}
+                    Telefon: {COMPANY_DATA.contact.phone}
                   </a>
                 </div>
               </div>

@@ -41,11 +41,11 @@ export default function KontaktPage() {
 
                                 <div>
                                     <h2 className="text-2xl font-black text-slate-900 mb-1">
-                                        Bad &amp; Energie GmbH
+                                        {COMPANY_DATA.legalName}
                                     </h2>
                                     <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
                                         <MapPin className="w-4 h-4 text-[#0C3A87]" />
-                                        Hans-Sachs-Straße 12, 35576 Wetzlar
+                                        {COMPANY_DATA.headquarters.street}, {COMPANY_DATA.headquarters.postalCode} {COMPANY_DATA.headquarters.city}
                                     </p>
                                 </div>
 

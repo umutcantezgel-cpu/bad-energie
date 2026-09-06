@@ -7,8 +7,8 @@ export const teamMembers = [
         id: 1,
         name: 'Sabri Demir',
         role: 'Geschäftsführer & Projektleitung',
-        email: 'anfrage@bad-energie-profi.de',
-        phone: '+49 6441 2039053',
+        email: 'info@bad-energie.de',
+        phone: '+49 6441 42956',
         image: '',
         specializations: ['Badsanierung', 'NIBE Wärmepumpen', 'Projektleitung'],
         bio: 'Geschäftsführer und Leitung der Bad & Energie GmbH in Wetzlar.'
@@ -17,8 +17,8 @@ export const teamMembers = [
         id: 2,
         name: 'Meisterleitung SHK',
         role: 'Bauleitung & 3D-Badplanung',
-        email: 'anfrage@bad-energie-profi.de',
-        phone: '+49 6441 2039053',
+        email: 'info@bad-energie.de',
+        phone: '+49 6441 42956',
         image: '',
         specializations: ['3D-Planung', 'Hydraulischer Abgleich', 'Trinkwasserhygiene'],
         bio: 'Spezialisten für präzise Ausführungsplanung und Baustellenkoordination vor Ort.'

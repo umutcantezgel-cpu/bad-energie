@@ -42,16 +42,16 @@ type Fixture = {
 };
 
 export const BRIEFBOGEN: Briefbogen = {
-  firma: 'Bad & Energie GmbH',
-  strasse: 'Siegmund-Hiepe-Straße 20',
+  firma: 'Bad & Energie GmbH Lahn-Dill',
+  strasse: 'Siegmund-Hiepe-Str. 20',
   plzOrt: '35578 Wetzlar',
-  telefon: '06441 2039053',
-  telefonLink: 'tel:+4964412039053',
+  telefon: '06441-42956',
+  telefonLink: 'tel:+49644142956',
   email: 'info@bad-energie.de',
   web: 'bad-energie.de',
   geschaeftsfuehrer: 'Sabri Demir',
   register: 'Amtsgericht Wetzlar HRB 2449',
-  ustId: 'DE215933612',
+  ustId: 'DE215 933 612',
 };
 
 function lies(nummer: '0031' | '0032'): Fixture {

@@ -39,7 +39,7 @@ const karriereFaqs = [
   {
     question: 'Wie läuft der Bewerbungsprozess bei der Bad & Energie GmbH ab?',
     answer:
-      'Ganz unkompliziert: Sie rufen uns an unter 06441 20 39 053 oder schreiben eine kurze E-Mail an anfrage@bad-energie-profi.de.',
+      'Ganz unkompliziert: Sie rufen uns an unter 06441-42956 oder schreiben eine kurze E-Mail an info@bad-energie.de.',
   },
   {
     question: 'Gibt es Möglichkeiten zur fachlichen Weiterbildung?',

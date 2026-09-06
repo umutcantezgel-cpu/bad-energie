@@ -94,43 +94,28 @@ const Footer = () => {
                         </h4>
 
                         <div className="space-y-3 text-xs">
-                            {/* Headquarters */}
+                            {/* Official Location & Contact */}
                             <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1.5 backdrop-blur-md">
                                 <p className="font-bold text-white flex items-center justify-between">
-                                    <span>Hauptsitz Wetzlar</span>
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-cyan-300 font-bold border border-blue-400/30">Zentrale</span>
+                                    <span>Bad &amp; Energie GmbH Lahn-Dill</span>
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-cyan-300 font-bold border border-blue-400/30">Meisterbetrieb</span>
                                 </p>
-                                <p className="text-slate-300">Hans-Sachs-Straße 12, 35576 Wetzlar</p>
+                                <p className="text-slate-300">{COMPANY_DATA.headquarters.street}, {COMPANY_DATA.headquarters.postalCode} {COMPANY_DATA.headquarters.city}</p>
                                 <div className="flex items-center gap-2 pt-1">
                                     <Phone className="w-3.5 h-3.5 text-[#35A7E9]" />
-                                    <a href={`tel:${COMPANY_DATA.headquarters.phoneLink}`} className="text-white font-black hover:text-[#35A7E9] transition-colors">
-                                        {COMPANY_DATA.headquarters.phone}
-                                    </a>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Mail className="w-3.5 h-3.5 text-slate-400" />
-                                    <a href={`mailto:${COMPANY_DATA.headquarters.email}`} className="text-slate-300 hover:text-white transition-colors">
-                                        {COMPANY_DATA.headquarters.email}
-                                    </a>
-                                </div>
-                            </div>
-
-                            {/* Branch Lahn-Dill */}
-                            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1.5 backdrop-blur-md">
-                                <p className="font-bold text-white flex items-center justify-between">
-                                    <span>Standort Lahn-Dill</span>
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-bold">Betriebsstätte</span>
-                                </p>
-                                <p className="text-slate-300">Siegmund-Hiepe-Str. 20, 35578 Wetzlar</p>
-                                <div className="flex items-center gap-2 pt-1">
-                                    <Phone className="w-3.5 h-3.5 text-[#35A7E9]" />
-                                    <a href={`tel:${COMPANY_DATA.branchLahnDill.phoneLink}`} className="text-white font-black hover:text-[#35A7E9] transition-colors">
-                                        {COMPANY_DATA.branchLahnDill.phone}
+                                    <a href={`tel:${COMPANY_DATA.contact.phoneLink}`} className="text-white font-black hover:text-[#35A7E9] transition-colors">
+                                        {COMPANY_DATA.contact.phone}
                                     </a>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Printer className="w-3.5 h-3.5 text-slate-400" />
-                                    <span className="text-slate-300">Fax: {COMPANY_DATA.branchLahnDill.fax}</span>
+                                    <span className="text-slate-300">Telefax: {COMPANY_DATA.contact.fax}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Mail className="w-3.5 h-3.5 text-slate-400" />
+                                    <a href={`mailto:${COMPANY_DATA.contact.email}`} className="text-slate-300 hover:text-white transition-colors">
+                                        {COMPANY_DATA.contact.email}
+                                    </a>
                                 </div>
                             </div>
 

@@ -32,13 +32,13 @@ export default function AboutPage() {
             </h2>
             <div className="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
               <p>
-                Mit den historischen Wurzeln von 1926 und der Umfirmierung zur <strong>Bad &amp; Energie GmbH</strong> im Jahr 2001 steht unser Betrieb für handwerkliche Exzellenz im Mittelhessischen Raum.
+                Mit den historischen Wurzeln von 1926 und der Umfirmierung zur <strong>{COMPANY_DATA.legalName}</strong> im Jahr 2001 steht unser Betrieb für handwerkliche Exzellenz im Mittelhessischen Raum.
               </p>
               <p>
-                Unter der Führung von Geschäftsführer <strong>Sabri Demir</strong> haben wir den Schwerpunkt konsequent auf erneuerbare Energiesysteme (zertifizierter <strong>NIBE Effizienz Partner</strong>) und schlüsselfertige Komplettbadsanierungen aus einer Hand gelegt.
+                Unter der Führung von Geschäftsführer <strong>{COMPANY_DATA.owner.fullName}</strong> haben wir den Schwerpunkt konsequent auf erneuerbare Energiesysteme (zertifizierter <strong>NIBE Effizienz Partner</strong>) und schlüsselfertige Komplettbadsanierungen aus einer Hand gelegt.
               </p>
               <p>
-                An unseren Standorten in der Hans-Sachs-Straße 12 und Siegmund-Hiepe-Straße 20 in Wetzlar beraten wir Sie persönlich, transparent und mit verbindlicher Festpreisgarantie.
+                An unserem Standort in der {COMPANY_DATA.headquarters.street} in {COMPANY_DATA.headquarters.postalCode} {COMPANY_DATA.headquarters.city} beraten wir Sie persönlich, transparent und mit verbindlicher Festpreisgarantie.
               </p>
             </div>
           </div>

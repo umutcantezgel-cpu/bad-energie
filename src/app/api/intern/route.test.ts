@@ -197,9 +197,9 @@ const EINSTELLUNGEN_VOLL = {
   bueroEmail: 'info@bad-energie.de',
   absender: { name: 'Sabri Demir', email: 'info@bad-energie.de' },
   briefbogen: {
-    firma: 'Bad & Energie GmbH', strasse: 'Siegmund-Hiepe-Straße 20', plzOrt: '35578 Wetzlar',
-    telefon: '06441 2039053', telefonLink: '+4964412039053', email: 'info@bad-energie.de',
-    web: 'bad-energie.de', geschaeftsfuehrer: 'Sabri Demir', register: 'Amtsgericht Wetzlar HRB 2449', ustId: 'DE215933612',
+    firma: 'Bad & Energie GmbH Lahn-Dill', strasse: 'Siegmund-Hiepe-Str. 20', plzOrt: '35578 Wetzlar',
+    telefon: '06441-42956', telefonLink: '+49644142956', email: 'info@bad-energie.de',
+    web: 'bad-energie.de', geschaeftsfuehrer: 'Sabri Demir', register: 'Amtsgericht Wetzlar HRB 2449', ustId: 'DE215 933 612',
   },
 };
 

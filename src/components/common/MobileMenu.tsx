@@ -250,10 +250,10 @@ export default function MobileMenu({ isOpen, onClose, onOpenHelp }: MobileMenuPr
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600 space-y-1">
                         <div className="flex items-center gap-1.5 font-bold text-slate-800">
                             <MapPin className="w-3.5 h-3.5 text-[#35A7E9]" />
-                            <span>Showroom &amp; Meisterbetrieb</span>
+                            <span>Meisterbetrieb &amp; Ausstellung</span>
                         </div>
                         <p className="text-[11px] text-slate-500">
-                            Hans-Sachs-Str. 12 &middot; 35576 Wetzlar
+                            {COMPANY_DATA.headquarters.street} &middot; {COMPANY_DATA.headquarters.postalCode} {COMPANY_DATA.headquarters.city}
                         </p>
                     </div>
 

@@ -22,12 +22,9 @@ export default function ImpressumPage() {
                         {/* Company Details */}
                         <div className="space-y-2 border-b border-slate-200/60 pb-6 text-xs sm:text-sm">
                             <h2 className="text-base font-black text-slate-900">Angaben gemäß § 5 DDG:</h2>
-                            <p className="font-black text-slate-900">Bad &amp; Energie GmbH</p>
-                            <p>Hans-Sachs-Straße 12</p>
-                            <p>35576 Wetzlar</p>
-                            <p className="text-xs text-slate-500 font-medium pt-1">
-                                Zweiter Standort / Betriebsstätte: Siegmund-Hiepe-Straße 20, 35578 Wetzlar
-                            </p>
+                            <p className="font-black text-slate-900">{COMPANY_DATA.legalName}</p>
+                            <p>{COMPANY_DATA.headquarters.street}</p>
+                            <p>{COMPANY_DATA.headquarters.postalCode} {COMPANY_DATA.headquarters.city}</p>
                         </div>
 
                         {/* Representation */}
@@ -39,11 +36,9 @@ export default function ImpressumPage() {
                         {/* Contact */}
                         <div className="space-y-2 border-b border-slate-200/60 pb-6 text-xs sm:text-sm">
                             <h2 className="text-base font-black text-slate-900">Kontakt:</h2>
-                            <p>Telefon: <a href={`tel:${COMPANY_DATA.headquarters.phoneLink}`} className="text-[#0C3A87] font-black underline">{COMPANY_DATA.headquarters.phone}</a></p>
-                            <p>Telefon (Standort Lahn-Dill): <a href={`tel:${COMPANY_DATA.branchLahnDill.phoneLink}`} className="text-[#0C3A87] font-black underline">{COMPANY_DATA.branchLahnDill.phone}</a></p>
-                            <p>Telefax: {COMPANY_DATA.branchLahnDill.fax}</p>
-                            <p>E-Mail: <a href={`mailto:${COMPANY_DATA.headquarters.email}`} className="text-[#0C3A87] font-black underline">{COMPANY_DATA.headquarters.email}</a></p>
-                            <p>E-Mail (Allgemein): <a href={`mailto:${COMPANY_DATA.branchLahnDill.email}`} className="text-[#0C3A87] font-black underline">{COMPANY_DATA.branchLahnDill.email}</a></p>
+                            <p>Telefon: <a href={`tel:${COMPANY_DATA.contact.phoneLink}`} className="text-[#0C3A87] font-black underline">{COMPANY_DATA.contact.phone}</a></p>
+                            <p>Telefax: {COMPANY_DATA.contact.fax}</p>
+                            <p>E-Mail: <a href={`mailto:${COMPANY_DATA.contact.email}`} className="text-[#0C3A87] font-black underline">{COMPANY_DATA.contact.email}</a></p>
                         </div>
 
                         {/* Register & Tax */}

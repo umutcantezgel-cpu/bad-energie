@@ -164,7 +164,7 @@ export const navigationLinks: NavigationLink[] = [
                     { name: 'Referenzen & Kundenprojekte', path: '/referenzen', desc: 'Echte Arbeiten in Wetzlar, Gießen & Lahn-Dill' },
                     { name: 'Virtuelle Ausstellung Wetzlar', path: '/ausstellung/wetzlar', desc: 'Digitaler 360°-Rundgang durch Bäderwelten' },
                     { name: 'Virtuelle Ausstellung Gießen', path: '/ausstellung/giessen', desc: 'Inspiration für Bad & innovative Haustechnik' },
-                    { name: 'Kontakt & Anfahrt', path: '/kontakt', desc: 'Showroom Hans-Sachs-Str. 12, Wetzlar' }
+                    { name: 'Kontakt & Anfahrt', path: '/kontakt', desc: 'Meisterbetrieb Siegmund-Hiepe-Str. 20, Wetzlar' }
                 ]
             }
         ]
