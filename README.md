@@ -126,7 +126,7 @@ Lauf arbeitet oder erfolgreich war.
 
 ## Vorführung
 
-Adresse `https://bad-energie-nu.vercel.app`. Anmeldung unter `/intern` mit `chef@bad-energie.de` und der Vorführ-PIN `482916`. Bis die Domain `bad-energie.de` bei Resend verifiziert ist, sendet Resend nur an die verifizierte Kontoadresse (`phoenixprojekt1@gmail.com`); alle Kundenmails und Büro-Dossiers landen deshalb bei dieser Auffangadresse, im Betreff steht der eigentliche Empfänger („[an: …]“). Preise sind der Demo-Preissatz (unter `/intern/matrix` gekennzeichnet); der Chef ersetzt sie dort durch seine Werte.
+Adresse `https://bad-energie-nu.vercel.app`. Anmeldung unter `/intern` mit `chef@bad-energie.de` und der PIN, die beim Anlegen des Benutzers vergeben wurde (nicht im Repository; ändern unter `/intern/benutzer`). Bis die Domain `bad-energie.de` bei Resend verifiziert ist, sendet Resend nur an die verifizierte Kontoadresse (`phoenixprojekt1@gmail.com`); alle Kundenmails und Büro-Dossiers landen deshalb bei dieser Auffangadresse, im Betreff steht der eigentliche Empfänger („[an: …]“). Preise sind der Demo-Preissatz (unter `/intern/matrix` gekennzeichnet); der Chef ersetzt sie dort durch seine Werte.
 
 1. **Kunde** (öffentlich, ohne Anmeldung): `/heizung/heizungskonfigurator`. Sieben Schritte: Gas, älter als
    zwanzig Jahre, 22.000 kWh, Standort Keller; Einfamilienhaus, 150 m², vor 1978, 1 Wohnung, 2 Personen;
