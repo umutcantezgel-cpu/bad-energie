@@ -3,6 +3,7 @@
  * npm run benutzer -- --email chef@bad-energie.de --name "Sabri Demir" --rolle chef --funktion "Geschäftsführer" [--pin 123456]
  */
 import { randomInt, randomUUID } from 'node:crypto';
+import { eq } from 'drizzle-orm';
 import { getDb } from '../src/db/client';
 import { benutzer } from '../src/db/schema';
 import { pinHashen, pinGueltig } from '../src/lib/services/pin';
@@ -24,8 +25,23 @@ async function main() {
   if (!pin) pin = String(randomInt(100000, 99999999)).padStart(6, '0');
   if (!pinGueltig(pin)) throw new Error('PIN muss aus 6 bis 8 Ziffern bestehen');
   const db = await getDb();
-  await db.insert(benutzer).values({ id: randomUUID(), email: email.toLowerCase(), name, rolle, funktion, signaturMail, pinHash: pinHashen(pin) });
-  console.log(`Benutzer angelegt: ${name} <${email}> Rolle ${rolle}. PIN (nur jetzt sichtbar): ${pin}`);
+  const existing = await db.select().from(benutzer).where(eq(benutzer.email, email.toLowerCase())).limit(1);
+  if (existing.length > 0) {
+    await db.update(benutzer).set({
+      name,
+      rolle,
+      funktion,
+      signaturMail,
+      pinHash: pinHashen(pin),
+      fehlversuche: 0,
+      gesperrtBis: null,
+      aktiv: true,
+    }).where(eq(benutzer.email, email.toLowerCase()));
+    console.log(`Benutzer aktualisiert: ${name} <${email}> Rolle ${rolle}. PIN (nur jetzt sichtbar): ${pin}`);
+  } else {
+    await db.insert(benutzer).values({ id: randomUUID(), email: email.toLowerCase(), name, rolle, funktion, signaturMail, pinHash: pinHashen(pin) });
+    console.log(`Benutzer angelegt: ${name} <${email}> Rolle ${rolle}. PIN (nur jetzt sichtbar): ${pin}`);
+  }
   process.exit(0);
 }
 
