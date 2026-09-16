@@ -18,12 +18,13 @@
  * Notizen nicht gerendert, also aus dem DOM entfernt.
  */
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from 'react';
-import { ChevronLeft, ChevronRight, ClipboardList, Image as ImageIcon, Percent, Send, Save, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ClipboardList, FileCode, Image as ImageIcon, Percent, Send, Save, Users } from 'lucide-react';
 import {
   ladeKalkulationsdaten,
   ladeTerminfenster,
   speichereEntwurf,
 } from '@/app/(intern)/intern/actions';
+import { erstelleWaermepumpePdsVorlage, generierePdsXml } from '@/lib/services/pds-xml';
 import { berechne, euro, positionAusBaustein, vorschlagManuell } from '@/lib/services/calculation';
 import { betriebskosten, geraeteVorschlag, heizlastSchaetzen } from '@/lib/services/heizlast';
 import {
@@ -607,6 +608,39 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
     }
   };
 
+  const pdsXmlHerunterladen = () => {
+    const k = anfrage.kontakt;
+    const g = anfrage.gebaeude;
+    const name = [k.anrede, k.vorname, k.nachname].filter(Boolean).join(' ') || 'Kunde';
+    const strasse = k.strasse || anfrage.objekt.adresse || 'Musterstraße 1';
+    const plzOrtTeile = (k.plzOrt || '35578 Wetzlar').trim().split(/\s+/);
+    const plz = plzOrtTeile[0] || '35578';
+    const ort = plzOrtTeile.slice(1).join(' ') || 'Wetzlar';
+
+    const kw = g.geraet.kw || 10;
+    const hersteller = (g.geraet.hersteller as 'bosch' | 'buderus' | 'viessmann' | 'daikin') || 'buderus';
+    const speicherL = g.geraet.speicherLiter || (kw <= 7 ? 200 : 300);
+    const alteHeizung = g.bestand.energieart === 'oel' ? 'oel' : 'gas';
+
+    const pdsVorgang = erstelleWaermepumpePdsVorlage({
+      vorgangsNummer: (ksNummer || '20260312').replace(/\D/g, '') || '20260312',
+      kunde: { name, strasse, plz, ort, land: 'DE' },
+      kw: Math.round(kw),
+      hersteller,
+      speicherLiter: speicherL,
+      alteHeizung,
+    });
+
+    const xml = generierePdsXml(pdsVorgang);
+    const blob = new Blob([xml], { type: 'application/xml;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Angebot_${ksNummer || 'Vorgang'}_${k.nachname || 'Kunde'}_pdsXML.xml`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   /**
    * Sofortversand. 202 heisst: freigegeben, der Versand laeuft im Hintergrund;
    * 422 nennt offene Punkte, 403 fehlende Berechtigung.
@@ -1168,9 +1202,16 @@ export default function MeisterModus({ anfrageId, initial }: MeisterModusProps) 
               type="button"
               onClick={() => void alsEntwurf()}
               disabled={sendet}
-              className="fokus-ring inline-flex min-h-[56px] flex-1 items-center justify-center gap-2 rounded-2xl bg-white px-6 text-base font-semibold text-slate-800 disabled:opacity-50"
+              className="fokus-ring inline-flex min-h-[56px] flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 text-base font-semibold text-slate-800 disabled:opacity-50"
             >
               <Save aria-hidden className="h-5 w-5" /> Als Entwurf speichern
+            </button>
+            <button
+              type="button"
+              onClick={pdsXmlHerunterladen}
+              className="fokus-ring inline-flex min-h-[56px] flex-1 items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-6 text-base font-semibold text-[#1B3A8C] hover:bg-blue-100"
+            >
+              <FileCode aria-hidden className="h-5 w-5" /> PDS XML exportieren
             </button>
             <button
               type="button"

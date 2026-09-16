@@ -14,6 +14,7 @@ import {
   HERSTELLER_LABEL,
   geraeteVorschlag,
   heizlastSchaetzen,
+  heizlastAusVerbrauchKoehler,
   speicherVorschlag,
 } from '@/lib/services/heizlast';
 import { HERSTELLER, type GebaeudeDaten, type GroessenVariante, type Hersteller } from '@/lib/types';
@@ -41,6 +42,7 @@ export default function HeizlastKacheln({
 }: HeizlastKachelnProps) {
   const hersteller = gebaeude.geraet.hersteller;
   const heizlast = useMemo(() => heizlastSchaetzen(gebaeude), [gebaeude]);
+  const kwKoehler = useMemo(() => heizlastAusVerbrauchKoehler(gebaeude.bestand), [gebaeude.bestand]);
   const vorschlag = useMemo(
     () => (heizlast ? geraeteVorschlag(heizlast.kwEmpfohlen, varianten, hersteller) : null),
     [heizlast, varianten, hersteller],
@@ -85,6 +87,14 @@ export default function HeizlastKacheln({
             </dd>
           </div>
         </dl>
+
+        {kwKoehler != null ? (
+          <div className="rounded-2xl bg-blue-50/80 p-3 text-sm text-slate-700 border border-blue-200">
+            <span className="font-semibold text-slate-900">Köhler-Auslegung 2026:</span>{' '}
+            <span className="font-bold text-[#1B3A8C] tabular-nums">{kwText(kwKoehler)} kW</span>{' '}
+            (2.100 h Vollast, -2.500 kWh WW, 90% Nutzungsgrad)
+          </div>
+        ) : null}
 
         {heizlast && !belastbar ? (
           // Der reine Flaechenweg ohne Daemmungsangaben ueberschaetzt; die Abrechnung ist der belastbare Wert.

@@ -215,4 +215,26 @@ describe('Förderbausteine und Betriebskosten in der öffentlichen Spanne', () =
     const ohneErsparnis = oeffentlicheSpanne(ergebnis, { betriebskosten: { energieartLabel: 'Gas', heuteJahr: 1000, wpJahr: 1510, ersparnisJahr: -510, proMonat: 125 } });
     expect(ohneErsparnis.heizkostenWpJahr).toBeUndefined();
   });
+
+  it('Alternativpositionen haben eigene Beträge, fließen aber nicht in die Angebotssumme ein', () => {
+    const pos: Position[] = [
+      {
+        id: '1', titel: 'Wärmepumpe 10 kW', gewerk: 'waermepumpe', text: '', menge: 1, einheit: 'pauschal',
+        von: 14000, bis: 16000, matrixNr: 2, vorlageZeileId: null, varianteMatrixNr: null, zuschlag: false, aktiv: true,
+        alternativ: false, quelle: 'manuell', notizIntern: '', intern: {},
+      },
+      {
+        id: '2', titel: 'Option Wärmepumpe 12 kW', gewerk: 'waermepumpe', text: '', menge: 1, einheit: 'pauschal',
+        von: 16000, bis: 18000, matrixNr: 3, vorlageZeileId: null, varianteMatrixNr: null, zuschlag: false, aktiv: true,
+        alternativ: true, quelle: 'manuell', notizIntern: '', intern: {},
+      },
+    ];
+    const e = berechne({ positionen: pos, foerderRegeln: REGELN });
+    expect(e.nettoVon).toBe(14000);
+    expect(e.nettoBis).toBe(16000);
+    expect(e.positionen[1].alternativ).toBe(true);
+    expect(e.positionen[1].von).toBe(16000);
+    expect(e.positionen[1].bis).toBe(18000);
+  });
 });
+

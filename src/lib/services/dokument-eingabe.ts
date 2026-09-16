@@ -144,16 +144,17 @@ export function fehlendeAngaben(daten: VorgangDaten, ergebnis: KalkulationsErgeb
   const gebaeude = daten.anfrage.gebaeude;
   const wp = istWaermepumpenVorlage(daten.vorlageIds);
   if (gebaeude) {
-    const tuer = gebaeude.platz.tuerbreiteCm;
+    const tuer = gebaeude.platz?.tuerbreiteCm ?? null;
     // Der Transportweg zählt für die Wärmepumpe (Inneneinheit, Speicher); ein Bad braucht ihn nicht.
     if (wp && tuer !== null && tuer < 80) fehlt.push('Türbreite unter 80 cm, Transportweg klären');
-    if (wp && !gebaeude.bestand.energieart) fehlt.push('Bestehende Heizung');
+    if (wp && !gebaeude.bestand?.energieart) fehlt.push('Bestehende Heizung');
     if (wp) {
       const heizlast = heizlastSchaetzen(gebaeude);
       if (heizlast && !heizlast.belastbar) {
         fehlt.push('Jahresverbrauch fehlt, die Heizlast aus der Wohnfläche allein trägt die Gerätewahl nicht');
       }
-      if (heizlast && heizlast.belastbar && geraetAusBaureihe(heizlast.kwEmpfohlen, gebaeude.geraet.hersteller).ueberBaureihe) {
+      const hersteller = gebaeude.geraet?.hersteller ?? 'buderus';
+      if (heizlast && heizlast.belastbar && geraetAusBaureihe(heizlast.kwEmpfohlen, hersteller).ueberBaureihe) {
         fehlt.push('Die errechnete Heizlast liegt über der Baureihe, die Auslegung klären wir vor Ort.');
       }
     }

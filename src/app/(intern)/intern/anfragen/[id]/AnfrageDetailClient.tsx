@@ -25,7 +25,7 @@ import {
 } from '@/lib/services/heizlast';
 import { JOURNEYS, type Frage, type JourneyId } from '@/lib/journeys';
 import { freigeben } from '../../actions';
-import { loescheAnfrage, holeAuskunftJson, holeCsvExport, aendereStatus } from '../actions';
+import { loescheAnfrage, holeAuskunftJson, holeCsvExport, holePdsXmlExport, aendereStatus } from '../actions';
 
 const STATUS_BADGE: Record<AnfrageStatus, { label: string; bg: string; text: string }> = {
   eingang: { label: 'Eingang', bg: 'bg-slate-100', text: 'text-slate-800' },
@@ -266,6 +266,22 @@ export default function AnfrageDetailClient({
       URL.revokeObjectURL(url);
     } catch {
       setFehler('Der CSV-Export ist fehlgeschlagen.');
+    }
+  }
+
+  async function handlePdsXmlExport() {
+    setFehler(null);
+    try {
+      const xml = await holePdsXmlExport(dto.anfrageId);
+      const blob = new Blob([xml], { type: 'application/xml;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Angebot_${dto.ksNummer}_${dto.kontakt.nachname || 'Kunde'}_pdsXML.xml`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setFehler('Der PDS-XML-Export ist fehlgeschlagen.');
     }
   }
 
@@ -750,6 +766,13 @@ export default function AnfrageDetailClient({
             className="fokus-ring inline-flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             CSV herunterladen
+          </button>
+          <button
+            type="button"
+            onClick={handlePdsXmlExport}
+            className="fokus-ring inline-flex min-h-[44px] items-center rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-[#1B3A8C] hover:bg-blue-100"
+          >
+            PDS XML Vorgang herunterladen
           </button>
           <button
             type="button"

@@ -60,7 +60,12 @@ export const MALUS_UNTERGRENZE = -60;
 
 export const WARMWASSER_W = { dusche: 500, wanne: 1000 } as const;
 
-export const BAUREIHE_KW: Record<Hersteller, number[]> = { bosch: [4, 5, 7, 10, 12], buderus: [6, 8, 10, 13, 16, 18] };
+export const BAUREIHE_KW: Record<Hersteller, number[]> = {
+  bosch: [4, 5, 7, 10, 12],
+  buderus: [6, 8, 10, 13, 16, 18],
+  viessmann: [4, 6, 8, 10, 13, 16],
+  daikin: [4, 6, 8, 10, 12, 14, 16],
+};
 
 export const ENERGIEART_LABEL: Record<Energieart, string> = {
   gas: 'Gas', oel: 'Heizöl', fluessiggas: 'Flüssiggas', strom: 'Strom', nachtspeicher: 'Nachtspeicher',
@@ -164,6 +169,28 @@ export function heizlastAusVerbrauch(b: GebaeudeDaten['bestand']): number | null
   const kwh = verbrauchKwh(b);
   if (kwh === null) return null;
   return kwRunden((kwh * JAHRESNUTZUNGSGRAD[kesseltypVermutet(b)]) / VOLLLASTSTUNDEN);
+}
+
+/**
+ * Köhler-Verbrauchsformel (Auslegungspraxis Bad & Energie 2026):
+ * Heizlast (kW) = ((Verbrauch in kWh * Jahresnutzungsgrad) - Warmwasseranteil kWh) / Vollbenutzungsstunden
+ * Standard: 2.100 h Vollbenutzungsstunden, 2.500 kWh Warmwasser, 90 % (0,90) Nutzungsgrad.
+ * Beispiel Michael Köhler: (24.610 kWh * 0,90 - 2.500 kWh) / 2.100 h = 9,4 kW.
+ */
+export const KOEHLER_VOLLBENUTZUNGSSTUNDEN = 2100;
+export const KOEHLER_WARMWASSER_KWH = 2500;
+export const KOEHLER_NUTZUNGSGRAD = 0.90;
+
+export function heizlastAusVerbrauchKoehler(
+  b: GebaeudeDaten['bestand'],
+  volllaststunden = KOEHLER_VOLLBENUTZUNGSSTUNDEN,
+  warmwasserKwh = KOEHLER_WARMWASSER_KWH,
+  nutzungsgrad = KOEHLER_NUTZUNGSGRAD,
+): number | null {
+  const kwh = verbrauchKwh(b);
+  if (kwh === null) return null;
+  const nettoHeizungKwh = Math.max(0, kwh * nutzungsgrad - warmwasserKwh);
+  return kwRunden(nettoHeizungKwh / volllaststunden);
 }
 
 /** Weg (b): Wohnfläche × spezifischer Wärmebedarf × Lage × (1 + Bonus/Malus) + Warmwasser. */
@@ -273,6 +300,91 @@ export function speicherVorschlag(personen: number | null | undefined, optionen:
   const sortiert = [...optionen].sort((a, b) => a - b);
   const liter = sortiert.find((o) => o >= wunsch) ?? sortiert[sortiert.length - 1] ?? wunsch;
   return { liter, optionen: sortiert };
+}
+
+/**
+ * Erkennt Hersteller und Nennleistung (kW) aus Freitext-Angebotspositionen
+ * oder ERP-Artikelbezeichnungen (z. B. WLW186i-10, CS5800i-7, Vitocal 250-A 10).
+ */
+export function modellErkennung(text: string): { kw: number; hersteller?: Hersteller } | null {
+  if (!text) return null;
+  // Buderus WLW186i-7, WLW 10 MB AR, WLW186i-12...
+  const buderusMatch = text.match(/WLW(?:186i|196i)?[- ]*(\d+)/i) || text.match(/WLW.*?(\d+)/i);
+  if (buderusMatch) {
+    return { kw: parseInt(buderusMatch[1], 10), hersteller: 'buderus' };
+  }
+  // Bosch CS5800i-7, CS6800i-10, CS5800iAW 12, Compress 5800i-7...
+  const boschMatch =
+    text.match(/CS[5678]\d{3}[a-zA-Z]*[- ]*(\d+)/i) ||
+    text.match(/Compress\s*(?:[5678]\d{3}[a-zA-Z]*[- ]*)?(\d+)/i) ||
+    text.match(/Bosch.*?(\d+)\s*kW/i);
+  if (boschMatch) {
+    return { kw: parseInt(boschMatch[1], 10), hersteller: 'bosch' };
+  }
+  // Viessmann Vitocal 250-A 10, Vitocal 200-S 8...
+  const viessmannMatch = text.match(/Vitocal\s*\d{3}-?[A-Z]*\s*(\d+)/i);
+  if (viessmannMatch) {
+    return { kw: parseInt(viessmannMatch[1], 10), hersteller: 'viessmann' };
+  }
+  // Daikin Altherma 3 R 6 kW, 3H MT 10 kW...
+  const daikinMatch = text.match(/Altherma.*?(\d+)\s*kW/i) || text.match(/Daikin.*?(\d+)\s*kW/i);
+  if (daikinMatch) {
+    return { kw: parseInt(daikinMatch[1], 10), hersteller: 'daikin' };
+  }
+  // Generisches Muster: "10 kW", "7,5 kW", "12kW"
+  const kwMatch = text.match(/(\d+(?:[.,]\d+)?)\s*kW/i);
+  if (kwMatch) {
+    return { kw: parseFloat(kwMatch[1].replace(',', '.')) };
+  }
+  return null;
+}
+
+export type WaermepumpenAuslegung = {
+  berechneteHeizlastKw: number;
+  normalKw: number;
+  alternativKw: number;
+  speicherLiterEmpfohlen: number;
+  matrixNr: number;
+  hersteller: Hersteller;
+};
+
+/**
+ * Ermittelt Normal- und Alternativgeräteempfehlung sowie Speichergröße
+ * gemäß der gelebten Angebotspraxis des Chefs (2026).
+ */
+export function waermepumpenAuslegung(
+  kw: number,
+  personen: number | null = 2,
+  hersteller: Hersteller = 'bosch'
+): WaermepumpenAuslegung {
+  let normalKw = 10;
+  let alternativKw = 12;
+  let matrixNr = 2;
+
+  if (kw <= 7.5) {
+    normalKw = 7;
+    alternativKw = 10;
+    matrixNr = 1;
+  } else if (kw <= 11.0) {
+    normalKw = 10;
+    alternativKw = 12;
+    matrixNr = 2;
+  } else {
+    normalKw = 12;
+    alternativKw = 16;
+    matrixNr = 3;
+  }
+
+  const speicher = speicherVorschlag(personen);
+
+  return {
+    berechneteHeizlastKw: kw,
+    normalKw,
+    alternativKw,
+    speicherLiterEmpfohlen: speicher.liter,
+    matrixNr,
+    hersteller,
+  };
 }
 
 // ---------------------------------------------------------------------------

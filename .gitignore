@@ -58,3 +58,6 @@ dist/
 !.env.example
 # Belege des Chefs mit Kundendaten, nur lokal
 /Arbeitsweise Chef/
+/03_angebote_kalkulationen/
+/Angebote zu PDS XML Angebote/
+/XML Angebote/

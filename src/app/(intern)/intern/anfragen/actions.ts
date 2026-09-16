@@ -27,6 +27,13 @@ export async function holeCsvExport(anfrageId: string): Promise<string> {
   return await res.text();
 }
 
+/** PDS-XML-Vorgangsexport für das ERP-System */
+export async function holePdsXmlExport(anfrageId: string): Promise<string> {
+  const res = await fetch(`/api/intern/anfragen/${encodeURIComponent(anfrageId)}/pds-xml`);
+  if (!res.ok) throw new Error('Fehler beim Exportieren des PDS-XML-Vorgangs.');
+  return await res.text();
+}
+
 /** Ändert den Status eines Vorgangs manuell */
 export async function aendereStatus(
   anfrageId: string,

@@ -252,7 +252,7 @@ function positionBewerten(p: Position, matrix: Richtpreis[] | undefined): { erge
   return {
     ergebnis: {
       positionId: p.id, titel: p.titel, gewerk: p.gewerk, text: p.text, menge, einheit: p.einheit,
-      einzelVon, einzelBis, von, bis, blockiert, zuschlag: p.zuschlag, aktiv: p.aktiv,
+      einzelVon, einzelBis, von, bis, blockiert, zuschlag: p.zuschlag, aktiv: p.aktiv, alternativ: p.alternativ,
     },
     hinweise: p.aktiv ? hinweise : [],
   };
@@ -267,7 +267,7 @@ export function berechne(eingabe: KalkulationsEingabe): KalkulationsErgebnis {
     const { ergebnis, hinweise } = positionBewerten(p, eingabe.matrix);
     positionen.push(ergebnis);
     blockiert.push(...hinweise);
-    if (p.aktiv && !ergebnis.blockiert && ergebnis.von !== null && ergebnis.bis !== null) {
+    if (p.aktiv && !p.alternativ && !ergebnis.blockiert && ergebnis.von !== null && ergebnis.bis !== null) {
       nettoVon += ergebnis.von;
       nettoBis += ergebnis.bis;
     }

@@ -78,9 +78,11 @@ import {
   type FoerderRegeln,
   type Rolle,
   type SessionInfo,
+  type GebaeudeDaten,
 } from '@/lib/types';
 import { geraeteVorschlag,
-  geraetAusBaureihe, heizlastSchaetzen, leeresGebaeude, speicherVorschlag } from '@/lib/services/heizlast';
+  geraetAusBaureihe, heizlastSchaetzen, heizlastAusVerbrauchKoehler, leeresGebaeude, speicherVorschlag } from '@/lib/services/heizlast';
+import { erstelleWaermepumpePdsVorlage, generierePdsXml } from '@/lib/services/pds-xml';
 import { pruefeHerkunft } from '@/lib/services/herkunft';
 import {
   benutzerNeuSchema, benutzerPinSchema, benutzerToggleSchema, dispatchBefehlSchema, einstellungenSchema, foerderRegelnSchema, freigebenSchema,
@@ -1332,6 +1334,49 @@ export async function GET(
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="${daten.anfrage.ksNummer}.csv"`,
+      },
+    });
+  }
+
+  // PDS-XML-Export
+  if (slug.length === 3 && slug[0] === 'anfragen' && slug[2] === 'pds-xml') {
+    const anfrageId = slug[1];
+    const zugang = await anfrageFuerDownload(anfrageId, session);
+    if (!zugang.ok) return zugang.antwort;
+    const daten = await ladeVorgang(anfrageId);
+    if (!daten) return new NextResponse('Anfrage nicht gefunden.', { status: 404 });
+
+    const a = daten.anfrage;
+    const k = daten.kunde;
+    const g = a.gebaeude as GebaeudeDaten | null;
+    const name = [k?.vorname, k?.nachname].filter(Boolean).join(' ') || 'Kunde';
+    const strasse = k?.strasse || a.objektAdresse || 'Musterstraße 1';
+    const plzOrtTeile = (k?.plzOrt || a.objektPlz || '35578 Wetzlar').trim().split(/\s+/);
+    const plz = plzOrtTeile[0] || '35578';
+    const ort = plzOrtTeile.slice(1).join(' ') || 'Wetzlar';
+
+    // Kw und Geraet ermitteln
+    const kw = g?.geraet?.kw || (g?.bestand?.verbrauchJahr ? heizlastAusVerbrauchKoehler(g.bestand) : null) || 10;
+    const hersteller = (g?.geraet?.hersteller as 'bosch' | 'buderus' | 'viessmann' | 'daikin') || 'buderus';
+    const speicherL = g?.geraet?.speicherLiter || (kw <= 7 ? 200 : 300);
+    const alteHeizung = g?.bestand?.energieart === 'oel' ? 'oel' : 'gas';
+
+    const pdsVorgang = erstelleWaermepumpePdsVorlage({
+      vorgangsNummer: a.ksNummer.replace(/\D/g, '') || '20260312',
+      kunde: { name, strasse, plz, ort, land: 'DE' },
+      kw: Math.round(kw),
+      hersteller,
+      speicherLiter: speicherL,
+      alteHeizung,
+    });
+
+    const xml = generierePdsXml(pdsVorgang);
+    const dateiname = `Angebot_${a.ksNummer}_${k?.nachname || 'Kunde'}_pdsXML.xml`;
+    return new NextResponse(xml, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${dateiname}"`,
       },
     });
   }

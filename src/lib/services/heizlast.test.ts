@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { BETRIEBSKOSTEN_STANDARD, type GebaeudeDaten, type GroessenVariante } from '../types';
 import {
   VERBRAUCH_MAX_KWH, baujahrKlasseAus, betriebskosten, gebaeudeAusJourney, geraeteVorschlag, heizkostenHeute,
-  heizlastAusFlaeche, heizlastAusVerbrauch, heizlastSchaetzen, kesseltypVermutet, leeresGebaeude, proMonat,
-  speicherVorschlag, verbrauchKwh, verbrauchPlausibel,
+  heizlastAusFlaeche, heizlastAusVerbrauch, heizlastAusVerbrauchKoehler, heizlastSchaetzen, kesseltypVermutet, leeresGebaeude, proMonat,
+  speicherVorschlag, verbrauchKwh, verbrauchPlausibel, modellErkennung, waermepumpenAuslegung,
 } from './heizlast';
 
 const WP_VARIANTEN: GroessenVariante[] = [
@@ -222,5 +222,62 @@ describe('Vorbelegung aus dem Web', () => {
     expect(g.baujahrKlasse).toBeNull();
     expect(g.wohneinheiten).toBe(3);
     expect(gebaeudeAusJourney(null).wohnflaeche).toBeNull();
+  });
+});
+
+describe('Köhler-Verbrauchsformel 2026 & Modell-Erkennung', () => {
+  it('Michael Köhler (Beleg 1.01): 24.610 kWh Gas → 9,4 kW → 10 kW Normal, 12 kW Alternativ', () => {
+    const k = gebaeude({
+      bestand: {
+        energieart: 'gas',
+        verbrauchJahr: 24610,
+      },
+      personen: 4,
+    });
+    const kw = heizlastAusVerbrauchKoehler(k.bestand);
+    expect(kw).toBe(9.4);
+
+    const auslegung = waermepumpenAuslegung(kw!, k.personen, 'buderus');
+    expect(auslegung.normalKw).toBe(10);
+    expect(auslegung.alternativKw).toBe(12);
+    expect(auslegung.matrixNr).toBe(2);
+    expect(auslegung.speicherLiterEmpfohlen).toBe(300);
+  });
+
+  it('Modell-Erkennung extrahiert kW und Marke aus Freitexten', () => {
+    expect(modellErkennung('BUDERUS Logaplus Paket M, Luft Wasser Wärmepumpe WLW 10 MB AR')).toEqual({
+      kw: 10,
+      hersteller: 'buderus',
+    });
+    expect(modellErkennung('BOSCH Compress 5800i-7')).toEqual({
+      kw: 7,
+      hersteller: 'bosch',
+    });
+    expect(modellErkennung('Vitocal 250-A 10')).toEqual({
+      kw: 10,
+      hersteller: 'viessmann',
+    });
+    expect(modellErkennung('Daikin Altherma 3 R 6 kW')).toEqual({
+      kw: 6,
+      hersteller: 'daikin',
+    });
+    expect(modellErkennung('Unbekannte Wärmepumpe mit 12 kW Leistung')).toEqual({
+      kw: 12,
+    });
+  });
+
+  it('Öl-Umrechnung: 2.200 Liter Öl → 22.000 kWh → 8,2 kW', () => {
+    const oel = gebaeude({
+      bestand: {
+        energieart: 'oel',
+        verbrauchJahr: 2200,
+        verbrauchEinheit: 'liter',
+      },
+    });
+    const kw = heizlastAusVerbrauchKoehler(oel.bestand);
+    expect(kw).toBe(8.2);
+    const auslegung = waermepumpenAuslegung(kw!, 2);
+    expect(auslegung.normalKw).toBe(10);
+    expect(auslegung.speicherLiterEmpfohlen).toBe(200);
   });
 });

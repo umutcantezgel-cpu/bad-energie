@@ -51,10 +51,15 @@ export const FENSTER = ['einfach', 'zweifach', 'dreifach', 'unbekannt'] as const
 export type Fenster = (typeof FENSTER)[number];
 export const VERTEILUNGEN = ['heizkoerper', 'fussboden', 'gemischt'] as const;
 export type Verteilung = (typeof VERTEILUNGEN)[number];
-export const HERSTELLER = ['bosch', 'buderus'] as const;
+export const HERSTELLER = ['bosch', 'buderus', 'viessmann', 'daikin'] as const;
 export type Hersteller = (typeof HERSTELLER)[number];
-/** Markenname im Kundentext. Bosch ist die Standardmarke (Premium Partner), Buderus die Alternative. */
-export const HERSTELLER_LABEL: Record<Hersteller, string> = { bosch: 'Bosch', buderus: 'Buderus' };
+/** Markenname im Kundentext. Bosch ist die Standardmarke (Premium Partner), Buderus, Viessmann und Daikin Alternativen. */
+export const HERSTELLER_LABEL: Record<Hersteller, string> = {
+  bosch: 'Bosch',
+  buderus: 'Buderus',
+  viessmann: 'Viessmann',
+  daikin: 'Daikin',
+};
 export const HEIZUNGS_STANDORTE = ['keller', 'erdgeschoss', 'dachgeschoss', 'anbau', 'aussen', 'unbekannt'] as const;
 export type HeizungsStandort = (typeof HEIZUNGS_STANDORTE)[number];
 export const SANIERUNGEN = ['dach', 'fenster', 'fassade', 'kellerdecke'] as const;
@@ -187,6 +192,7 @@ export type Position = {
   varianteMatrixNr: number | null;
   zuschlag: boolean;
   aktiv: boolean;
+  alternativ?: boolean;
   quelle: 'vorlage' | 'manuell';
   notizIntern: string;
   intern: ZeileIntern;
@@ -226,11 +232,12 @@ export type FoerderungErgebnis = {
 
 export type HinweisCode =
   | 'matrix_fehlt'
-  | 'platzhalter_offen'
   | 'wert_fehlt'
-  | 'menge_fehlt'
   | 'variante_fehlt'
-  | 'foerdersatz_fehlt';
+  | 'platzhalter_offen'
+  | 'menge_fehlt'
+  | 'foerdersatz_fehlt'
+  | 'kfw_deckel_ueberschritten';
 
 export type Hinweis = { code: HinweisCode; text: string; positionId?: string; matrixNr?: number };
 
@@ -248,6 +255,7 @@ export type PositionErgebnis = {
   blockiert: boolean;
   zuschlag: boolean;
   aktiv: boolean;
+  alternativ?: boolean;
 };
 
 export type KalkulationsErgebnis = {
